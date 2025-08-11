@@ -7,6 +7,10 @@ import networkx as nx
 import seaborn as sns
 from tigramite import plotting as tp
 
+def saveBoxPlot(distributions):
+    plt.boxplot(distributions)
+    plt.show()
+
 def saveROCCurve(TPR, FPR, values, title, filename, colors = [], rowLabels = [], show = False, save=True, annotateBest = True,
                  xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=100, xlabel ="", ylabel =""):
     fig = plt.figure(figsize=figsize, layout="constrained")
@@ -63,7 +67,7 @@ def saveROCCurve(TPR, FPR, values, title, filename, colors = [], rowLabels = [],
         plt.close()
 
 def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowLabels=[], show = False, save= True, 
-                xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=200, xlabel ="", ylabel ="", yAxisCut = False, yAxisLinearLim = 1):
+                xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=200, xlabel ="", ylabel ="", yAxisCut = False, yAxisLinearLim = 1, quantileLower = [], quantileHigher = []):
     fig = plt.figure(figsize=figsize, layout ='constrained')
     if scores.shape[0] != len(values) and scores.shape[1] != len(values):
         print("Value list doesn't match any dimension of data")
@@ -89,6 +93,8 @@ def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowL
         plt.plot(values, scores)
         if len(errors) > 0:
             plt.fill_between(values, scores + errors, scores - errors, alpha = 0.2)
+        elif len(quantileLower) > 0:
+            plt.fill_between(values, quantileLower, quantileHigher, alpha = 0.2)
     else:
         showLegend = True
         if len(rowLabels) == 0:
@@ -105,10 +111,14 @@ def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowL
                 plt.plot(values, scores[i], label = str(rowLabels[i]))
                 if len(errors) > 0:
                     plt.fill_between(values, scores[i] + errors[i], scores[i] - errors[i], alpha = 0.2)
+                elif len(quantileLower) > 0:
+                    plt.fill_between(values, quantileLower[i], quantileHigher[i], alpha = 0.2)
             else:
                 plt.plot(values, scores[i], label = str(rowLabels[i]), color=colors[i])
                 if len(errors) > 0:
                     plt.fill_between(values, scores[i] + errors[i], scores[i] - errors[i], alpha = 0.2, color= colors[i])
+                elif len(quantileLower) > 0:
+                    plt.fill_between(values, quantileLower[i], quantileHigher[i], alpha = 0.2, color= colors[i])
         if showLegend:
             plt.legend(fontsize=14)
     if save:

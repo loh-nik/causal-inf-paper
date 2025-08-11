@@ -21,7 +21,7 @@ def getCascadeData(couplingMatrix, samples, deltaTOutput, noiseScale, seed, cons
     sol = solve_ivp(dynSysX3, timeSpan, init, t_eval = timePoints, args=(A,B,C,couplingMatrix,deltaTOutput*constantNoiseDuration,noiseArray))
     return sol.y.T[::int(deltaTOutput/deltaTSim)]
 
-def getVARData(couplingMatrix, samples, noiseScale, seed):
+def getVARData(couplingMatrix, samples, noiseScale, seed, delay=0):
     n,_ = couplingMatrix.shape
     randomGen = np.random.default_rng(seed)
     noiseArray = randomGen.normal(loc = 0, scale = noiseScale, size=(int(1.1*samples), n))
@@ -31,7 +31,10 @@ def getVARData(couplingMatrix, samples, noiseScale, seed):
         row = []
         for j in range(n):
             if couplingMatrix[i,j] != 0:
-                row.append(((j, -1), couplingMatrix[i,j], lin))
+                if i == j:
+                    row.append(((j, -1), couplingMatrix[i,j], lin))
+                else:
+                    row.append(((j, -1 - delay), couplingMatrix[i,j], lin))
         links[i] = row
     data_full, nonstationarity_indicator = toys.structural_causal_process(
         links=links, T=samples, noises=noiseArray, seed=seed, transient_fraction=0.1)
@@ -240,4 +243,11 @@ def checkStability():
 
 
 if __name__ == "__main__":
-    checkStability()
+    truthMatrix = np.array([[0.5,0.2,0],[-0.2,0.5,0],[0.2,-0.2,0.5]])
+    data = getVARData(truthMatrix, 1000, 0.01, 0, 5)
+    plt.plot(data)
+    plt.figure()
+    data2 = getVARData(truthMatrix, 1000, 0.01, 0, 0)
+    plt.plot(data2)
+    plt.plot(data[:,1] - data2[:,1])
+    plt.show()
