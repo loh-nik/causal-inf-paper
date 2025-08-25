@@ -663,6 +663,14 @@ def system6dEvaluations():
     #median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
 
     # decide how to display the results
+    vis.saveMCCCurve(final[:,::3].T, [3,6,12], "", "./diagrams/SystemCascGCSS", [], show=False, save = True, rowLabels=["GCSS-LD", "GCSS-HD"], 
+                     xlabel = "Variable Count", ylabel ="MCC")
+    vis.saveMCCCurve(final[:,1::3].T, [3,6,12], "", "./diagrams/SystemCascLKIF", [], show=False, save = True, rowLabels=["LKIF-LD", "LKIF-HD"], 
+                     xlabel = "Variable Count", ylabel ="MCC")
+    vis.saveMCCCurve(final[:,2::3].T, [3,6,12], "", "./diagrams/SystemCascPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
+                     xlabel = "Variable Count", ylabel ="MCC")
+    
+
     vis.saveMCCCurve(final.T, [3,6,12], "", "./diagrams/SystemCasc", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"], 
                      colors=[defaultCols[0], defaultCols[1], defaultCols[2], scale_lightness(defaultCols[0], 1.6), scale_lightness(defaultCols[1], 1.6), scale_lightness(defaultCols[2], 1.6)], xlabel = "Variable Count", ylabel ="MCC")
     #vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
@@ -697,34 +705,35 @@ def system6dEvaluations():
     #vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
 
 import matplotlib.pyplot as plt
-def nonStationarity():
-    loadData = False
+def nonStationaryTipping():
+    loadData = True
     if not loadData:
         #dT = lambda x,t : max(min((-0.4 / 20) + 0.8, 0), -0.4)
         dT = lambda x,t : (t >= 40) * (t <= 60) * (-0.4 / 20)
-        truthMatrix = np.array([[0,1,0],[-1,0,0],[1,-1,0]])
-        truthMatrix = np.array([[0,0,0],[-1,0,0],[0,-1,0]])
+        #truthMatrix = np.array([[0,1,0],[-1,0,0],[0,0,0]])
+        truthMatrix = np.array([[0,0,0],[0,0,1],[0,-1,0]])
+        #truthMatrix = np.array([[0,1], [-1,0]])
         randomRuns = 10
         metricsNormal = []
         metricsReducedInfo = []
         for i in range(randomRuns):
-            data = DataGenerator.getCascade3dConfoundedBrainpy(dT, truthMatrix, 1000)
+            data = DataGenerator.getCascade3dConfoundedBrainpy(dT, truthMatrix, 10000)
             #plt.plot(data.T)
             #plt.show()
             #exit()
-            matrices = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "None", 1000, 0.05, 0, 0, 5, 0, 0, "Full", fullData = data.T, returnMatrices=True)
+            matrices = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "None", 10000, 0.05, 0, 0, 5, 0, 0, "Full", fullData = data.T, returnMatrices=True)
             #vis.saveCouplingMatrixGraph(matrices[0], "", "", True, False)
             #vis.saveCouplingMatrixGraph(matrices[1], "", "", True, False)
             #vis.saveCouplingMatrixGraph(matrices[2], "", "", True, False)
             matrices = matrices[:,:3,:3]
             metrics = np.array([getFullMetrics(truthMatrix, matrix) for matrix in matrices])
             metricsNormal.append(metrics.T)
-            reducedMetrics = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "None", 1000, 0.05, 0, 0, 5, 0, 0, "Full", fullData = data[:3].T, returnMatrices = True)
+            reducedMetrics = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "None", 10000, 0.05, 0, 0, 5, 0, 0, "Full", fullData = data[:3].T, returnMatrices = True)
             #vis.saveCouplingMatrixGraph(reducedMetrics[0], "", "", True, False)
             #vis.saveCouplingMatrixGraph(reducedMetrics[1], "", "", True, False)
             #vis.saveCouplingMatrixGraph(reducedMetrics[2], "", "", True, False)
             reducedMetrics = np.array([getFullMetrics(truthMatrix, matrix) for matrix in reducedMetrics])
-            metricsReducedInfo.append(reducedMetrics)
+            metricsReducedInfo.append(reducedMetrics.T)
         np.save("./data/Casc_fullInfo.npy", metricsNormal)
         np.save("./data/Casc_reducedInfo.npy", metricsReducedInfo)
     else: 
@@ -732,6 +741,8 @@ def nonStationarity():
         metricsReducedInfo = np.load("./data/Casc_reducedInfo.npy")
     print(np.array(metricsNormal).shape)
     print(np.array(metricsReducedInfo).shape)
+    print(metricsNormal[:,:,2])
+    print(metricsReducedInfo[:,:,2])
     fullInfoMCC = MCCFromFull(np.array(metricsNormal), axis=1)
     reducedInfoMCC = MCCFromFull(np.array(metricsReducedInfo), axis=1)
     fullInfoMean, fullInfoStd = getMeanStdDev(fullInfoMCC, axis = 0)
@@ -740,6 +751,39 @@ def nonStationarity():
     print(fullInfoStd)
     print(reducedInfoMean)
     print(reducedInfoStd)
+
+def nonStationaryStable():
+    """We increase forcing linearly over the course of 50 units of time (500 samples), up to some ceiling, then compare performances across ceiling heights"""
+    loadData = False
+    ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+    if not loadData:
+        truthMatrix = np.array([[0,0,0,0,0,0],
+                                        [1,0,0,0,0,0],
+                                        [0,-1,0,0,0,0],
+                                        [0,0,0,0,0,0],
+                                        [0,0,1,0,0,1],
+                                        [0,0,0,0,-1,0]])
+        dim = 6
+        randomRuns = 10
+        metrics = np.zeros((len(ceilings), randomRuns, 4, 3))
+        for i in range(len(ceilings)):
+            for j in range(randomRuns):
+                dT = lambda x,t : (t <= 50) * (-0.4 / 50) * ceilings[i]
+                data = DataGenerator.getCascade6dConfoundedBrainpy(dT, truthMatrix, 1000, 0)
+                if j == 0:
+                    plt.figure()
+                    plt.plot(data.T)
+                    plt.savefig("diagrams/forcing6d_"+str(i)+"_"+str(j)+".png")
+                metrics[i,j] = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "None", 1000, 0.05, 0, 0, 5, 0, 0, "Full", fullData = data[:dim].T)
+        np.save("./data/Casc_forcing6d.npy", metrics)
+    else: 
+        metrics = np.load("./data/Casc_forcing6d.npy")
+    print(np.array(metrics).shape)
+    print(metrics[0,:,:,1])
+    print(metrics[0,:,:,2])
+    fullInfoMCC = MCCFromFull(np.array(metrics), axis=2)
+    fullInfoMean, fullInfoStd = getMeanStdDev(fullInfoMCC, axis = 1)
+    vis.saveMCCCurve(fullInfoMean.T, ceilings, "", "./diagrams/forcing6d", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
 
 
 def autoCorrEvaluations():
@@ -1430,8 +1474,9 @@ if __name__ == "__main__":
     #mainEvaluations(args.testIndex)
     #sample6dEvaluations()
     #couplStrength6dEvaluations()
-    #print("hi")
-    nonStationarity()
+    print("hi")
+    system6dEvaluations()
+    nonStationaryStable()
     # truthMatrix = np.array([[0.5,0.1,0],[-0.1,0.5,0],[0.1,-0.1,0.5]])
     # truthMatrix = np.array([[0.5,1,0],[-1,0.5,0],[0,0,0.5]])
     # truthMatrix = np.array([            [0.5,0,0,0,0,0],

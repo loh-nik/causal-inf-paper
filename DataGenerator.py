@@ -174,7 +174,7 @@ def getCascadeDataBrainpy(couplingMatrix, samples, delay = 0):
     print("Error, no implementation of delayed 12x12 matrix")
     return
 
-def getCascade3dConfoundedBrainpy(confounderFct, couplingMatrix, samples):
+def getCascade3dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcingNoise = 0.01):
     if couplingMatrix.shape != (3,3):
         print("Error, coupling matrix not of shape (3,3)")
         return
@@ -184,7 +184,7 @@ def getCascade3dConfoundedBrainpy(confounderFct, couplingMatrix, samples):
         minus1 = values-1
         result = -jnp.power(values, 3) + values + couplingMatrix @ minus1 + c
         return result[0], result[1], result[2], confounderFct(c,t)
-    g = lambda x,y,z,c,t: (0.01, 0.01, 0.01, 0.01)
+    g = lambda x,y,z,c,t: (0.01, 0.01, 0.01, forcingNoise)
 
     integral = bp.sdeint(function3dConfounded, g)
 
@@ -194,6 +194,29 @@ def getCascade3dConfoundedBrainpy(confounderFct, couplingMatrix, samples):
                                 dt=dt)
     runner.run(samples / 10)
     stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100], runner.mon.c[::100])).reshape((4,-1))
+    return stacked
+
+def getCascade6dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcingNoise = 0.01):
+    if couplingMatrix.shape != (6,6):
+        print("Error, coupling matrix not of shape (6,6)")
+        return
+    dt = 0.001
+    def function6dConfounded(x,y,z,a,b,c,d,t):
+        values = jnp.stack([x,y,z,a,b,c])
+        minus1 = values-1
+        result = -jnp.power(values, 3) + values + couplingMatrix @ minus1 + d
+        return result[0], result[1], result[2], result[3], result[4], result[5], confounderFct(d,t)
+    g = lambda x,y,z,a,b,c,d,t: (0.01, 0.01, 0.01,0.01, 0.01, 0.01, forcingNoise)
+
+    integral = bp.sdeint(function6dConfounded, g)
+
+    runner = bp.IntegratorRunner(integral,
+                                monitors=['x', 'y', 'z', 'a', 'b','c','d'],
+                                inits = [1.,1.,1.,1.,1.,1.,0.],
+                                dt=dt)
+    runner.run(samples / 10)
+    stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100], 
+                        runner.mon.a[::100], runner.mon.b[::100],runner.mon.c[::100], runner.mon.d[::100])).reshape((7,-1))
     return stacked
 
 def getCascadeData(couplingMatrix, samples, deltaTOutput, noiseScale, seed, constantNoiseDuration = 1, deltaTSim = 0.001):
