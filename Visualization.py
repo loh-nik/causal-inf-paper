@@ -1,11 +1,9 @@
 from matplotlib import pyplot as plt
 import numpy as np
-import dtreeviz
-from dtreeviz import decision_boundaries
-from sklearn.tree import DecisionTreeClassifier
-import networkx as nx
+
+#import networkx as nx
 import seaborn as sns
-from tigramite import plotting as tp
+
 
 def saveBoxPlot(distributions):
     plt.boxplot(distributions)
@@ -129,6 +127,8 @@ def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowL
         plt.close()
 
 def saveDecisionTree(data, labels, feature_names, class_names, filename, max_depth = 3, show = False, save = True):
+    import dtreeviz
+    from sklearn.tree import DecisionTreeClassifier
     clf = DecisionTreeClassifier(random_state=0, max_depth=max_depth)
     clf = clf.fit(data, labels)
     viz_model = dtreeviz.model(clf,
@@ -142,6 +142,8 @@ def saveDecisionTree(data, labels, feature_names, class_names, filename, max_dep
         v.show()
 
 def saveDecisionBoundaries(data, labels, filename, show = False, save = True):
+    from dtreeviz import decision_boundaries
+    from sklearn.tree import DecisionTreeClassifier
     if data.shape[1] != 2 :
         print("Invalid data to draw 2d decision boundaries")
         exit()
@@ -160,6 +162,7 @@ def saveDecisionBoundaries(data, labels, filename, show = False, save = True):
         plt.close()
 
 def saveCouplingMatrixGraph(matrix, title, filename, show = False, save= True, figsize=(4,4.5), dpi=100):
+    from tigramite import plotting as tp
     ax = plt.subplots(1,1,layout="constrained", figsize=figsize)
     plt.title(title, fontsize=17)
     #G = nx.from_numpy_array(matrix, create_using =nx.DiGraph)

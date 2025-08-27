@@ -1,13 +1,9 @@
 import numpy as np
-import oct2py
-from scipy.stats import chi2
-from oct2py import octave
 
-oc = oct2py.Oct2Py()
-
-octave.addpath("./StateSpaceGC")
+init = False
 
 def significanceMatrix(G, model_ord, samples, alpha):
+    from scipy.stats import chi2
     d = G.shape[0]
     pVals = 1 - chi2.cdf(G, df = model_ord, loc=0, scale = 1/samples)
     for i in range(d):
@@ -32,6 +28,13 @@ def significanceMatrix(G, model_ord, samples, alpha):
 
 # X in shape (variables, observations)
 def gcss(X, alpha, tau_max, returnAll = False):
+    """Lazy import of octave, because it takes some time to couple to python"""
+    import oct2py
+    from oct2py import octave
+    if not init:
+        oc = oct2py.Oct2Py()
+        octave.addpath("./StateSpaceGC")
+        init = True
     q, N = X.shape
     _, pbic = octave.ar_IC(X, tau_max, False, nout=2, verbose=False)
     pbic = max(pbic, tau_max)

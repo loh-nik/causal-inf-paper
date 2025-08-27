@@ -1,17 +1,18 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.integrate import solve_ivp
-from tigramite.toymodels import structural_causal_processes as toys
+
 from progress.bar import Bar
 
-import brainpy as bp
-import brainpy.math as bm
-import jax.numpy as jnp
 
 def dynSysX3(t,y,A,B,C,D,deltaT,noiseArr):
     return A*(np.power(y,3)) + B*y + C + D@(y-1) + noiseArr[int(t/deltaT)%len(noiseArr)]
 
 def gen3dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000, savename = "threeInteractions"):
+    
+    import brainpy as bp
+    import brainpy.math as bm
+    import jax.numpy as jnp
     if couplingMatrix.shape != (3,3) or delayMatrix.shape != (3,3):
         print("Error, coupling or delay matrix not of shape (3,3)")
         return
@@ -39,6 +40,9 @@ def gen3dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000, savename = "th
     return stacked
 
 def gen3dNoDelayData(couplingMatrix, timeSteps = 1000):
+    import brainpy as bp
+    import brainpy.math as bm
+    import jax.numpy as jnp
     dt = 0.001
     f = lambda x,y,z,t: (- pow(x, 3) + x + couplingMatrix[0,1] * (y-1) + couplingMatrix[0,2] * (z-1),\
                           - pow(y, 3) + y + couplingMatrix[1,0] * (x-1) + couplingMatrix[1,2] * (z-1), \
@@ -57,6 +61,9 @@ def gen3dNoDelayData(couplingMatrix, timeSteps = 1000):
 
 # 6 dimensional cubic diff. eq. with delays
 def gen6dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000):
+    import brainpy as bp
+    import brainpy.math as bm
+    import jax.numpy as jnp
     if couplingMatrix.shape != (6,6) or delayMatrix.shape != (6,6):
         print("Error, coupling or delay matrix not of shape (6,6)")
         return
@@ -90,6 +97,9 @@ def gen6dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000):
     return stacked
 
 def gen6dNoDelayData(couplingMatrix, timeSteps = 1000):
+    import brainpy as bp
+    import brainpy.math as bm
+    import jax.numpy as jnp
     if couplingMatrix.shape != (6,6):
         print("Error, coupling or delay matrix not of shape (6,6)")
         return
@@ -116,6 +126,9 @@ def gen6dNoDelayData(couplingMatrix, timeSteps = 1000):
     return stacked
 
 def gen12dNoDelayData(couplingMatrix, timeSteps = 1000):
+    import brainpy as bp
+    import brainpy.math as bm
+    import jax.numpy as jnp
     if couplingMatrix.shape != (12,12):
         print("Error, coupling or delay matrix not of shape (12,12)")
         return
@@ -139,6 +152,9 @@ def gen12dNoDelayData(couplingMatrix, timeSteps = 1000):
     return stacked
 
 def gen3dAutoCorrData(couplingMatrix, autoCorr):
+    import brainpy as bp
+    import brainpy.math as bm
+    import jax.numpy as jnp
     dt = 0.001
     f = lambda x,y,z,t: (- autoCorr*pow(x, 3) + autoCorr*x + couplingMatrix[0,1] * (y-1) + couplingMatrix[0,2] * (z-1),\
                           - autoCorr*pow(y, 3) + autoCorr*y + couplingMatrix[1,0] * (x-1) + couplingMatrix[1,2] * (z-1), \
@@ -175,6 +191,9 @@ def getCascadeDataBrainpy(couplingMatrix, samples, delay = 0):
     return
 
 def getCascade3dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcingNoise = 0.01):
+    import brainpy as bp
+    import brainpy.math as bm
+    import jax.numpy as jnp
     if couplingMatrix.shape != (3,3):
         print("Error, coupling matrix not of shape (3,3)")
         return
@@ -196,7 +215,35 @@ def getCascade3dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcin
     stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100], runner.mon.c[::100])).reshape((4,-1))
     return stacked
 
+def getCascade2dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcingNoise = 0.01):
+    import brainpy as bp
+    import brainpy.math as bm
+    import jax.numpy as jnp
+    if couplingMatrix.shape != (2,2):
+        print("Error, coupling matrix not of shape (2,2)")
+        return
+    dt = 0.001
+    def function2dConfounded(x,y,c,t):
+        values = jnp.stack([x,y])
+        minus1 = values-1
+        result = -jnp.power(values, 3) + values + couplingMatrix @ minus1 + c
+        return result[0], result[1], confounderFct(c,t)
+    g = lambda x,y,c,t: (0.01, 0.01, forcingNoise)
+
+    integral = bp.sdeint(function2dConfounded, g)
+
+    runner = bp.IntegratorRunner(integral,
+                                monitors=['x', 'y', 'c'],
+                                inits = [1.,1.,0.],
+                                dt=dt)
+    runner.run(samples / 10)
+    stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100], runner.mon.c[::100])).reshape((3,-1))
+    return stacked
+
 def getCascade6dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcingNoise = 0.01):
+    import brainpy as bp
+    import brainpy.math as bm
+    import jax.numpy as jnp
     if couplingMatrix.shape != (6,6):
         print("Error, coupling matrix not of shape (6,6)")
         return
@@ -234,6 +281,7 @@ def getCascadeData(couplingMatrix, samples, deltaTOutput, noiseScale, seed, cons
     return sol.y.T[::int(deltaTOutput/deltaTSim)]
 
 def getVARData(couplingMatrix, samples, noiseScale, seed, delay=0):
+    from tigramite.toymodels import structural_causal_processes as toys
     n,_ = couplingMatrix.shape
     randomGen = np.random.default_rng(seed)
     noiseArray = randomGen.normal(loc = 0, scale = noiseScale, size=(int(1.1*samples), n))

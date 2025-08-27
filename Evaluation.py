@@ -1,13 +1,11 @@
 import numpy as np
 import DataGenerator
-import GCSS
-import LKIF
-import PCMCI
+
 import Visualization as vis
 #from matplotlib import pyplot as plt
 from progress.bar import Bar
 import time
-import argparse
+#import argparse
 
 # get label encoding the full ranking of 3 algorithms
 def getLabel(scoreTriplet):
@@ -131,6 +129,15 @@ def tpr_fpr_FromFull(a, axis=0):
 # returns a numpy array of shape (2, len(algorithms))
 # or shape (4, len(algorithms)) for evalType "full" 
 def getMetricOfRealization(couplingMatrix, algorithms, model, samples, alpha, couplingStrength, noiseScale, tauMax, seed, deltaTCascadeOutput, evalType, delayLength = 0, fullData = [], returnMatrices = False):
+    import GCSS
+    import LKIF
+    import PCMCI
+    tauList = False
+    if type(tauMax) is list:
+        if len(tauMax) != len(algorithms):
+            print("Error: length of tauMax must equal number of selected algorithms")
+            return
+        tauList = True
     # dont change autoregressive components
     matrix = couplingStrength * couplingMatrix
     for i in range(matrix.shape[0]):
@@ -142,9 +149,12 @@ def getMetricOfRealization(couplingMatrix, algorithms, model, samples, alpha, co
     matrices = []
     # fullData has the shape (observations, variables), LKIF and GCSS want that transposed
     if "GCSS" in algorithms:
+        tauGCSS = tauMax
+        if tauList: 
+            tauGCSS = tauMax[algorithms.index("GCSS")]
         #matrixGCSS = GCSS.gcss(fullData.T, alpha, tauMax, returnAll=False)
         try:
-            matrixGCSS = GCSS.gcss(fullData.T, alpha, tauMax, returnAll=False)
+            matrixGCSS = GCSS.gcss(fullData.T, alpha, tauGCSS, returnAll=False)
             matrixGCSS[np.isnan(matrixGCSS)] = 0
         except:
             matrixGCSS = np.zeros((fullData.shape[1],fullData.shape[1]))
@@ -152,11 +162,17 @@ def getMetricOfRealization(couplingMatrix, algorithms, model, samples, alpha, co
         np.fill_diagonal(matrixGCSS,0)
         matrices.append(matrixGCSS)
     if "LKIF" in algorithms:
-        matrixLKIF = LKIF.lkif(fullData.T, alpha, tau_max=tauMax)
+        tauLKIF = tauMax
+        if tauList: 
+            tauLKIF = tauMax[algorithms.index("LKIF")]
+        matrixLKIF = LKIF.lkif(fullData.T, alpha, tau_max=tauLKIF)
         np.fill_diagonal(matrixLKIF, 0)
         matrices.append(matrixLKIF)
     if "PCMCI" in algorithms:
-        matrixPCMCI, p_values = PCMCI.PCMCIPlus(fullData, [], range(fullData.shape[1]), None, tauMax, alpha if alpha<=1 else 1, contempLinks=True)
+        tauPCMCI = tauMax
+        if tauList: 
+            tauPCMCI = tauMax[algorithms.index("PCMCI")]
+        matrixPCMCI, p_values = PCMCI.PCMCIPlus(fullData, [], range(fullData.shape[1]), None, tauPCMCI, alpha if alpha<=1 else 1, contempLinks=True)
         graph_bool = p_values <= alpha
         matrixPCMCI = maxSignificantLink(matrixPCMCI, graph_bool, axis = 2)
         np.fill_diagonal(matrixPCMCI,0)
@@ -498,7 +514,7 @@ def couplStrength6dEvaluations():
     # get central 90% of data
     #median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
     
-    vis.saveMCCCurve(mean.T, couplStrengths, "", "./diagrams/coupl6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
+    vis.saveMCCCurve(mean.T, couplStrengths*10, "", "./diagrams/coupl6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
     #vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
 
     # VAR systems with additional delay, note that 1 time step delay is always in there due to time discretization, so we add between 1 and 30 time steps to that
@@ -532,16 +548,15 @@ def couplStrength6dEvaluations():
     vis.saveMCCCurve(mean.T, couplStrengths, "", "./diagrams/coupl6dVAR", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
     #vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
 
-import colorsys
-
 def scale_lightness(rgb, scale_l):
+    import colorsys
     # convert rgb to hls
     h, l, s = colorsys.rgb_to_hls(*rgb)
     # manipulate h, l, s values and return as rgb
     return colorsys.hls_to_rgb(h, min(1, l * scale_l), s = s)
 
-import matplotlib as mpl
 def system6dEvaluations():
+    import matplotlib as mpl
     print("System Size and Density Experiment")
     defaultCols = mpl.color_sequences["tab10"]
     # low density: n-1 edges
@@ -704,47 +719,56 @@ def system6dEvaluations():
                      colors=[defaultCols[0], defaultCols[1], defaultCols[2], scale_lightness(defaultCols[0], 1.6), scale_lightness(defaultCols[1], 1.6), scale_lightness(defaultCols[2], 1.6)], xlabel = "Variable Count", ylabel ="MCC")
     #vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
 
-import matplotlib.pyplot as plt
 def nonStationaryTipping():
-    loadData = True
+    loadData = False
     if not loadData:
         #dT = lambda x,t : max(min((-0.4 / 20) + 0.8, 0), -0.4)
-        dT = lambda x,t : (t >= 40) * (t <= 60) * (-0.4 / 20)
+        dT = lambda x,t : (t >= 30) * (t <= 70) * (-0.4 / 40)
         #truthMatrix = np.array([[0,1,0],[-1,0,0],[0,0,0]])
-        truthMatrix = np.array([[0,0,0],[0,0,1],[0,-1,0]])
+        #truthMatrix = np.array([[0,0,0],[0,0,1],[0,-1,0]])
         #truthMatrix = np.array([[0,1], [-1,0]])
+        #truthMatrix = np.array([[0,0], [-1,0]])
+        truthMatrix = np.array([[0,0,0,0,0,0],
+                                        [1,0,0,0,0,0],
+                                        [0,-1,0,0,0,0],
+                                        [0,0,0,0,0,0],
+                                        [0,0,1,0,0,1],
+                                        [0,0,0,0,-1,0]])
+        dim = 6
         randomRuns = 10
         metricsNormal = []
         metricsReducedInfo = []
         for i in range(randomRuns):
-            data = DataGenerator.getCascade3dConfoundedBrainpy(dT, truthMatrix, 10000)
+            data = DataGenerator.getCascade6dConfoundedBrainpy(dT, truthMatrix, 1000)
             #plt.plot(data.T)
             #plt.show()
             #exit()
-            matrices = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "None", 10000, 0.05, 0, 0, 5, 0, 0, "Full", fullData = data.T, returnMatrices=True)
-            #vis.saveCouplingMatrixGraph(matrices[0], "", "", True, False)
-            #vis.saveCouplingMatrixGraph(matrices[1], "", "", True, False)
-            #vis.saveCouplingMatrixGraph(matrices[2], "", "", True, False)
-            matrices = matrices[:,:3,:3]
+            matrices = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "None", 1000, 0.05, 0, 0, [5,1,5], 0, 0, "Full", fullData = data.T, returnMatrices=True)
+            vis.saveCouplingMatrixGraph(matrices[0], "", "diagrams/gcssFullInfo", False, True)
+            vis.saveCouplingMatrixGraph(matrices[1], "", "diagrams/lkifFullInfo", False, True)
+            vis.saveCouplingMatrixGraph(matrices[2], "", "diagrams/pcmciFullInfo", False, True)
+            matrices = matrices[:,:dim,:dim]
             metrics = np.array([getFullMetrics(truthMatrix, matrix) for matrix in matrices])
             metricsNormal.append(metrics.T)
-            reducedMetrics = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "None", 10000, 0.05, 0, 0, 5, 0, 0, "Full", fullData = data[:3].T, returnMatrices = True)
-            #vis.saveCouplingMatrixGraph(reducedMetrics[0], "", "", True, False)
-            #vis.saveCouplingMatrixGraph(reducedMetrics[1], "", "", True, False)
-            #vis.saveCouplingMatrixGraph(reducedMetrics[2], "", "", True, False)
+            reducedMetrics = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "None", 1000, 0.05, 0, 0, [5,1,5], 0, 0, "Full", fullData = data[:dim].T, returnMatrices = True)
+            vis.saveCouplingMatrixGraph(reducedMetrics[0], "", "diagrams/gcssNoInfo", False, True)
+            vis.saveCouplingMatrixGraph(reducedMetrics[1], "", "diagrams/lkifNoInfo", False, True)
+            vis.saveCouplingMatrixGraph(reducedMetrics[2], "", "diagrams/pcmciNoInfo", False, True)
             reducedMetrics = np.array([getFullMetrics(truthMatrix, matrix) for matrix in reducedMetrics])
             metricsReducedInfo.append(reducedMetrics.T)
-        np.save("./data/Casc_fullInfo.npy", metricsNormal)
-        np.save("./data/Casc_reducedInfo.npy", metricsReducedInfo)
+        np.save("./data/Casc_fullInfo6d.npy", metricsNormal)
+        np.save("./data/Casc_reducedInfo6d.npy", metricsReducedInfo)
     else: 
-        metricsNormal = np.load("./data/Casc_fullInfo.npy")
-        metricsReducedInfo = np.load("./data/Casc_reducedInfo.npy")
-    print(np.array(metricsNormal).shape)
-    print(np.array(metricsReducedInfo).shape)
+        metricsNormal = np.load("./data/Casc_fullInfo6d.npy")
+        metricsReducedInfo = np.load("./data/Casc_reducedInfo6d.npy")
+    metricsNormal = np.array(metricsNormal)
+    metricsReducedInfo=np.array(metricsReducedInfo)
+    print(metricsNormal.shape)
+    print(metricsReducedInfo.shape)
     print(metricsNormal[:,:,2])
     print(metricsReducedInfo[:,:,2])
-    fullInfoMCC = MCCFromFull(np.array(metricsNormal), axis=1)
-    reducedInfoMCC = MCCFromFull(np.array(metricsReducedInfo), axis=1)
+    fullInfoMCC = MCCFromFull(metricsNormal, axis=1)
+    reducedInfoMCC = MCCFromFull(metricsReducedInfo, axis=1)
     fullInfoMean, fullInfoStd = getMeanStdDev(fullInfoMCC, axis = 0)
     reducedInfoMean, reducedInfoStd = getMeanStdDev(reducedInfoMCC, axis=0)
     print(fullInfoMean)
@@ -753,9 +777,10 @@ def nonStationaryTipping():
     print(reducedInfoStd)
 
 def nonStationaryStable():
+    import matplotlib.pyplot as plt
     """We increase forcing linearly over the course of 50 units of time (500 samples), up to some ceiling, then compare performances across ceiling heights"""
-    loadData = False
-    ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+    loadData = True
+    ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.8, 0.9, 1.0]
     if not loadData:
         truthMatrix = np.array([[0,0,0,0,0,0],
                                         [1,0,0,0,0,0],
@@ -765,27 +790,50 @@ def nonStationaryStable():
                                         [0,0,0,0,-1,0]])
         dim = 6
         randomRuns = 10
-        metrics = np.zeros((len(ceilings), randomRuns, 4, 3))
+        metricsNormal = np.zeros((len(ceilings), randomRuns, 4, 3))
+        metricsReducedInfo = np.zeros((len(ceilings), randomRuns, 4, 3))
         for i in range(len(ceilings)):
             for j in range(randomRuns):
                 dT = lambda x,t : (t <= 50) * (-0.4 / 50) * ceilings[i]
-                data = DataGenerator.getCascade6dConfoundedBrainpy(dT, truthMatrix, 1000, 0)
+                data = DataGenerator.getCascade6dConfoundedBrainpy(dT, truthMatrix, 1000, 0.001)
                 if j == 0:
                     plt.figure()
                     plt.plot(data.T)
                     plt.savefig("diagrams/forcing6d_"+str(i)+"_"+str(j)+".png")
-                metrics[i,j] = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "None", 1000, 0.05, 0, 0, 5, 0, 0, "Full", fullData = data[:dim].T)
-        np.save("./data/Casc_forcing6d.npy", metrics)
+                matrices = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "None", 1000, 0.05, 0, 0, [5,1,5], 0, 0, "Full", fullData = data.T, returnMatrices=True)
+                matrices = matrices[:,:dim,:dim]
+                metricsNormal[i,j] = np.array([getFullMetrics(truthMatrix, matrix) for matrix in matrices]).T
+                matrices2 = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "None", 1000, 0.05, 0, 0, [5,1,5], 0, 0, "Full", fullData = data[:dim].T, returnMatrices=True)
+                metricsReducedInfo[i,j] = np.array([getFullMetrics(truthMatrix, matrix) for matrix in matrices2]).T
+        np.save("./data/Casc_forcing6d.npy", metricsNormal)
+        np.save("./data/Casc_forcing_reducedInfo_6d.npy", metricsReducedInfo)
     else: 
-        metrics = np.load("./data/Casc_forcing6d.npy")
-    print(np.array(metrics).shape)
-    print(metrics[0,:,:,1])
-    print(metrics[0,:,:,2])
-    fullInfoMCC = MCCFromFull(np.array(metrics), axis=2)
+        metricsNormal = np.load("./data/Casc_forcing6d.npy")
+        metricsReducedInfo = np.load("./data/Casc_forcing_reducedInfo_6d.npy")
+    # print(np.array(metricsNormal).shape)
+    # print(metricsNormal[0,:,:,1])
+    # print(metricsNormal[0,:,:,2])
+    fullInfoMCC = MCCFromFull(np.array(metricsNormal), axis=2)
     fullInfoMean, fullInfoStd = getMeanStdDev(fullInfoMCC, axis = 1)
+    noInfoMCC = MCCFromFull(np.array(metricsReducedInfo), axis=2)
+    noInfoMean, noInfoStd = getMeanStdDev(noInfoMCC, axis = 1)
+
+    gcssInfo = np.stack((fullInfoMean[:,0], noInfoMean[:,0]), axis=1)
+    lkifInfo = np.stack((fullInfoMean[:,1], noInfoMean[:,1]), axis=1)
+    pcmInfo = np.stack((fullInfoMean[:,2], noInfoMean[:,2]), axis=1)
+    gcssStd = np.stack((fullInfoStd[:,0], noInfoStd[:,0]), axis=1)
+    lkifStd = np.stack((fullInfoStd[:,1], noInfoStd[:,1]), axis=1)
+    pcmStd = np.stack((fullInfoStd[:,2], noInfoStd[:,2]), axis=1)
+
+    # print(gcssInfo.shape)
+    
     vis.saveMCCCurve(fullInfoMean.T, ceilings, "", "./diagrams/forcing6d", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
+    vis.saveMCCCurve(noInfoMean.T, ceilings, "", "./diagrams/forcing6d_reducedInformation", noInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
 
-
+    vis.saveMCCCurve(gcssInfo.T, ceilings, "", "./diagrams/forcing6d_gcss", gcssStd.T, rowLabels=["With Conf.", "Without"])
+    vis.saveMCCCurve(lkifInfo.T, ceilings, "", "./diagrams/forcing6d_lkif", lkifStd.T, rowLabels=["With Conf.", "Without"])
+    vis.saveMCCCurve(pcmInfo.T, ceilings, "", "./diagrams/forcing6d_pcmci", pcmStd.T, rowLabels=["With Conf.", "Without"])
+    
 def autoCorrEvaluations():
     loadCasc = False
     autoCorrelations = [0.1, 0.25, 0.5, 0.75, 1, 1.25,1.5,2,4]
@@ -1465,8 +1513,6 @@ def mainEvaluations(analysisIndex = None):
     print(endTime - startTime)
     print(str(int((endTime - startTime)/60))+ " minutes")
     
-
-    
 if __name__ == "__main__":
     #parser = argparse.ArgumentParser()
     #parser.add_argument("-testIndex", type=int, choices=[0,1,2,3,4], help="0 to run all analysis, 1 for alpha, 2 for tau-max, 3 for separate data parameters, 4 for combined data parameters, 5 for a reduced combination of alpha values, sampling and coupling strength", required=False)
@@ -1474,9 +1520,10 @@ if __name__ == "__main__":
     #mainEvaluations(args.testIndex)
     #sample6dEvaluations()
     #couplStrength6dEvaluations()
-    print("hi")
-    system6dEvaluations()
+    #print("hi")
+    #system6dEvaluations()
     nonStationaryStable()
+    #nonStationaryTipping()
     # truthMatrix = np.array([[0.5,0.1,0],[-0.1,0.5,0],[0.1,-0.1,0.5]])
     # truthMatrix = np.array([[0.5,1,0],[-1,0.5,0],[0,0,0.5]])
     # truthMatrix = np.array([            [0.5,0,0,0,0,0],
