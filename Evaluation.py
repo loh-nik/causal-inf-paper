@@ -830,9 +830,9 @@ def nonStationaryStable():
     vis.saveMCCCurve(fullInfoMean.T, ceilings, "", "./diagrams/forcing6d", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
     vis.saveMCCCurve(noInfoMean.T, ceilings, "", "./diagrams/forcing6d_reducedInformation", noInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
 
-    vis.saveMCCCurve(gcssInfo.T, ceilings, "", "./diagrams/forcing6d_gcss", gcssStd.T, rowLabels=["With Conf.", "Without"])
-    vis.saveMCCCurve(lkifInfo.T, ceilings, "", "./diagrams/forcing6d_lkif", lkifStd.T, rowLabels=["With Conf.", "Without"])
-    vis.saveMCCCurve(pcmInfo.T, ceilings, "", "./diagrams/forcing6d_pcmci", pcmStd.T, rowLabels=["With Conf.", "Without"])
+    vis.saveMCCScatter(gcssInfo.T, ceilings, "", "./diagrams/forcing6d_gcss", gcssStd.T, rowLabels=["With Conf.", "Without"],figsize=(8,2), dpi=300)
+    vis.saveMCCScatter(lkifInfo.T, ceilings, "", "./diagrams/forcing6d_lkif", lkifStd.T, rowLabels=["With Conf.", "Without"],figsize=(8,2), dpi=300)
+    vis.saveMCCScatter(pcmInfo.T, ceilings, "", "./diagrams/forcing6d_pcmci", pcmStd.T, rowLabels=["With Conf.", "Without"],figsize=(8,2), dpi=300)
     
 def autoCorrEvaluations():
     loadCasc = False

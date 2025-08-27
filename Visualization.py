@@ -65,7 +65,8 @@ def saveROCCurve(TPR, FPR, values, title, filename, colors = [], rowLabels = [],
         plt.close()
 
 def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowLabels=[], show = False, save= True, 
-                xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=200, xlabel ="", ylabel ="", yAxisCut = False, yAxisLinearLim = 1, quantileLower = [], quantileHigher = []):
+                xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=200, xlabel ="", ylabel ="", yAxisCut = False,
+                  yAxisLinearLim = 1, quantileLower = [], quantileHigher = []):
     fig = plt.figure(figsize=figsize, layout ='constrained')
     if scores.shape[0] != len(values) and scores.shape[1] != len(values):
         print("Value list doesn't match any dimension of data")
@@ -117,6 +118,76 @@ def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowL
                     plt.fill_between(values, scores[i] + errors[i], scores[i] - errors[i], alpha = 0.2, color= colors[i])
                 elif len(quantileLower) > 0:
                     plt.fill_between(values, quantileLower[i], quantileHigher[i], alpha = 0.2, color= colors[i])
+        if showLegend:
+            plt.legend(fontsize=14)
+    if save:
+        plt.savefig(filename, dpi=dpi)
+    if show:
+        plt.show()
+    else:
+        plt.close()
+
+def saveMCCScatter(scores, values, title, filename, errors = [], colors = [], rowLabels=[], show = False, save= True, 
+                xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=200, xlabel ="", ylabel ="", yAxisCut = False,
+                  yAxisLinearLim = 1, quantileLower = [], quantileHigher = [], marker = 'o'):
+    """Draws a plot with markers for data points, optionally with error bars.
+    \nScores are the MCC score values, in a 2D array with first dimension as the number of data lines drawn, \
+    and second dimension equaling values dimension. 
+    \nValues are drawn on the x-axis, e.g. number of samples"""
+    fig = plt.figure(figsize=figsize, layout ='constrained')
+    if scores.shape[0] != len(values) and scores.shape[1] != len(values):
+        print("Value list doesn't match any dimension of data")
+        exit()
+    if len(errors) > 0 and errors.shape != scores.shape:
+        print("Errors shape doesn't match scores shape")
+        exit()
+    #plt.suptitle(title, fontsize=15)
+    plt.xscale(xscale)
+    if yAxisCut:
+        plt.yscale("symlog", linthresh = yAxisLinearLim)
+        plt.yticks(np.append(np.arange(0,1,0.1), range(1,8)), labels=["0","","","","","0.5","","","","","1","","","","5","",""])
+        ax = plt.gca()
+        ax.grid(True, axis="y", color='lightgray', linestyle='-', linewidth=0.5)
+        ax.axhline(y=yAxisLinearLim, color='gray', linewidth=1, linestyle='-')
+    else:
+        plt.yscale(yscale)
+    plt.xlabel(xlabel, fontsize=14)
+    plt.ylabel(ylabel, fontsize=14)
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
+    if len(scores.shape) == 1:
+        if len(errors) > 0:
+            plt.errorbar(values, scores, errors, fmt=marker, alpha = 0.2)
+        elif len(quantileLower) > 0:
+            plt.errorbar(values, scores, np.stack((quantileLower, quantileHigher), axis=0), fmt=marker, alpha = 0.2)
+        else:
+            plt.scatter(values, scores, marker=marker)
+    else:
+        showLegend = True
+        if len(rowLabels) == 0:
+            rowLabels = np.zeros(scores.shape[0])
+            showLegend = False
+        elif len(rowLabels) != scores.shape[0]:
+            print("Error: Not enough labels provided for Score data")
+            exit()
+        if len(colors) > 0 and len(colors) != scores.shape[0]:
+            print("Error: Not enough colors provided for Score data")
+            exit()
+        for i in range(scores.shape[0]):
+            if len(colors) == 0:
+                if len(errors) > 0:
+                    plt.errorbar(values, scores[i], errors[i], fmt=marker, alpha = 0.2,label = str(rowLabels[i]))
+                elif len(quantileLower) > 0:
+                    plt.errorbar(values, scores[i], np.stack((quantileLower[i], quantileHigher[i]), axis=0), fmt=marker, alpha = 0.2,label = str(rowLabels[i]))
+                else:
+                    plt.scatter(values, scores[i],  marker=marker,label = str(rowLabels[i]))
+            else:
+                if len(errors) > 0:
+                    plt.errorbar(values, scores[i],errors[i], fmt=marker, alpha = 0.2, color= colors[i],label = str(rowLabels[i]))
+                elif len(quantileLower) > 0:
+                    plt.errorbar(values, scores[i], np.stack((quantileLower[i], quantileHigher[i]), axis=0), fmt=marker, alpha = 0.2, color= colors[i],label = str(rowLabels[i]))
+                else:
+                    plt.scatter(values, scores[i], label = str(rowLabels[i]), marker=marker, color=colors[i])
         if showLegend:
             plt.legend(fontsize=14)
     if save:
