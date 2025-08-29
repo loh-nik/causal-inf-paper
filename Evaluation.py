@@ -157,26 +157,6 @@ def getFullMetrics(a,b):
     falseNeg = np.sum(np.maximum(a-b,0))
     return [truePos, trueNeg, falsePos, falseNeg]
 
-def f1Score(a,b):
-    a = np.abs(a) > 0
-    b = np.abs(b) > 0
-    #convert bool to int
-    a = a*1
-    b = b*1
-    truePos = np.sum(a+b == 2)
-    falsePos = np.sum(np.maximum(b-a,0))
-    falseNeg = np.sum(np.maximum(a-b,0))
-    return [float(2 * truePos / (2 * truePos + falsePos + falseNeg)),0]
-
-def f1Score_formula(arr):
-    truePos, trueNeg, falsePos, falseNeg = arr
-    return float(2 * truePos / (2 * truePos + falsePos + falseNeg))
-
-def f1ScoreFromFull(a, axis=0):
-    if a.shape[int(axis)] != 4:
-        print("Error: Can't determine MCC from falsely shaped array")
-    return np.apply_along_axis(f1Score_formula, axis, a)
-
 def MCC(arr):
     #print(arr)
     truePos, trueNeg, falsePos, falseNeg = arr
@@ -266,351 +246,159 @@ def getMetricOfRealization(couplingMatrix, algorithms, model, samples, alpha, co
     np.fill_diagonal(couplingMatrix, 0)
     if returnMatrices:
         return np.array(matrices)
-    #print(matrices)
-    #print(couplingMatrix)
     if evalType == "ROC":
         metrics = np.array([tpr_fpr_Scores(couplingMatrix, matrix) for matrix in matrices])
-    elif evalType == "F1":
-        metrics = np.array([f1Score(couplingMatrix, matrix) for matrix in matrices])
     elif evalType == "Full":
         metrics = np.array([getFullMetrics(couplingMatrix, matrix) for matrix in matrices])
     else:
         print("Error: Invalid evaluation type found")
-        exit()
     return metrics.T
 
-# if iterateSeeds is set to false and evaluateSeparately is set to true, the same seed is used for data generation with varying parameter values
-def runAccuracyEvaluation(algorithms, model, evaluateSeparately, defaultCouplingMatrix, defaultSamples, defaultAlpha, defaultCouplingStrength, defaultNoiseScale, defaultTauMax,
-                  couplingMatrices, samples, alphas, couplingStrengths, noiseScales, tauMaxs, runsPerConfig, startSeed = 0, deltaTCascadeOutput = 0.1, fakeRun = False, evalType = "ROC",
-                  iterateSeeds = True):
-    validAlgorithms = ["PCMCI", "LKIF", "GCSS"]
-    validModels = ["VAR", "Cascade"]
-    assert len(couplingMatrices) + len(samples) + len(alphas) + len(couplingStrengths) + len(noiseScales) + len(tauMaxs) > 0
-    assert len(algorithms) > 0 and np.all(algorithm in validAlgorithms for algorithm in algorithms)
-    assert model in validModels
-
-    metricsLength = 4 if evalType == "Full" else 2
-    if evaluateSeparately:
-        runs = runsPerConfig * (len(couplingMatrices) + len(samples) + len(alphas) + len(couplingStrengths) + len(noiseScales) + len(tauMaxs))
-        currentSeed = startSeed
-        progressBar = Bar('Processing', max=runs)
-        matricesResults = np.zeros((metricsLength, len(algorithms), runsPerConfig, len(couplingMatrices)))
-        sampleResults = np.zeros((metricsLength, len(algorithms), runsPerConfig, len(samples)))
-        couplingStrengthResults = np.zeros((metricsLength, len(algorithms), runsPerConfig, len(couplingStrengths)))
-        noiseScaleResults = np.zeros((metricsLength, len(algorithms), runsPerConfig, len(noiseScales)))
-        alphaResults = np.zeros((metricsLength, len(algorithms), runsPerConfig, len(alphas)))
-        tauMaxResults = np.zeros((metricsLength, len(algorithms), runsPerConfig, len(tauMaxs)))
-        if not fakeRun:
-            for i in range(runsPerConfig):
-                if not iterateSeeds:
-                    currentSeed += 1
-                for matrixIndex in range(len(couplingMatrices)):
-                    couplingMatrix = couplingMatrices[matrixIndex]
-                    matricesResults[:,:,i,matrixIndex] = getMetricOfRealization(couplingMatrix, algorithms, model, defaultSamples, defaultAlpha, defaultCouplingStrength, defaultNoiseScale, defaultTauMax, currentSeed, deltaTCascadeOutput, evalType)
-                    if iterateSeeds:
-                        currentSeed += 1
-                    progressBar.next()
-                for sampleIndex in range(len(samples)):
-                    sample = samples[sampleIndex]
-                    sampleResults[:,:,i,sampleIndex] = getMetricOfRealization(defaultCouplingMatrix, algorithms, model, sample, defaultAlpha, defaultCouplingStrength, defaultNoiseScale, defaultTauMax, currentSeed, deltaTCascadeOutput, evalType)
-                    if iterateSeeds:
-                        currentSeed += 1
-                    progressBar.next()
-                for alphaIndex in range(len(alphas)):
-                    alpha = alphas[alphaIndex]
-                    alphaResults[:,:,i,alphaIndex]=getMetricOfRealization(defaultCouplingMatrix, algorithms, model, defaultSamples, alpha, defaultCouplingStrength, defaultNoiseScale, defaultTauMax, currentSeed, deltaTCascadeOutput, evalType)
-                    if iterateSeeds:
-                        currentSeed += 1
-                    progressBar.next()
-                for couplingStrengthIndex in range(len(couplingStrengths)):
-                    couplingStrength = couplingStrengths[couplingStrengthIndex]
-                    couplingStrengthResults[:,:,i,couplingStrengthIndex]=getMetricOfRealization(defaultCouplingMatrix, algorithms, model, defaultSamples, defaultAlpha, couplingStrength, defaultNoiseScale, defaultTauMax, currentSeed, deltaTCascadeOutput, evalType)
-                    if iterateSeeds:
-                        currentSeed += 1
-                    progressBar.next()
-                for noiseScaleIndex in range(len(noiseScales)):
-                    noiseScale = noiseScales[noiseScaleIndex]
-                    noiseScaleResults[:,:,i,noiseScaleIndex] = getMetricOfRealization(defaultCouplingMatrix, algorithms, model, defaultSamples, defaultAlpha, defaultCouplingStrength, noiseScale, defaultTauMax, currentSeed, deltaTCascadeOutput, evalType)
-                    if iterateSeeds:
-                        currentSeed += 1
-                    progressBar.next()
-                for tauMaxIndex in range(len(tauMaxs)):
-                    tauMax = tauMaxs[tauMaxIndex]
-                    tauMaxResults[:,:,i,tauMaxIndex]=getMetricOfRealization(defaultCouplingMatrix, algorithms, model, defaultSamples, defaultAlpha, defaultCouplingStrength, defaultNoiseScale, tauMax, currentSeed, deltaTCascadeOutput, evalType)
-                    if iterateSeeds:
-                        currentSeed += 1
-                    progressBar.next()
-            progressBar.finish()
-        return currentSeed, [matricesResults, sampleResults, alphaResults, couplingStrengthResults, noiseScaleResults, tauMaxResults]
-    else:
-        if len(couplingMatrices) == 0:
-            couplingMatrices = [defaultCouplingMatrix]
-        if len(samples) == 0:
-            samples = [defaultSamples]
-        if len(alphas) == 0:
-            alphas = [defaultAlpha]
-        if len(couplingStrengths) == 0:
-            couplingStrengths = [defaultCouplingStrength]
-        if len(noiseScales) == 0:
-            noiseScales = [defaultNoiseScale]
-        if len(tauMaxs) == 0:
-            tauMaxs = [defaultTauMax]
-        runs = runsPerConfig * len(couplingMatrices) * len(samples) * len(alphas) * len(couplingStrengths) * len(noiseScales) * len(tauMaxs)
-        results = np.zeros((metricsLength, len(algorithms), runsPerConfig, len(couplingMatrices), len(samples), len(alphas), len(couplingStrengths), len(noiseScales), len(tauMaxs)))
-        currentSeed = startSeed
-        progressBar = Bar('Processing', max=runs)
-        if not fakeRun:
-            for matrixIndex in range(len(couplingMatrices)):
-                couplingMatrix = couplingMatrices[matrixIndex]
-                for sampleIndex in range(len(samples)):
-                    sample = samples[sampleIndex]
-                    for alphaIndex in range(len(alphas)):
-                        alpha = alphas[alphaIndex]
-                        for couplingStrengthIndex in range(len(couplingStrengths)):
-                            couplingStrength = couplingStrengths[couplingStrengthIndex]
-                            for noiseScaleIndex in range(len(noiseScales)):
-                                noiseScale = noiseScales[noiseScaleIndex]
-                                for tauMaxIndex in range(len(tauMaxs)):
-                                    tauMax = tauMaxs[tauMaxIndex]
-                                    for i in range(runsPerConfig):
-                                        results[:,:,i,matrixIndex,sampleIndex,alphaIndex,couplingStrengthIndex,noiseScaleIndex,tauMaxIndex] = getMetricOfRealization(couplingMatrix, algorithms, model, sample, alpha, couplingStrength, noiseScale, tauMax, currentSeed, deltaTCascadeOutput, evalType)
-                                        currentSeed += 1
-                                        progressBar.next()
-            progressBar.finish()
-        return currentSeed, results
-    
-def delayEvaluations():
-    loadCasc = True
-    delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0]
-    samples = 1000
-    alpha =0.05
-    if not loadCasc:
-        data = np.load("./data/3d_multiDelay_20_runs_1000_samples.npy")
-        print(data.shape)
-        
-        # this data should have: 3 variables, 100 runs, 2000 samples per run
-        truthMatrix = np.array([[0,1,0],[-1,0,0],[1,-1,0]])
-        fullOut = []
-        for j in range(data.shape[0]):
-            output = []
-            for i in range(data.shape[1]):
-                metrics = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "None", samples, alpha, 0, 0, int(delaySizes[j] * 10) + 1, 0, 0, "Full", fullData = data[j,i].T)
-                output.append(metrics)
-            fullOut.append(output)
-        fullOut = np.array(fullOut)
-        print(fullOut.shape)
-        #print(fullOut)
-        np.save("./data/3d_multiDelay_20_runs_1000_samples_metrics.npy", fullOut)
-    else: 
-        fullOut = np.load("./data/3d_multiDelay_20_runs_1000_samples_metrics.npy")
-    print(fullOut)
-    scores = MCCFromFull(fullOut, axis=2)
-    mean, stdDev = getMeanStdDev(scores, axis = 1)
-    
-    vis.saveMCCCurve(mean.T, delaySizes, "", "./diagrams/delaysCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
-
-    # VAR systems with additional delay, note that 1 time step delay is always in there due to time discretization, so we add between 1 and 30 time steps to that
-    loadVAR = True
-    randomRuns = 20
-    if not loadVAR:
-        seed = 0
-        truthMatrix = np.array([[0.5,1,0],[-1,0.5,0],[1,-1,0.5]])
-        fullOut = []
-        for j in range(len(delaySizes)):
-            output = []
-            for i in range(randomRuns):
-                metrics = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "VAR", samples, alpha, 0.1, 0.01, int(delaySizes[j] * 10) + 1, seed, 0, "Full", delayLength=int(delaySizes[j] * 10))
-                seed += 1
-                output.append(metrics)
-            fullOut.append(output)
-        fullOut = np.array(fullOut)
-        print(fullOut.shape)
-        print(fullOut)
-        np.save("./data/VAR_3d_multiDelay_20_runs_1000_samples_metrics.npy", fullOut)
-
-    else: fullOut = np.load("./data/VAR_3d_multiDelay_20_runs_1000_samples_metrics.npy")
-    scores = MCCFromFull(fullOut, axis=2)
-    mean, stdDev = getMeanStdDev(scores, axis = 1)
-    
-    vis.saveMCCCurve(mean.T, [int(d*10) for d in delaySizes], "", "./diagrams/delaysVAR", stdDev.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
-
-def delay6dEvaluations():
-    loadCasc = True
-    delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0]
-    samples = 1000
-    alpha =0.05
-    randomRuns = 20
-    if not loadCasc:
+def delay6dEvaluations(plotOnly, delaySizes, samples, alpha, randomRuns, couplStrength):
+    if not plotOnly:
         # this data should have: 3 variables, 100 runs, 2000 samples per run
         truthMatrix = mediumCouplingMatrixCascade_LowDense
         fullOut = []
         for j in range(len(delaySizes)):
             output = []
             for i in range(randomRuns):
-                metrics = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "Cascade", samples, alpha, 0, 0, int(delaySizes[j] * 10) + 1, 0, 0, "Full", delayLength=delaySizes[j])
+                metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade", 
+                                                 samples = samples, alpha= alpha, couplingStrength= couplStrength, noiseScale= 0.01, tauMax= int(delaySizes[j] * 10) + 1,
+                                                  seed= 0, deltaTCascadeOutput= 0, evalType= "Full", delayLength=delaySizes[j])
                 output.append(metrics)
             fullOut.append(output)
         fullOut = np.array(fullOut)
-        print(fullOut.shape)
-        #print(fullOut)
-        np.save("./data/6d_multiDelay_20_runs_1000_samples_metrics.npy", fullOut)
+        np.save("./data/6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
     else: 
-        fullOut = np.load("./data/6d_multiDelay_20_runs_1000_samples_metrics.npy")
-    print(fullOut)
+        fullOut = np.load("./data/6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy")
     scores = MCCFromFull(fullOut, axis=2)
     mean, stdDev = getMeanStdDev(scores, axis = 1)
-    # get central 90% of data
+    # get central 80% of data
     median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-    
     vis.saveMCCCurve(mean.T, delaySizes, "", "./diagrams/delays6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
     vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
 
     # VAR systems with additional delay, note that 1 time step delay is always in there due to time discretization, so we add between 1 and 30 time steps to that
-    loadVAR = True
-    if not loadVAR:
+    if not plotOnly:
         seed = 0
         truthMatrix = mediumCouplingMatrixVAR_LowDense
         fullOut = []
         for j in range(len(delaySizes)):
             output = []
             for i in range(randomRuns):
-                metrics = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "VAR", samples, alpha, 0.1, 0.01, int(delaySizes[j] * 10) + 1, seed, 0, "Full", delayLength=int(delaySizes[j] * 10))
+                metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "VAR", 
+                                                 samples = samples, alpha= alpha, couplingStrength= couplStrength * 0.1, noiseScale= 0.01, tauMax= int(delaySizes[j] * 10) + 1,
+                                                  seed= seed, deltaTCascadeOutput= 0, evalType= "Full", delayLength=delaySizes[j] * 10)
                 seed += 1
                 output.append(metrics)
             fullOut.append(output)
         fullOut = np.array(fullOut)
-        print(fullOut.shape)
-        print(fullOut)
-        np.save("./data/VAR_6d_multiDelay_20_runs_1000_samples_metrics.npy", fullOut)
-
-    else: fullOut = np.load("./data/VAR_6d_multiDelay_20_runs_1000_samples_metrics.npy")
+        np.save("./data/VAR_6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
+    else: 
+        fullOut = np.load("./data/VAR_6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy")
     scores = MCCFromFull(fullOut, axis=2)
     mean, stdDev = getMeanStdDev(scores, axis = 1)
-    # get central 90% of data
+    # get central 80% of data
     median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
     vis.saveMCCCurve(mean.T, [int(d*10) for d in delaySizes], "", "./diagrams/delays6dVAR", stdDev.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
     vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
 
-def sample6dEvaluations():
-    print("Sample Count Experiment")
-    loadCasc = True
-    sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000]
-    alpha = 0.05
-    randomRuns = 10
-    if not loadCasc:
+def sample6dEvaluations(plotOnly, sampleCounts, alpha, randomRuns, tauMax, couplingStrength):
+    if not plotOnly:
         # this data should have: 3 variables, 100 runs, 2000 samples per run
         truthMatrix = mediumCouplingMatrixCascade_LowDense
         fullOut = []
         for j in range(len(sampleCounts)):
             output = []
             for i in range(randomRuns):
-                metrics = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "Cascade", sampleCounts[j], alpha, 1, 0, 1, 0, 0, "Full")
+                metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade", 
+                                                 samples = sampleCounts[j], alpha= alpha, couplingStrength= couplingStrength, noiseScale= 0.01, tauMax= tauMax,
+                                                  seed= 0, deltaTCascadeOutput= 0, evalType= "Full")
                 output.append(metrics)
             fullOut.append(output)
         fullOut = np.array(fullOut)
-        #print(fullOut.shape)
-        #print(fullOut)
-        np.save("./data/6d_Samples_20_runs_metrics.npy", fullOut)
+        np.save("./data/6d_Samples_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
     else: 
-        fullOut = np.load("./data/6d_Samples_20_runs_metrics.npy")
+        fullOut = np.load("./data/6d_Samples_"+str(randomRuns)+"_runs_metrics.npy")
     scores = MCCFromFull(fullOut, axis=2)
     mean, stdDev = getMeanStdDev(scores, axis = 1)
-    # get central 90% of data
+    # get central 80% of data
     median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-    
     vis.saveMCCCurve(mean.T, sampleCounts, "", "./diagrams/samples6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC", xscale ="log")
     vis.saveMCCCurve(median.T, sampleCounts, "", "./diagrams/samples6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC",xscale ="log")
 
-    # VAR systems with additional delay, note that 1 time step delay is always in there due to time discretization, so we add between 1 and 30 time steps to that
-    loadVAR = True
-    
-    if not loadVAR:
+    # VAR model
+    if not plotOnly:
         seed = 0
         truthMatrix = mediumCouplingMatrixVAR_LowDense
         fullOut = []
         for j in range(len(sampleCounts)):
             output = []
             for i in range(randomRuns):
-                metrics = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "VAR", sampleCounts[j], alpha, 0.1, 0.01, 1, seed, 0, "Full")
+                metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "VAR", 
+                                                 samples = sampleCounts[j], alpha= alpha, couplingStrength= couplingStrength*0.1, noiseScale= 0.01, tauMax= tauMax,
+                                                  seed= seed, deltaTCascadeOutput= 0, evalType= "Full")
                 seed += 1
                 output.append(metrics)
             fullOut.append(output)
         fullOut = np.array(fullOut)
-        print(fullOut.shape)
-        print(fullOut)
-        np.save("./data/VAR_6d_Samples_20_runs_metrics.npy", fullOut)
-
-    else: fullOut = np.load("./data/VAR_6d_Samples_20_runs_metrics.npy")
+        np.save("./data/VAR_6d_Samples_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
+    else: 
+        fullOut = np.load("./data/VAR_6d_Samples_"+str(randomRuns)+"_runs_metrics.npy")
     scores = MCCFromFull(fullOut, axis=2)
     mean, stdDev = getMeanStdDev(scores, axis = 1)
-    # get central 90% of data
-    #median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
+    # get central 80% of data
+    median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
     vis.saveMCCCurve(mean.T, sampleCounts, "", "./diagrams/samples6dVAR", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC", xscale ="log")
-    #vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
+    vis.saveMCCCurve(median.T, sampleCounts, "", "./diagrams/samples6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC")
 
-def couplStrength6dEvaluations():
-    print("Coupling Strength Experiment")
-    loadCasc = True
-    couplStrengths = np.array([0.01, 0.02, 0.05, 0.07,0.1,0.15,0.2,0.25,0.3])
-    alpha = 0.05
-    randomRuns = 10
-    if not loadCasc:
+def couplStrength6dEvaluations(plotOnly, couplStrengths, samples, alpha, randomRuns, tauMax):
+    if not plotOnly:
         # this data should have: 3 variables, 100 runs, 2000 samples per run
-        truthMatrix = np.array([[0,0,0,0,0,0],
-                                        [1,0,0,0,0,0],
-                                        [0,-1,0,0,0,0],
-                                        [0,0,0,0,0,0],
-                                        [0,0,1,0,0,1],
-                                        [0,0,0,0,-1,0]])
+        truthMatrix = mediumCouplingMatrixCascade_LowDense
         fullOut = []
         for j in range(len(couplStrengths)):
             output = []
             for i in range(randomRuns):
-                metrics = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "Cascade", 1000, alpha, couplStrengths[j] * 10, 0, 1, 0, 0, "Full")
+                metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade", 
+                                                 samples = samples, alpha= alpha, couplingStrength=  couplStrengths[j] * 10, noiseScale= 0.01, tauMax= tauMax,
+                                                  seed= 0, deltaTCascadeOutput= 0, evalType= "Full")
                 output.append(metrics)
             fullOut.append(output)
         fullOut = np.array(fullOut)
-        np.save("./data/6d_CouplStren_20_runs_metrics.npy", fullOut)
+        np.save("./data/6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
     else: 
-        fullOut = np.load("./data/6d_CouplStren_20_runs_metrics.npy")
+        fullOut = np.load("./data/6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy")
     scores = MCCFromFull(fullOut, axis=2)
     mean, stdDev = getMeanStdDev(scores, axis = 1)
     # get central 90% of data
     median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-    
     vis.saveMCCCurve(mean.T, couplStrengths*10, "", "./diagrams/coupl6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
     vis.saveMCCCurve(median.T, couplStrengths*10, "", "./diagrams/coupl6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
 
-    # VAR systems with additional delay, note that 1 time step delay is always in there due to time discretization, so we add between 1 and 30 time steps to that
-    loadVAR = True
-    
-    if not loadVAR:
+    if not plotOnly:
         seed = 0
-        truthMatrix = np.array([
-                                        [0.5,0,0,0,0,0],
-                                        [1,0.5,0,0,0,0],
-                                        [0,-1,0.5,0,0,0],
-                                        [0,0,0,0.5,0,0],
-                                        [0,0,1,0,0.5,1],
-                                        [0,0,0,0,-1,0.5]])
+        truthMatrix = mediumCouplingMatrixVAR_LowDense
         fullOut = []
         for j in range(len(couplStrengths)):
             output = []
             for i in range(randomRuns):
-                metrics = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "VAR", 1000, alpha, couplStrengths[j], 0.01, 1, seed, 0, "Full")
+                metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "VAR", 
+                                                 samples = samples, alpha= alpha, couplingStrength= couplStrengths[j], noiseScale= 0.01, tauMax= tauMax,
+                                                  seed= seed, deltaTCascadeOutput= 0, evalType= "Full")
                 seed += 1
                 output.append(metrics)
             fullOut.append(output)
         fullOut = np.array(fullOut)
-        np.save("./data/VAR_6d_CouplStren_20_runs_metrics.npy", fullOut)
-
-    else: fullOut = np.load("./data/VAR_6d_CouplStren_20_runs_metrics.npy")
+        np.save("./data/VAR_6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
+    else: 
+        fullOut = np.load("./data/VAR_6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy")
     scores = MCCFromFull(fullOut, axis=2)
     mean, stdDev = getMeanStdDev(scores, axis = 1)
     # get central 90% of data
-    #median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
+    median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
     vis.saveMCCCurve(mean.T, couplStrengths, "", "./diagrams/coupl6dVAR", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
-    #vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
+    vis.saveMCCCurve(median.T, couplStrengths, "", "./diagrams/coupl6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
 
 def scale_lightness(rgb, scale_l):
     import colorsys
@@ -619,46 +407,37 @@ def scale_lightness(rgb, scale_l):
     # manipulate h, l, s values and return as rgb
     return colorsys.hls_to_rgb(h, min(1, l * scale_l), s = s)
 
-def system6dEvaluations():
+def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingStrength):
     import matplotlib as mpl
-    print("System Size and Density Experiment")
     defaultCols = mpl.color_sequences["tab10"]
     # low density: n-1 edges
     # high density: 2n (or 2n-1 for 3 nodes)
-    
-    
     cascMatrices = [defaultCouplingMatrixCascade_LowDense, mediumCouplingMatrixCascade_LowDense, largeCouplingMatrixCascade_LowDense, defaultCouplingMatrixCascade_HighDense, mediumCouplingMatrixCascade_HighDense, largeCouplingMatrixCascade_HighDense]
     VARMatrices = [defaultCouplingMatrixVAR_LowDense, mediumCouplingMatrixVAR_LowDense, largeCouplingMatrixVAR_LowDense, defaultCouplingMatrixVAR_HighDense, mediumCouplingMatrixVAR_HighDense, largeCouplingMatrixVAR_HighDense]
-    loadCasc = True
-    alpha = 0.05
-    randomRuns = 10
-    if not loadCasc:
+    
+    if not plotOnly:
         fullOut = []
         for j in range(len(cascMatrices)):
             output = []
             for i in range(randomRuns):
-                metrics = getMetricOfRealization(cascMatrices[j], ["GCSS", "LKIF", "PCMCI"], "Cascade", 1000, alpha, 1, 0, 1, 0, 0, "Full")
+                metrics = getMetricOfRealization(couplingMatrix = cascMatrices[j], algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade", 
+                                                 samples = samples, alpha= alpha, couplingStrength= couplingStrength, noiseScale= 0.01, tauMax= tauMax,
+                                                  seed= 0, deltaTCascadeOutput= 0, evalType= "Full")
                 output.append(metrics)
             fullOut.append(output)
         fullOut = np.array(fullOut)
-        np.save("./data/6d_System_20_runs_metrics.npy", fullOut)
+        np.save("./data/6d_System_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
     else: 
-        fullOut = np.load("./data/6d_System_20_runs_metrics.npy")
-    print(fullOut[3,:,:,2])
+        fullOut = np.load("./data/6d_System_"+str(randomRuns)+"_runs_metrics.npy")
     scores = MCCFromFull(fullOut, axis=2)
-    print(scores[3,:,2])
     mean, stdDev = getMeanStdDev(scores, axis = 1)
-    print(mean)
-    
     lowDense = mean[:3]
     highDense = mean[3:]
     final = np.append(lowDense, highDense, axis=1)
-    print(final)
 
     # get central 90% of data
     #median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
 
-    # decide how to display the results
     vis.saveMCCCurve(final[:,::3].T, [3,6,12], "", "./diagrams/SystemCascGCSS", [], show=False, save = True, rowLabels=["GCSS-LD", "GCSS-HD"], 
                      xlabel = "Variable Count", ylabel ="MCC")
     vis.saveMCCCurve(final[:,1::3].T, [3,6,12], "", "./diagrams/SystemCascLKIF", [], show=False, save = True, rowLabels=["LKIF-LD", "LKIF-HD"], 
@@ -666,27 +445,26 @@ def system6dEvaluations():
     vis.saveMCCCurve(final[:,2::3].T, [3,6,12], "", "./diagrams/SystemCascPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
                      xlabel = "Variable Count", ylabel ="MCC")
     
-
     vis.saveMCCCurve(final.T, [3,6,12], "", "./diagrams/SystemCasc", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"], 
                      colors=[defaultCols[0], defaultCols[1], defaultCols[2], scale_lightness(defaultCols[0], 1.6), scale_lightness(defaultCols[1], 1.6), scale_lightness(defaultCols[2], 1.6)], xlabel = "Variable Count", ylabel ="MCC")
     #vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
 
-    loadVAR = True
-    
-    if not loadVAR:
+    if not plotOnly:
         seed = 0
         fullOut = []
         for j in range(len(VARMatrices)):
             output = []
             for i in range(randomRuns):
-                metrics = getMetricOfRealization(VARMatrices[j], ["GCSS", "LKIF", "PCMCI"], "VAR", 1000, alpha, 0.1, 0.01, 1, seed, 0, "Full")
+                metrics = getMetricOfRealization(couplingMatrix = VARMatrices[j], algorithms = ["GCSS", "LKIF", "PCMCI"], model= "VAR", 
+                                                 samples = samples, alpha= alpha, couplingStrength= couplingStrength*0.1, noiseScale= 0.01, tauMax= tauMax,
+                                                  seed= seed, deltaTCascadeOutput= 0, evalType= "Full")
                 seed += 1
                 output.append(metrics)
             fullOut.append(output)
         fullOut = np.array(fullOut)
-        np.save("./data/VAR_6d_System_20_runs_metrics.npy", fullOut)
+        np.save("./data/VAR_6d_System_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
 
-    else: fullOut = np.load("./data/VAR_6d_System_20_runs_metrics.npy")
+    else: fullOut = np.load("./data/VAR_6d_System_"+str(randomRuns)+"_runs_metrics.npy")
     scores = MCCFromFull(fullOut, axis=2)
     mean, stdDev = getMeanStdDev(scores, axis = 1)
     lowDense = mean[:3]
@@ -698,6 +476,12 @@ def system6dEvaluations():
     # decide how to display the results
     vis.saveMCCCurve(final.T, [3,6,12], "", "./diagrams/SystemVAR", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"],
                      colors=[defaultCols[0], defaultCols[1], defaultCols[2], scale_lightness(defaultCols[0], 1.6), scale_lightness(defaultCols[1], 1.6), scale_lightness(defaultCols[2], 1.6)], xlabel = "Variable Count", ylabel ="MCC")
+    vis.saveMCCCurve(final[:,::3].T, [3,6,12], "", "./diagrams/SystemVARGCSS", [], show=False, save = True, rowLabels=["GCSS-LD", "GCSS-HD"], 
+                     xlabel = "Variable Count", ylabel ="MCC")
+    vis.saveMCCCurve(final[:,1::3].T, [3,6,12], "", "./diagrams/SystemVARLKIF", [], show=False, save = True, rowLabels=["LKIF-LD", "LKIF-HD"], 
+                     xlabel = "Variable Count", ylabel ="MCC")
+    vis.saveMCCCurve(final[:,2::3].T, [3,6,12], "", "./diagrams/SystemVARPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
+                     xlabel = "Variable Count", ylabel ="MCC")
     #vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
 
 def nonStationaryTipping():
@@ -757,43 +541,33 @@ def nonStationaryTipping():
     print(reducedInfoMean)
     print(reducedInfoStd)
 
-def nonStationaryStable():
-    import matplotlib.pyplot as plt
-    """We increase forcing linearly over the course of 50 units of time (500 samples), up to some ceiling, then compare performances across ceiling heights"""
-    loadData = True
-    ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.8, 0.9, 1.0]
-    if not loadData:
-        truthMatrix = np.array([[0,0,0,0,0,0],
-                                        [1,0,0,0,0,0],
-                                        [0,-1,0,0,0,0],
-                                        [0,0,0,0,0,0],
-                                        [0,0,1,0,0,1],
-                                        [0,0,0,0,-1,0]])
+def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns):
+    """We increase forcing linearly over the course of 50 units of time (500 samples), up to some ceiling, then compare performances across ceiling heights.
+    Experiment only conducted for nonlinear system, as there's no tipping in the VAR system"""
+    
+    if not plotOnly:
+        truthMatrix = mediumCouplingMatrixCascade_LowDense
         dim = 6
-        randomRuns = 10
         metricsNormal = np.zeros((len(ceilings), randomRuns, 4, 3))
         metricsReducedInfo = np.zeros((len(ceilings), randomRuns, 4, 3))
         for i in range(len(ceilings)):
             for j in range(randomRuns):
                 dT = lambda x,t : (t <= 50) * (-0.4 / 50) * ceilings[i]
                 data = DataGenerator.getCascade6dConfoundedBrainpy(dT, truthMatrix, 1000, 0.001)
-                if j == 0:
-                    plt.figure()
-                    plt.plot(data.T)
-                    plt.savefig("diagrams/forcing6d_"+str(i)+"_"+str(j)+".png")
-                matrices = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "None", 1000, 0.05, 0, 0, [5,1,5], 0, 0, "Full", fullData = data.T, returnMatrices=True)
+                metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "None", 
+                                                 samples = samples, alpha= alpha, couplingStrength= 1, noiseScale= 0.01, tauMax= tauMax,
+                                                  seed= 0, deltaTCascadeOutput= 0, evalType= "Full", fullData = data.T, returnMatrices=True)
                 matrices = matrices[:,:dim,:dim]
                 metricsNormal[i,j] = np.array([getFullMetrics(truthMatrix, matrix) for matrix in matrices]).T
-                matrices2 = getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "None", 1000, 0.05, 0, 0, [5,1,5], 0, 0, "Full", fullData = data[:dim].T, returnMatrices=True)
+                matrices2 = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "None", 
+                                                 samples = samples, alpha= alpha, couplingStrength= 1, noiseScale= 0.01, tauMax= tauMax,
+                                                  seed= 0, deltaTCascadeOutput= 0, evalType= "Full", fullData = data[:dim].T, returnMatrices=True)
                 metricsReducedInfo[i,j] = np.array([getFullMetrics(truthMatrix, matrix) for matrix in matrices2]).T
         np.save("./data/Casc_forcing6d.npy", metricsNormal)
         np.save("./data/Casc_forcing_reducedInfo_6d.npy", metricsReducedInfo)
     else: 
         metricsNormal = np.load("./data/Casc_forcing6d.npy")
         metricsReducedInfo = np.load("./data/Casc_forcing_reducedInfo_6d.npy")
-    # print(np.array(metricsNormal).shape)
-    # print(metricsNormal[0,:,:,1])
-    # print(metricsNormal[0,:,:,2])
     fullInfoMCC = MCCFromFull(np.array(metricsNormal), axis=2)
     fullInfoMean, fullInfoStd = getMeanStdDev(fullInfoMCC, axis = 1)
     noInfoMCC = MCCFromFull(np.array(metricsReducedInfo), axis=2)
@@ -805,8 +579,6 @@ def nonStationaryStable():
     gcssStd = np.stack((fullInfoStd[:,0], noInfoStd[:,0]), axis=1)
     lkifStd = np.stack((fullInfoStd[:,1], noInfoStd[:,1]), axis=1)
     pcmStd = np.stack((fullInfoStd[:,2], noInfoStd[:,2]), axis=1)
-
-    # print(gcssInfo.shape)
     
     vis.saveMCCCurve(fullInfoMean.T, ceilings, "", "./diagrams/forcing6d", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
     vis.saveMCCCurve(noInfoMean.T, ceilings, "", "./diagrams/forcing6d_reducedInformation", noInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
@@ -1495,31 +1267,44 @@ def mainEvaluations(analysisIndex = None):
     print(str(int((endTime - startTime)/60))+ " minutes")
     
 if __name__ == "__main__":
-    #parser = argparse.ArgumentParser()
-    #parser.add_argument("-testIndex", type=int, choices=[0,1,2,3,4], help="0 to run all analysis, 1 for alpha, 2 for tau-max, 3 for separate data parameters, 4 for combined data parameters, 5 for a reduced combination of alpha values, sampling and coupling strength", required=False)
-    #args = parser.parse_args()
-    #mainEvaluations(args.testIndex)
-    #sample6dEvaluations()
-    #couplStrength6dEvaluations()
-    #print("hi")
-    #system6dEvaluations()
-    nonStationaryStable()
-    #nonStationaryTipping()
-    # truthMatrix = np.array([[0.5,0.1,0],[-0.1,0.5,0],[0.1,-0.1,0.5]])
-    # truthMatrix = np.array([[0.5,1,0],[-1,0.5,0],[0,0,0.5]])
-    # truthMatrix = np.array([            [0.5,0,0,0,0,0],
-    #                                     [1,0.5,0,0,0,0],
-    #                                     [0,-1,0.5,0,0,0],
-    #                                     [0,0,0,0.5,0,0],
-    #                                     [0,0,1,0,0.5,1],
-    #                                     [0,0,0,0,-1,0.5]])
-    # data = DataGenerator.getVARData(truthMatrix, 1000, 0.01, 0, 8)
-    # data2 = DataGenerator.getVARData(truthMatrix, 1000, 0.01, 0, 0)
-    # matrix1 = LKIF.lkif(data.T, 0.05,tau_max=4)
-    # matrix2 = GCSS.gcss(data2.T, 0.05, tau_max = 1)
-    # matrix3 = GCSS.gcss(data.T, alpha=0.05, tau_max = 9)
-    # print(matrix1)
-    # print(matrix2)
-    # print(matrix3)
-    #truthMatrix = np.array([[0.5,1,0],[-1,0.5,0],[0,0,0.5]])
-    #getMetricOfRealization(truthMatrix, ["GCSS", "LKIF", "PCMCI"], "VAR", 1000, 0.05, 0.1, 0.01, 2, 0, 0, "Full", 1)
+    plotOnly = True
+    randomRuns = 100
+    alpha = 0.05
+    samples = 1000
+    couplingStrength = 1
+    tauMax = [5,1,5]
+
+    sample6dEvaluations(plotOnly = plotOnly,
+        sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
+        alpha = alpha,
+        randomRuns = randomRuns,
+        tauMax = tauMax,
+        couplingStrength=couplingStrength)
+    
+    couplStrength6dEvaluations(plotOnly = plotOnly,
+        couplStrengths = np.array([0.01, 0.02, 0.05, 0.07,0.1,0.15,0.2,0.25,0.3]),
+        samples = samples,
+        alpha = alpha,
+        randomRuns = randomRuns,
+        tauMax = tauMax)
+
+    delay6dEvaluations(plotOnly = plotOnly,
+        delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0],
+        samples = samples,
+        alpha = alpha,
+        randomRuns = randomRuns,
+        couplStrength=couplingStrength)
+    
+    system6dEvaluations(plotOnly = plotOnly,
+        alpha = alpha,
+        samples = samples,
+        randomRuns = randomRuns,
+        tauMax = tauMax,
+        couplingStrength=couplingStrength)
+
+    nonStationaryStable(plotOnly = plotOnly,
+        ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.8, 0.9, 1.0],
+        alpha = alpha,
+        samples = samples,
+        tauMax = tauMax,
+        randomRuns = randomRuns)
