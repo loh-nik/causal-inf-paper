@@ -7,6 +7,92 @@ from progress.bar import Bar
 import time
 #import argparse
 
+# these matrices are used often so we just define them globally
+mediumCouplingMatrixCascade_LowDense = np.array([
+                                        [0,0,0,0,0,0],
+                                        [1,0,0,0,0,0],
+                                        [0,-1,0,0,0,0],
+                                        [0,0,0,0,0,0],
+                                        [0,0,1,0,0,1],
+                                        [0,0,0,0,-1,0]])
+mediumCouplingMatrixVAR_LowDense = np.array([
+                                    [0.5,0,0,0,0,0],
+                                    [1,0.5,0,0,0,0],
+                                    [0,-1,0.5,0,0,0],
+                                    [0,0,0,0.5,0,0],
+                                    [0,0,1,0,0.5,1],
+                                    [0,0,0,0,-1,0.5]])
+
+mediumCouplingMatrixVAR_HighDense = np.array([
+                                    [0.5,0,-1,-1,0,0],
+                                    [1,0.5,0,0,0,0],
+                                    [1,1,0.5,0,0,0],
+                                    [0,0,0,0.5,-1,-1],
+                                    [0,1,-1,0,0.5,1],
+                                    [0,0,0,1,-1,0.5]])
+mediumCouplingMatrixCascade_HighDense = np.array([
+                                    [0,0,-1,-1,0,0],
+                                    [1,0,0,0,0,0],
+                                    [1,1,0,0,0,0],
+                                    [0,0,0,0,-1,-1],
+                                    [0,1,-1,0,0,1],
+                                    [0,0,0,1,-1,0]])
+
+defaultCouplingMatrixVAR_LowDense= np.array([[0.5,0,0],[-1,0.5,0],[0,-1,0.5]])
+defaultCouplingMatrixCascade_LowDense = np.array([[0,0,0],[-1,0,0],[0,-1,0]])
+
+defaultCouplingMatrixVAR_HighDense= np.array([[0.5,1,0],[-1,0.5,1],[1,-1,0.5]])
+defaultCouplingMatrixCascade_HighDense = np.array([[0,1,0],[-1,0,1],[1,-1,0]])
+
+largeCouplingMatrixVAR_LowDense = np.array([[0.5,0,0,0,0,0,0,0,0,0,0,0],
+                                    [1,0.5,0,0,0,0,0,0,0,0,0,0],
+                                    [0,1,0.5,0,0,0,0,0,0,0,0,0],
+                                    [0,1,0,0.5,0,0,0,0,0,0,0,0],
+                                    [0,0,0,0,0.5,-1,0,0,0,0,0,0],
+                                    [0,0,0,-1,0,0.5,0,0,0,0,0,0],
+                                    [0,0,-1,0,0,0,0.5,0,0,0,0,0],
+                                    [0,0,0,0,0,0,0,0.5,1,0,0,0],
+                                    [0,0,0,0,0,0,0,-1,0.5,0,0,0],
+                                    [0,0,0,0,1,0,0,0,0,0.5,0,-1],
+                                    [0,0,0,0,0,0,0,-1,0,0,0.5,0],
+                                    [0,0,0,0,0,0,0,0,0,0,0,0.5]])
+largeCouplingMatrixCascade_LowDense = np.array([[0,0,0,0,0,0,0,0,0,0,0,0],
+                                    [1,0,0,0,0,0,0,0,0,0,0,0],
+                                    [0,1,0,0,0,0,0,0,0,0,0,0],
+                                    [0,1,0,0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,0,0,-1,0,0,0,0,0,0],
+                                    [0,0,0,-1,0,0,0,0,0,0,0,0],
+                                    [0,0,-1,0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,0,0,0,0,0,1,0,0,0],
+                                    [0,0,0,0,0,0,0,-1,0,0,0,0],
+                                    [0,0,0,0,1,0,0,0,0,0,0,-1],
+                                    [0,0,0,0,0,0,0,-1,0,0,0,0],
+                                    [0,0,0,0,0,0,0,0,0,0,0,0]])
+largeCouplingMatrixVAR_HighDense = np.array([[0.5,0,-1,0,0,1,0,0,0,0,0,0],
+                                    [1,0.5,-1,0,0,0,0,0,0,0,0,0],
+                                    [0,1,0.5,0,0,0,0,1,0,0,0,0],
+                                    [0,1,0,0.5,0,0,0,-1,0,0,0,0],
+                                    [0,0,0,0,0.5,-1,0,0,-1,-1,0,0],
+                                    [0,0,0,-1,0,0.5,0,0,0,0,0,0],
+                                    [0,0,-1,0,0,1,0.5,0,0,0,0,0],
+                                    [0,0,0,0,0,0,-1,0.5,1,0,0,0],
+                                    [0,0,0,0,0,0,0,-1,0.5,1,0,0],
+                                    [0,0,0,0,1,0,0,0,0,0.5,1,-1],
+                                    [0,0,0,0,0,0,0,-1,0,0,0.5,1],
+                                    [0,0,0,1,0,0,0,0,0,0,0,0.5]])
+largeCouplingMatrixCascade_HighDense = np.array([[0,0,-1,0,0,1,0,0,0,0,0,0],
+                                    [1,0,-1,0,0,0,0,0,0,0,0,0],
+                                    [0,1,0,0,0,0,0,1,0,0,0,0],
+                                    [0,1,0,0,0,0,0,-1,0,0,0,0],
+                                    [0,0,0,0,0,-1,0,0,-1,-1,0,0],
+                                    [0,0,0,-1,0,0,0,0,0,0,0,0],
+                                    [0,0,-1,0,0,1,0,0,0,0,0,0],
+                                    [0,0,0,0,0,0,-1,0,1,0,0,0],
+                                    [0,0,0,0,0,0,0,-1,0,1,0,0],
+                                    [0,0,0,0,1,0,0,0,0,0,1,-1],
+                                    [0,0,0,0,0,0,0,-1,0,0,0,1],
+                                    [0,0,0,1,0,0,0,0,0,0,0,0]])
+
 # get label encoding the full ranking of 3 algorithms
 def getLabel(scoreTriplet):
     gcss, lkif, pcm = scoreTriplet
@@ -353,14 +439,10 @@ def delay6dEvaluations():
     delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0]
     samples = 1000
     alpha =0.05
+    randomRuns = 20
     if not loadCasc:
         # this data should have: 3 variables, 100 runs, 2000 samples per run
-        truthMatrix = np.array([[0,0,0,0,0,0],
-                                        [1,0,0,0,0,0],
-                                        [0,-1,0,0,0,0],
-                                        [0,0,0,0,0,0],
-                                        [0,0,1,0,0,1],
-                                        [0,0,0,0,-1,0]])
+        truthMatrix = mediumCouplingMatrixCascade_LowDense
         fullOut = []
         for j in range(len(delaySizes)):
             output = []
@@ -385,16 +467,9 @@ def delay6dEvaluations():
 
     # VAR systems with additional delay, note that 1 time step delay is always in there due to time discretization, so we add between 1 and 30 time steps to that
     loadVAR = True
-    randomRuns = 20
     if not loadVAR:
         seed = 0
-        truthMatrix = np.array([
-                                        [0.5,0,0,0,0,0],
-                                        [1,0.5,0,0,0,0],
-                                        [0,-1,0.5,0,0,0],
-                                        [0,0,0,0.5,0,0],
-                                        [0,0,1,0,0.5,1],
-                                        [0,0,0,0,-1,0.5]])
+        truthMatrix = mediumCouplingMatrixVAR_LowDense
         fullOut = []
         for j in range(len(delaySizes)):
             output = []
@@ -424,12 +499,7 @@ def sample6dEvaluations():
     randomRuns = 10
     if not loadCasc:
         # this data should have: 3 variables, 100 runs, 2000 samples per run
-        truthMatrix = np.array([[0,0,0,0,0,0],
-                                        [1,0,0,0,0,0],
-                                        [0,-1,0,0,0,0],
-                                        [0,0,0,0,0,0],
-                                        [0,0,1,0,0,1],
-                                        [0,0,0,0,-1,0]])
+        truthMatrix = mediumCouplingMatrixCascade_LowDense
         fullOut = []
         for j in range(len(sampleCounts)):
             output = []
@@ -446,23 +516,17 @@ def sample6dEvaluations():
     scores = MCCFromFull(fullOut, axis=2)
     mean, stdDev = getMeanStdDev(scores, axis = 1)
     # get central 90% of data
-    #median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
+    median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
     
     vis.saveMCCCurve(mean.T, sampleCounts, "", "./diagrams/samples6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC", xscale ="log")
-    #vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
+    vis.saveMCCCurve(median.T, sampleCounts, "", "./diagrams/samples6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC",xscale ="log")
 
     # VAR systems with additional delay, note that 1 time step delay is always in there due to time discretization, so we add between 1 and 30 time steps to that
     loadVAR = True
     
     if not loadVAR:
         seed = 0
-        truthMatrix = np.array([
-                                        [0.5,0,0,0,0,0],
-                                        [1,0.5,0,0,0,0],
-                                        [0,-1,0.5,0,0,0],
-                                        [0,0,0,0.5,0,0],
-                                        [0,0,1,0,0.5,1],
-                                        [0,0,0,0,-1,0.5]])
+        truthMatrix = mediumCouplingMatrixVAR_LowDense
         fullOut = []
         for j in range(len(sampleCounts)):
             output = []
@@ -512,10 +576,10 @@ def couplStrength6dEvaluations():
     scores = MCCFromFull(fullOut, axis=2)
     mean, stdDev = getMeanStdDev(scores, axis = 1)
     # get central 90% of data
-    #median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
+    median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
     
     vis.saveMCCCurve(mean.T, couplStrengths*10, "", "./diagrams/coupl6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
-    #vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
+    vis.saveMCCCurve(median.T, couplStrengths*10, "", "./diagrams/coupl6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
 
     # VAR systems with additional delay, note that 1 time step delay is always in there due to time discretization, so we add between 1 and 30 time steps to that
     loadVAR = True
@@ -561,90 +625,7 @@ def system6dEvaluations():
     defaultCols = mpl.color_sequences["tab10"]
     # low density: n-1 edges
     # high density: 2n (or 2n-1 for 3 nodes)
-    mediumCouplingMatrixCascade_LowDense = np.array([
-                                        [0,0,0,0,0,0],
-                                        [1,0,0,0,0,0],
-                                        [0,-1,0,0,0,0],
-                                        [0,0,0,0,0,0],
-                                        [0,0,1,0,0,1],
-                                        [0,0,0,0,-1,0]])
-    mediumCouplingMatrixVAR_LowDense = np.array([
-                                        [0.5,0,0,0,0,0],
-                                        [1,0.5,0,0,0,0],
-                                        [0,-1,0.5,0,0,0],
-                                        [0,0,0,0.5,0,0],
-                                        [0,0,1,0,0.5,1],
-                                        [0,0,0,0,-1,0.5]])
     
-    mediumCouplingMatrixVAR_HighDense = np.array([
-                                        [0.5,0,-1,-1,0,0],
-                                        [1,0.5,0,0,0,0],
-                                        [1,1,0.5,0,0,0],
-                                        [0,0,0,0.5,-1,-1],
-                                        [0,1,-1,0,0.5,1],
-                                        [0,0,0,1,-1,0.5]])
-    mediumCouplingMatrixCascade_HighDense = np.array([
-                                        [0,0,-1,-1,0,0],
-                                        [1,0,0,0,0,0],
-                                        [1,1,0,0,0,0],
-                                        [0,0,0,0,-1,-1],
-                                        [0,1,-1,0,0,1],
-                                        [0,0,0,1,-1,0]])
-    
-    defaultCouplingMatrixVAR_LowDense= np.array([[0.5,0,0],[-1,0.5,0],[0,-1,0.5]])
-    defaultCouplingMatrixCascade_LowDense = np.array([[0,0,0],[-1,0,0],[0,-1,0]])
-
-    defaultCouplingMatrixVAR_HighDense= np.array([[0.5,1,0],[-1,0.5,1],[1,-1,0.5]])
-    defaultCouplingMatrixCascade_HighDense = np.array([[0,1,0],[-1,0,1],[1,-1,0]])
-
-    largeCouplingMatrixVAR_LowDense = np.array([[0.5,0,0,0,0,0,0,0,0,0,0,0],
-                                        [1,0.5,0,0,0,0,0,0,0,0,0,0],
-                                        [0,1,0.5,0,0,0,0,0,0,0,0,0],
-                                        [0,1,0,0.5,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0.5,-1,0,0,0,0,0,0],
-                                        [0,0,0,-1,0,0.5,0,0,0,0,0,0],
-                                        [0,0,-1,0,0,0,0.5,0,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0.5,1,0,0,0],
-                                        [0,0,0,0,0,0,0,-1,0.5,0,0,0],
-                                        [0,0,0,0,1,0,0,0,0,0.5,0,-1],
-                                        [0,0,0,0,0,0,0,-1,0,0,0.5,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,0.5]])
-    largeCouplingMatrixCascade_LowDense = np.array([[0,0,0,0,0,0,0,0,0,0,0,0],
-                                        [1,0,0,0,0,0,0,0,0,0,0,0],
-                                        [0,1,0,0,0,0,0,0,0,0,0,0],
-                                        [0,1,0,0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0,-1,0,0,0,0,0,0],
-                                        [0,0,0,-1,0,0,0,0,0,0,0,0],
-                                        [0,0,-1,0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0,1,0,0,0],
-                                        [0,0,0,0,0,0,0,-1,0,0,0,0],
-                                        [0,0,0,0,1,0,0,0,0,0,0,-1],
-                                        [0,0,0,0,0,0,0,-1,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,0]])
-    largeCouplingMatrixVAR_HighDense = np.array([[0.5,0,-1,0,0,1,0,0,0,0,0,0],
-                                        [1,0.5,-1,0,0,0,0,0,0,0,0,0],
-                                        [0,1,0.5,0,0,0,0,1,0,0,0,0],
-                                        [0,1,0,0.5,0,0,0,-1,0,0,0,0],
-                                        [0,0,0,0,0.5,-1,0,0,-1,-1,0,0],
-                                        [0,0,0,-1,0,0.5,0,0,0,0,0,0],
-                                        [0,0,-1,0,0,1,0.5,0,0,0,0,0],
-                                        [0,0,0,0,0,0,-1,0.5,1,0,0,0],
-                                        [0,0,0,0,0,0,0,-1,0.5,1,0,0],
-                                        [0,0,0,0,1,0,0,0,0,0.5,1,-1],
-                                        [0,0,0,0,0,0,0,-1,0,0,0.5,1],
-                                        [0,0,0,1,0,0,0,0,0,0,0,0.5]])
-    largeCouplingMatrixCascade_HighDense = np.array([[0,0,-1,0,0,1,0,0,0,0,0,0],
-                                        [1,0,-1,0,0,0,0,0,0,0,0,0],
-                                        [0,1,0,0,0,0,0,1,0,0,0,0],
-                                        [0,1,0,0,0,0,0,-1,0,0,0,0],
-                                        [0,0,0,0,0,-1,0,0,-1,-1,0,0],
-                                        [0,0,0,-1,0,0,0,0,0,0,0,0],
-                                        [0,0,-1,0,0,1,0,0,0,0,0,0],
-                                        [0,0,0,0,0,0,-1,0,1,0,0,0],
-                                        [0,0,0,0,0,0,0,-1,0,1,0,0],
-                                        [0,0,0,0,1,0,0,0,0,0,1,-1],
-                                        [0,0,0,0,0,0,0,-1,0,0,0,1],
-                                        [0,0,0,1,0,0,0,0,0,0,0,0]])
     
     cascMatrices = [defaultCouplingMatrixCascade_LowDense, mediumCouplingMatrixCascade_LowDense, largeCouplingMatrixCascade_LowDense, defaultCouplingMatrixCascade_HighDense, mediumCouplingMatrixCascade_HighDense, largeCouplingMatrixCascade_HighDense]
     VARMatrices = [defaultCouplingMatrixVAR_LowDense, mediumCouplingMatrixVAR_LowDense, largeCouplingMatrixVAR_LowDense, defaultCouplingMatrixVAR_HighDense, mediumCouplingMatrixVAR_HighDense, largeCouplingMatrixVAR_HighDense]
