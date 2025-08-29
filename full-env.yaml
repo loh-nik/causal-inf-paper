@@ -1,5 +1,6 @@
 name: causal-inf-env
 channels:
+  - https://software.repos.intel.com/python/conda
   - conda-forge
 dependencies:
   - _libgcc_mutex=0.1=conda_forge
@@ -42,6 +43,7 @@ dependencies:
   - harfbuzz=11.4.3=h15599e2_0
   - hdf5=1.14.3=nompi_h2d575fe_109
   - icu=75.1=he02047a_0
+  - impi_rt=2021.16.1=intel_803
   - keyutils=1.6.3=hb9d3cd8_0
   - krb5=1.21.3=h659f571_0
   - lame=3.100=h166bdaf_1003
@@ -136,6 +138,7 @@ dependencies:
   - metis=5.1.0=hd0bcaf9_1007
   - mpfr=4.2.1=h90cbb55_3
   - mpg123=1.32.9=hc50e24c_0
+  - mpi4py=3.1.5=py310h3fd9d12_0
   - ncurses=6.5=h2d0b736_3
   - nspr=4.37=h29cc59b_0
   - nss=3.115=hc3c8bcf_0

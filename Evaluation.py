@@ -550,11 +550,14 @@ def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns):
         dim = 6
         metricsNormal = np.zeros((len(ceilings), randomRuns, 4, 3))
         metricsReducedInfo = np.zeros((len(ceilings), randomRuns, 4, 3))
+        tipped = np.zeros(len(ceilings))
         for i in range(len(ceilings)):
             for j in range(randomRuns):
                 dT = lambda x,t : (t <= 50) * (-0.4 / 50) * ceilings[i]
-                data = DataGenerator.getCascade6dConfoundedBrainpy(dT, truthMatrix, 1000, 0.001)
-                metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "None", 
+                data = DataGenerator.getCascade6dConfoundedBrainpy(dT, truthMatrix, samples, 0.001)
+                # if we cross the threshold between +1 and -1, we assume tipped
+                if np.min(data[:dim]) < 0: tipped[i] += 1
+                matrices = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "None", 
                                                  samples = samples, alpha= alpha, couplingStrength= 1, noiseScale= 0.01, tauMax= tauMax,
                                                   seed= 0, deltaTCascadeOutput= 0, evalType= "Full", fullData = data.T, returnMatrices=True)
                 matrices = matrices[:,:dim,:dim]
@@ -563,11 +566,17 @@ def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns):
                                                  samples = samples, alpha= alpha, couplingStrength= 1, noiseScale= 0.01, tauMax= tauMax,
                                                   seed= 0, deltaTCascadeOutput= 0, evalType= "Full", fullData = data[:dim].T, returnMatrices=True)
                 metricsReducedInfo[i,j] = np.array([getFullMetrics(truthMatrix, matrix) for matrix in matrices2]).T
+            tipped[i] = tipped[i] / randomRuns
         np.save("./data/Casc_forcing6d.npy", metricsNormal)
         np.save("./data/Casc_forcing_reducedInfo_6d.npy", metricsReducedInfo)
+        np.save("./data/Casc_forcing6d_tippedFraction.npy", tipped)
     else: 
         metricsNormal = np.load("./data/Casc_forcing6d.npy")
         metricsReducedInfo = np.load("./data/Casc_forcing_reducedInfo_6d.npy")
+        tipped = np.load("./data/Casc_forcing6d_tippedFraction.npy")
+    
+    vis.saveMCCCurve(tipped, ceilings, "", "./diagrams/forcing6d_tippedFraction", xlabel="Forcing Strength", ylabel="Fraction of runs with tipping")
+
     fullInfoMCC = MCCFromFull(np.array(metricsNormal), axis=2)
     fullInfoMean, fullInfoStd = getMeanStdDev(fullInfoMCC, axis = 1)
     noInfoMCC = MCCFromFull(np.array(metricsReducedInfo), axis=2)
@@ -582,11 +591,33 @@ def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns):
     
     vis.saveMCCCurve(fullInfoMean.T, ceilings, "", "./diagrams/forcing6d", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
     vis.saveMCCCurve(noInfoMean.T, ceilings, "", "./diagrams/forcing6d_reducedInformation", noInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
-
-    vis.saveMCCScatter(gcssInfo.T, ceilings, "", "./diagrams/forcing6d_gcss", gcssStd.T, rowLabels=["With Conf.", "Without"],figsize=(8,2), dpi=300)
-    vis.saveMCCScatter(lkifInfo.T, ceilings, "", "./diagrams/forcing6d_lkif", lkifStd.T, rowLabels=["With Conf.", "Without"],figsize=(8,2), dpi=300)
-    vis.saveMCCScatter(pcmInfo.T, ceilings, "", "./diagrams/forcing6d_pcmci", pcmStd.T, rowLabels=["With Conf.", "Without"],figsize=(8,2), dpi=300)
     
+    vis.saveMCCScatter(gcssInfo.T, ceilings, "", "./diagrams/forcing6d_gcss", gcssStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
+    vis.saveMCCScatter(lkifInfo.T, ceilings, "", "./diagrams/forcing6d_lkif", lkifStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
+    vis.saveMCCScatter(pcmInfo.T, ceilings, "", "./diagrams/forcing6d_pcmci", pcmStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
+    
+    fullInfoMCC = tpr_fpr_FromFull(np.array(metricsNormal), axis=2)
+    fullInfoMean, fullInfoStd = getMeanStdDev(fullInfoMCC, axis = 1)
+    noInfoMCC = tpr_fpr_FromFull(np.array(metricsReducedInfo), axis=2)
+    noInfoMean, noInfoStd = getMeanStdDev(noInfoMCC, axis = 1)
+
+    gcssInfo = np.append(fullInfoMean[:,:,0], noInfoMean[:,:,0], axis=1)
+    lkifInfo = np.append(fullInfoMean[:,:,1], noInfoMean[:,:,1], axis=1)
+    pcmInfo = np.append(fullInfoMean[:,:,2], noInfoMean[:,:,2], axis=1)
+    gcssStd = np.append(fullInfoStd[:,:,0], noInfoStd[:,:,0], axis=1)
+    lkifStd = np.append(fullInfoStd[:,:,1], noInfoStd[:,:,1], axis=1)
+    pcmStd = np.append(fullInfoStd[:,:,2], noInfoStd[:,:,2], axis=1)
+
+    print(gcssInfo.shape)
+    
+    # vis.saveMCCCurve(fullInfoMean.T, ceilings, "", "./diagrams/forcing6d_TPR", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
+    # vis.saveMCCCurve(noInfoMean.T, ceilings, "", "./diagrams/forcing6d_reducedInformation_TPR", noInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
+    
+    vis.saveMCCScatter(gcssInfo.T, ceilings, "", "./diagrams/forcing6d_gcss_TPR", gcssStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR", "Hidden Confounder TPR", "Hidden Confounder FPR"],figsize=(8,2), dpi=300)
+    vis.saveMCCScatter(lkifInfo.T, ceilings, "", "./diagrams/forcing6d_lkif_TPR", lkifStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],figsize=(8,2), dpi=300)
+    vis.saveMCCScatter(pcmInfo.T, ceilings, "", "./diagrams/forcing6d_pcmci_TPR", pcmStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],figsize=(8,2), dpi=300)
+    
+
 def autoCorrEvaluations():
     loadCasc = False
     autoCorrelations = [0.1, 0.25, 0.5, 0.75, 1, 1.25,1.5,2,4]
@@ -1266,45 +1297,63 @@ def mainEvaluations(analysisIndex = None):
     print(endTime - startTime)
     print(str(int((endTime - startTime)/60))+ " minutes")
     
+# def main():
+#     from mpi4py import MPI
+#     comm = MPI.COMM_WORLD
+#     rank = comm.Get_rank()
+#     size = comm.Get_size()
+
+#     plotOnly = True
+#     randomRuns = 2
+#     alpha = 0.05
+#     samples = 1000
+#     couplingStrength = 1
+#     tauMax = [5,1,5]
+
+#     if rank == 0:
+#         sample6dEvaluations(plotOnly = plotOnly,
+#         sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
+#         alpha = alpha,
+#         randomRuns = randomRuns,
+#         tauMax = tauMax,
+#         couplingStrength=couplingStrength)
+    
+#     if rank == 1:
+#         couplStrength6dEvaluations(plotOnly = plotOnly,
+#         couplStrengths = np.array([0.01, 0.02, 0.05, 0.07,0.1,0.15,0.2,0.25,0.3]),
+#         samples = samples,
+#         alpha = alpha,
+#         randomRuns = randomRuns,
+#         tauMax = tauMax)
+
+#     if rank == 2:
+#         delay6dEvaluations(plotOnly = plotOnly,
+#         delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0],
+#         samples = samples,
+#         alpha = alpha,
+#         randomRuns = randomRuns,
+#         couplStrength=couplingStrength)
+
+#     if rank == 3:
+#         system6dEvaluations(plotOnly = plotOnly,
+#         alpha = alpha,
+#         samples = samples,
+#         randomRuns = randomRuns,
+#         tauMax = tauMax,
+#         couplingStrength=couplingStrength)
+
+#     if rank == 4:
+#         nonStationaryStable(plotOnly = plotOnly,
+#         ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.8, 0.9, 1.0],
+#         alpha = alpha,
+#         samples = samples,
+#         tauMax = tauMax,
+#         randomRuns = randomRuns)
+
 if __name__ == "__main__":
-    plotOnly = True
-    randomRuns = 100
-    alpha = 0.05
-    samples = 1000
-    couplingStrength = 1
-    tauMax = [5,1,5]
-
-    sample6dEvaluations(plotOnly = plotOnly,
-        sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
-        alpha = alpha,
-        randomRuns = randomRuns,
-        tauMax = tauMax,
-        couplingStrength=couplingStrength)
-    
-    couplStrength6dEvaluations(plotOnly = plotOnly,
-        couplStrengths = np.array([0.01, 0.02, 0.05, 0.07,0.1,0.15,0.2,0.25,0.3]),
-        samples = samples,
-        alpha = alpha,
-        randomRuns = randomRuns,
-        tauMax = tauMax)
-
-    delay6dEvaluations(plotOnly = plotOnly,
-        delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0],
-        samples = samples,
-        alpha = alpha,
-        randomRuns = randomRuns,
-        couplStrength=couplingStrength)
-    
-    system6dEvaluations(plotOnly = plotOnly,
-        alpha = alpha,
-        samples = samples,
-        randomRuns = randomRuns,
-        tauMax = tauMax,
-        couplingStrength=couplingStrength)
-
-    nonStationaryStable(plotOnly = plotOnly,
-        ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.8, 0.9, 1.0],
-        alpha = alpha,
-        samples = samples,
-        tauMax = tauMax,
-        randomRuns = randomRuns)
+    nonStationaryStable(plotOnly = True,
+        ceilings = [0, 0.1, 0.5, 0.8],
+        alpha = 0.05,
+        samples = 1000,
+        tauMax = [5,1,5],
+        randomRuns = 3)
