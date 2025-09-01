@@ -264,7 +264,7 @@ def delay6dEvaluations(plotOnly, delaySizes, samples, alpha, randomRuns, couplSt
         truthMatrix = mediumCouplingMatrixCascade_LowDense
         fullOut = np.zeros((len(delaySizes), randomRuns, 4, 3))
 
-        seed = 0
+        seed = comm.Get_rank()
         truthMatrixVAR = mediumCouplingMatrixVAR_LowDense
         fullOutVAR = np.zeros((len(delaySizes), randomRuns, 4, 3))
         param_combs = list(product(np.arange(len(delaySizes)), np.arange(randomRuns)))
@@ -280,7 +280,7 @@ def delay6dEvaluations(plotOnly, delaySizes, samples, alpha, randomRuns, couplSt
             metrics = getMetricOfRealization(couplingMatrix = truthMatrixVAR, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "VAR", 
                                                 samples = samples, alpha= alpha, couplingStrength= couplStrength * 0.1, noiseScale= 0.01, tauMax= int(delaySizes[j] * 10) + 1,
                                                 seed= seed, deltaTCascadeOutput= 0, evalType= "Full", delayLength=int(delaySizes[j] * 10), verbose=verbose)
-            seed += 1
+            seed += comm.Get_size()
             localFullVAR.append((j,i,metrics))
 
         gathered = comm.gather(localFull, root=0)
@@ -320,7 +320,7 @@ def sample6dEvaluations(plotOnly, sampleCounts, alpha, randomRuns, tauMax, coupl
         # this data should have: 3 variables, 100 runs, 2000 samples per run
         truthMatrix = mediumCouplingMatrixCascade_LowDense
         fullOut = np.zeros((len(sampleCounts), randomRuns, 4, 3))
-        seed = 0
+        seed = comm.Get_rank()
         truthMatrixVAR = mediumCouplingMatrixVAR_LowDense
         fullOutVAR = np.zeros((len(sampleCounts), randomRuns, 4, 3))
         param_combs = list(product(np.arange(len(sampleCounts)), np.arange(randomRuns)))
@@ -336,7 +336,7 @@ def sample6dEvaluations(plotOnly, sampleCounts, alpha, randomRuns, tauMax, coupl
             metrics = getMetricOfRealization(couplingMatrix = truthMatrixVAR, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "VAR", 
                                                  samples = sampleCounts[j], alpha= alpha, couplingStrength= couplingStrength*0.1, noiseScale= 0.01, tauMax= tauMax,
                                                   seed= seed, deltaTCascadeOutput= 0, evalType= "Full", verbose=verbose)
-            seed += 1
+            seed += comm.Get_size()
             localFullVAR.append((j, i, metrics))
         gathered = comm.gather(localFull, root=0)
         gatheredVAR = comm.gather(localFullVAR, root = 0)
@@ -375,7 +375,7 @@ def couplStrength6dEvaluations(plotOnly, couplStrengths, samples, alpha, randomR
         # this data should have: 3 variables, 100 runs, 2000 samples per run
         truthMatrix = mediumCouplingMatrixCascade_LowDense
         fullOut = np.zeros((len(couplStrengths), randomRuns, 4, 3))
-        seed = 0
+        seed = comm.Get_rank()
         truthMatrixVAR = mediumCouplingMatrixVAR_LowDense
         fullOutVAR = np.zeros((len(couplStrengths), randomRuns, 4, 3))
         param_combs = list(product(np.arange(len(couplStrengths)), np.arange(randomRuns)))
@@ -383,15 +383,15 @@ def couplStrength6dEvaluations(plotOnly, couplStrengths, samples, alpha, randomR
         localFull = []
         localFullVAR = []
         for j,i in param_combs:
-                metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade", 
-                                                 samples = samples, alpha= alpha, couplingStrength=  couplStrengths[j] * 10, noiseScale= 0.01, tauMax= tauMax,
-                                                  seed= 0, deltaTCascadeOutput= 0, evalType= "Full", verbose=verbose)
-                localFull.append((j, i, metrics))
-                metrics = getMetricOfRealization(couplingMatrix = truthMatrixVAR, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "VAR", 
-                                                 samples = samples, alpha= alpha, couplingStrength= couplStrengths[j], noiseScale= 0.01, tauMax= tauMax,
-                                                  seed= seed, deltaTCascadeOutput= 0, evalType= "Full", verbose=verbose)
-                seed += 1
-                localFullVAR.append((j, i, metrics))
+            metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade", 
+                                                samples = samples, alpha= alpha, couplingStrength=  couplStrengths[j] * 10, noiseScale= 0.01, tauMax= tauMax,
+                                                seed= 0, deltaTCascadeOutput= 0, evalType= "Full", verbose=verbose)
+            localFull.append((j, i, metrics))
+            metrics = getMetricOfRealization(couplingMatrix = truthMatrixVAR, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "VAR", 
+                                                samples = samples, alpha= alpha, couplingStrength= couplStrengths[j], noiseScale= 0.01, tauMax= tauMax,
+                                                seed= seed, deltaTCascadeOutput= 0, evalType= "Full", verbose=verbose)
+            seed += comm.Get_size()
+            localFullVAR.append((j, i, metrics))
         gathered = comm.gather(localFull, root=0)
         gatheredVAR = comm.gather(localFullVAR, root = 0)
         if comm.Get_rank() == 0:
@@ -443,7 +443,7 @@ def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingSt
     
     if not plotOnly:
         fullOut = np.zeros((len(cascMatrices), randomRuns, 4, 3))
-        seed = 0
+        seed = comm.Get_rank()
         fullOutVAR = np.zeros((len(cascMatrices), randomRuns, 4, 3))
         param_combs = list(product(np.arange(len(cascMatrices)), np.arange(randomRuns)))
         param_combs = param_combs[comm.Get_rank()::comm.Get_size()]
@@ -457,7 +457,7 @@ def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingSt
             metrics = getMetricOfRealization(couplingMatrix = VARMatrices[j], algorithms = ["GCSS", "LKIF", "PCMCI"], model= "VAR", 
                                                  samples = samples, alpha= alpha, couplingStrength= couplingStrength*0.1, noiseScale= 0.01, tauMax= tauMax,
                                                   seed= seed, deltaTCascadeOutput= 0, evalType= "Full", verbose=verbose)
-            seed += 1
+            seed += comm.Get_size()
             localFullVAR.append((j, i, metrics))
         gathered = comm.gather(localFull, root=0)
         gatheredVAR = comm.gather(localFullVAR, root = 0)
@@ -591,7 +591,7 @@ def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns, 
             dT = lambda x,t : (t <= 50) * (-0.4 / 50) * ceilings[i]
             data = DataGenerator.getCascade6dConfoundedBrainpy(dT, truthMatrix, samples, 0.001, verbose=verbose)
             # if we cross the threshold between +1 and -1, we assume tipped
-            if np.min(data[:dim]) < 0: localTipped.append(i,j,1)
+            if np.min(data[:dim]) < 0: localTipped.append((i,j,1))
             matrices = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "None", 
                                                 samples = samples, alpha= alpha, couplingStrength= 1, noiseScale= 0.01, tauMax= tauMax,
                                                 seed= 0, deltaTCascadeOutput= 0, evalType= "Full", fullData = data.T, returnMatrices=True, verbose=verbose)
@@ -1350,7 +1350,7 @@ def main():
     comm = MPI.COMM_WORLD
 
     plotOnly = False
-    randomRuns = 2
+    randomRuns = 100
     alpha = 0.05
     samples = 1000
     couplingStrength = 1
@@ -1364,7 +1364,7 @@ def main():
     couplingStrength=couplingStrength, 
     verbose=False,
     comm=comm)
-    print("Sample Evaluation finished")
+    if comm.Get_rank() == 0: print("Sample Evaluation finished")
 
     couplStrength6dEvaluations(plotOnly = plotOnly,
     couplStrengths = np.array([0.01, 0.02, 0.05, 0.07,0.1,0.15,0.2,0.25,0.3]),
@@ -1374,7 +1374,7 @@ def main():
     tauMax = tauMax, 
     verbose=False,
     comm=comm)
-    print("Coupling Strength Evaluation finished")
+    if comm.Get_rank() == 0: print("Coupling Strength Evaluation finished")
 
     delay6dEvaluations(plotOnly = plotOnly,
     delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0],
@@ -1384,7 +1384,7 @@ def main():
     couplStrength=couplingStrength, 
     verbose=False,
     comm=comm)
-    print("Delay Evaluation finished")
+    if comm.Get_rank() == 0: print("Delay Evaluation finished")
 
     system6dEvaluations(plotOnly = plotOnly,
     alpha = alpha,
@@ -1394,7 +1394,7 @@ def main():
     couplingStrength=couplingStrength, 
     verbose=False,
     comm=comm)
-    print("System Size/Density Evaluation finished")
+    if comm.Get_rank() == 0: print("System Size/Density Evaluation finished")
 
     nonStationaryStable(plotOnly = plotOnly,
     ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
@@ -1404,7 +1404,7 @@ def main():
     randomRuns = randomRuns, 
     verbose=False,
     comm=comm)
-    print("Non-Stationarity Evaluation finished")
+    if comm.Get_rank() == 0: print("Non-Stationarity Evaluation finished")
 
 if __name__ == "__main__":
     main()

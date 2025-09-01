@@ -1,12 +1,12 @@
 #!/bin/bash
 
 #SBATCH --qos=short
-#SBATCH --job-name=mpiTest
+#SBATCH --job-name=causal-inference-eval
 #SBATCH --account=dominoes
-#SBATCH --ntasks=5
+#SBATCH --ntasks=50
 #SBATCH --output=%x-%j.out
 #SBATCH --error=%x-%j.err
-#SBATCH --time=00:30:00
+#SBATCH --time=03:00:00
 
 module load intel/oneAPI
 module load anaconda
@@ -22,5 +22,5 @@ echo "Testing mpi4py..."
 python -c "import mpi4py; print(mpi4py.__version__)"
 
 echo "-------------------------------------------------------------"
-echo "Testing a minimal evaluation run"
-mpirun -n 5 python Evaluation.py
+echo "Full Evaluation run"
+mpirun -n 50 python Evaluation.py
