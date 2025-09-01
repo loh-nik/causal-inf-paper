@@ -1297,63 +1297,77 @@ def mainEvaluations(analysisIndex = None):
     print(endTime - startTime)
     print(str(int((endTime - startTime)/60))+ " minutes")
     
-# def main():
-#     from mpi4py import MPI
-#     comm = MPI.COMM_WORLD
-#     rank = comm.Get_rank()
-#     size = comm.Get_size()
+def main():
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
 
-#     plotOnly = True
-#     randomRuns = 2
-#     alpha = 0.05
-#     samples = 1000
-#     couplingStrength = 1
-#     tauMax = [5,1,5]
+    plotOnly = True
+    randomRuns = 2
+    alpha = 0.05
+    samples = 1000
+    couplingStrength = 1
+    tauMax = [5,1,5]
 
-#     if rank == 0:
-#         sample6dEvaluations(plotOnly = plotOnly,
-#         sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
-#         alpha = alpha,
-#         randomRuns = randomRuns,
-#         tauMax = tauMax,
-#         couplingStrength=couplingStrength)
+    if rank == 0:
+        sample6dEvaluations(plotOnly = plotOnly,
+        sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
+        alpha = alpha,
+        randomRuns = randomRuns,
+        tauMax = tauMax,
+        couplingStrength=couplingStrength)
     
-#     if rank == 1:
-#         couplStrength6dEvaluations(plotOnly = plotOnly,
-#         couplStrengths = np.array([0.01, 0.02, 0.05, 0.07,0.1,0.15,0.2,0.25,0.3]),
-#         samples = samples,
-#         alpha = alpha,
-#         randomRuns = randomRuns,
-#         tauMax = tauMax)
+    if rank == 1:
+        couplStrength6dEvaluations(plotOnly = plotOnly,
+        couplStrengths = np.array([0.01, 0.02, 0.05, 0.07,0.1,0.15,0.2,0.25,0.3]),
+        samples = samples,
+        alpha = alpha,
+        randomRuns = randomRuns,
+        tauMax = tauMax)
 
-#     if rank == 2:
-#         delay6dEvaluations(plotOnly = plotOnly,
-#         delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0],
-#         samples = samples,
-#         alpha = alpha,
-#         randomRuns = randomRuns,
-#         couplStrength=couplingStrength)
+    if rank == 2:
+        delay6dEvaluations(plotOnly = plotOnly,
+        delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0],
+        samples = samples,
+        alpha = alpha,
+        randomRuns = randomRuns,
+        couplStrength=couplingStrength)
 
-#     if rank == 3:
-#         system6dEvaluations(plotOnly = plotOnly,
-#         alpha = alpha,
-#         samples = samples,
-#         randomRuns = randomRuns,
-#         tauMax = tauMax,
-#         couplingStrength=couplingStrength)
+    if rank == 3:
+        system6dEvaluations(plotOnly = plotOnly,
+        alpha = alpha,
+        samples = samples,
+        randomRuns = randomRuns,
+        tauMax = tauMax,
+        couplingStrength=couplingStrength)
 
-#     if rank == 4:
-#         nonStationaryStable(plotOnly = plotOnly,
-#         ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.8, 0.9, 1.0],
-#         alpha = alpha,
-#         samples = samples,
-#         tauMax = tauMax,
-#         randomRuns = randomRuns)
+    if rank == 4:
+        nonStationaryStable(plotOnly = plotOnly,
+        ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.8, 0.9, 1.0],
+        alpha = alpha,
+        samples = samples,
+        tauMax = tauMax,
+        randomRuns = randomRuns)
 
 if __name__ == "__main__":
-    nonStationaryStable(plotOnly = True,
-        ceilings = [0, 0.1, 0.5, 0.8],
-        alpha = 0.05,
-        samples = 1000,
-        tauMax = [5,1,5],
-        randomRuns = 3)
+    main()
+    # nonStationaryStable(plotOnly = True,
+    #     ceilings = [0, 0.1, 0.5, 0.8],
+    #     alpha = 0.05,
+    #     samples = 1000,
+    #     tauMax = [5,1,5],
+    #     randomRuns = 3)
+    # plotOnly = False
+    # randomRuns = 2
+    # alpha = 0.05
+    # samples = 1000
+    # couplingStrength = 1
+    # tauMax = [5,1,5]
+
+    # sample6dEvaluations(plotOnly = plotOnly,
+    # sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
+    # alpha = alpha,
+    # randomRuns = randomRuns,
+    # tauMax = tauMax,
+    # couplingStrength=couplingStrength)

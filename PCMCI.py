@@ -22,8 +22,8 @@ def PCMCIPlus(numeric_data, mask, var_names, mask_type, tauMax = 5, alpha = 0.05
         cond_ind_test=parcorr,
         verbosity=0)
 
-    #tau_min = 0 if contempLinks else 1
-    tau_min = 1
+    tau_min = 0 if contempLinks else 1
+    #tau_min = 1
     tau_max = tauMax
     pc_alpha = alpha
 
