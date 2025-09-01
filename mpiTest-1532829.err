@@ -1,0 +1,55 @@
+#######################################################################################
+### conda added to PATH. Use 'source activate' rather than 'conda activate'.        ###
+### Do not run 'conda init' if prompted.                                            ###
+### 'conda init' will modify your shell outside of the `module` environment         ###
+#######################################################################################
+/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/pty.py:89: RuntimeWarning: os.fork() was called. os.fork() is incompatible with multithreaded code, and JAX is multithreaded, so this will likely lead to a deadlock.
+  pid, fd = os.forkpty()
+Traceback (most recent call last):
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 1364, in <module>
+    main()
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 1314, in main
+    sample6dEvaluations(plotOnly = plotOnly,
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 314, in sample6dEvaluations
+    metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade",
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 212, in getMetricOfRealization
+    fullData = np.array(DataGenerator.getCascadeDataBrainpy(matrix, samples, delayLength, verbose)).T
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/DataGenerator.py", line 178, in getCascadeDataBrainpy
+    return gen6dNoDelayData(couplingMatrix, samples, verbose)
+TypeError: gen6dNoDelayData() takes from 1 to 2 positional arguments but 3 were given
+Traceback (most recent call last):
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 1364, in <module>
+    main()
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 1324, in main
+    couplStrength6dEvaluations(plotOnly = plotOnly,
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 363, in couplStrength6dEvaluations
+    metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade",
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 212, in getMetricOfRealization
+    fullData = np.array(DataGenerator.getCascadeDataBrainpy(matrix, samples, delayLength, verbose)).T
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/DataGenerator.py", line 178, in getCascadeDataBrainpy
+    return gen6dNoDelayData(couplingMatrix, samples, verbose)
+TypeError: gen6dNoDelayData() takes from 1 to 2 positional arguments but 3 were given
+Traceback (most recent call last):
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 1364, in <module>
+    main()
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 1334, in main
+    delay6dEvaluations(plotOnly = plotOnly,
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 265, in delay6dEvaluations
+    metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade",
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 212, in getMetricOfRealization
+    fullData = np.array(DataGenerator.getCascadeDataBrainpy(matrix, samples, delayLength, verbose)).T
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/DataGenerator.py", line 178, in getCascadeDataBrainpy
+    return gen6dNoDelayData(couplingMatrix, samples, verbose)
+TypeError: gen6dNoDelayData() takes from 1 to 2 positional arguments but 3 were given
+Traceback (most recent call last):
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 1364, in <module>
+    main()
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 1344, in main
+    system6dEvaluations(plotOnly = plotOnly,
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 423, in system6dEvaluations
+    metrics = getMetricOfRealization(couplingMatrix = cascMatrices[j], algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade",
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 212, in getMetricOfRealization
+    fullData = np.array(DataGenerator.getCascadeDataBrainpy(matrix, samples, delayLength, verbose)).T
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/DataGenerator.py", line 178, in getCascadeDataBrainpy
+    return gen6dNoDelayData(couplingMatrix, samples, verbose)
+TypeError: gen6dNoDelayData() takes from 1 to 2 positional arguments but 3 were given

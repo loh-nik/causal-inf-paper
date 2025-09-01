@@ -10,7 +10,7 @@ import jax.numpy as jnp
 def dynSysX3(t,y,A,B,C,D,deltaT,noiseArr):
     return A*(np.power(y,3)) + B*y + C + D@(y-1) + noiseArr[int(t/deltaT)%len(noiseArr)]
 
-def gen3dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000, savename = "threeInteractions"):
+def gen3dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000, savename = "threeInteractions", verbose = True):
     
     
     if couplingMatrix.shape != (3,3) or delayMatrix.shape != (3,3):
@@ -33,13 +33,14 @@ def gen3dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000, savename = "th
     runner = bp.IntegratorRunner(integral,
                                 monitors=['x', 'y', 'z'],
                                 inits = [1.,1.,1.],
-                                dt=dt)
+                                dt=dt,
+                                progress_bar=verbose)
     runner.run(timeSteps / 10)
 
     stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100])).reshape((3,-1))
     return stacked
 
-def gen3dNoDelayData(couplingMatrix, timeSteps = 1000):
+def gen3dNoDelayData(couplingMatrix, timeSteps = 1000, verbose = True):
     
     dt = 0.001
     f = lambda x,y,z,t: (- pow(x, 3) + x + couplingMatrix[0,1] * (y-1) + couplingMatrix[0,2] * (z-1),\
@@ -52,13 +53,14 @@ def gen3dNoDelayData(couplingMatrix, timeSteps = 1000):
     runner = bp.IntegratorRunner(integral,
                                 monitors=['x', 'y', 'z'],
                                 inits = [1.,1.,1.],
-                                dt=dt)
+                                dt=dt,
+                                progress_bar=verbose)
     runner.run(timeSteps / 10)
     stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100])).reshape((3,-1))
     return stacked
 
 # 6 dimensional cubic diff. eq. with delays
-def gen6dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000):
+def gen6dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000, verbose = True):
     
     if couplingMatrix.shape != (6,6) or delayMatrix.shape != (6,6):
         print("Error, coupling or delay matrix not of shape (6,6)")
@@ -87,12 +89,13 @@ def gen6dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000):
     runner = bp.IntegratorRunner(integral,
                                 monitors=['x', 'y', 'z','a', 'b', 'c'],
                                 inits = [1.,1.,1.,1.,1.,1.],
-                                dt=dt)
+                                dt=dt,
+                                progress_bar=verbose)
     runner.run(timeSteps / 10)
     stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100],runner.mon.a[::100], runner.mon.b[::100],runner.mon.c[::100])).reshape((6,-1))
     return stacked
 
-def gen6dNoDelayData(couplingMatrix, timeSteps = 1000):
+def gen6dNoDelayData(couplingMatrix, timeSteps = 1000, verbose = True):
 
     if couplingMatrix.shape != (6,6):
         print("Error, coupling or delay matrix not of shape (6,6)")
@@ -114,12 +117,13 @@ def gen6dNoDelayData(couplingMatrix, timeSteps = 1000):
     runner = bp.IntegratorRunner(integral,
                                 monitors=['x', 'y', 'z','a', 'b', 'c'],
                                 inits = [1.,1.,1.,1.,1.,1.],
-                                dt=dt)
+                                dt=dt,
+                                progress_bar=verbose)
     runner.run(timeSteps / 10)
     stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100],runner.mon.a[::100], runner.mon.b[::100],runner.mon.c[::100])).reshape((6,-1))
     return stacked
 
-def gen12dNoDelayData(couplingMatrix, timeSteps = 1000):
+def gen12dNoDelayData(couplingMatrix, timeSteps = 1000, verbose = True):
     
     if couplingMatrix.shape != (12,12):
         print("Error, coupling or delay matrix not of shape (12,12)")
@@ -138,12 +142,13 @@ def gen12dNoDelayData(couplingMatrix, timeSteps = 1000):
     runner = bp.IntegratorRunner(integral,
                                 monitors=['x', 'y', 'z','a', 'b', 'c', 'd','e','f','g','h','j'],
                                 inits = [1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.],
-                                dt=dt)
+                                dt=dt,
+                                progress_bar=verbose)
     runner.run(timeSteps / 10)
     stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100],runner.mon.a[::100], runner.mon.b[::100],runner.mon.c[::100],runner.mon.d[::100], runner.mon.e[::100],runner.mon.f[::100],runner.mon.g[::100], runner.mon.h[::100],runner.mon.j[::100])).reshape((12,-1))
     return stacked
 
-def gen3dAutoCorrData(couplingMatrix, autoCorr):
+def gen3dAutoCorrData(couplingMatrix, autoCorr, verbose = True):
     
     dt = 0.001
     f = lambda x,y,z,t: (- autoCorr*pow(x, 3) + autoCorr*x + couplingMatrix[0,1] * (y-1) + couplingMatrix[0,2] * (z-1),\
@@ -156,31 +161,32 @@ def gen3dAutoCorrData(couplingMatrix, autoCorr):
     runner = bp.IntegratorRunner(integral,
                                 monitors=['x', 'y', 'z'],
                                 inits = [1.,1.,1.],
-                                dt=dt)
+                                dt=dt,
+                                progress_bar=verbose)
     runner.run(100.)
     stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100])).reshape((3,-1))
     return stacked
 
-def getCascadeDataBrainpy(couplingMatrix, samples, delay = 0):
+def getCascadeDataBrainpy(couplingMatrix, samples, delay = 0, verbose = True):
     if couplingMatrix.shape != ((3,3)) and couplingMatrix.shape != ((6,6)) and couplingMatrix.shape != ((12,12)):
         print("Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)")
         return
     if delay == 0:
         if couplingMatrix.shape == (3,3):
-            return gen3dNoDelayData(couplingMatrix, samples)
+            return gen3dNoDelayData(couplingMatrix, samples, verbose)
         elif couplingMatrix.shape == (6,6):
-            return gen6dNoDelayData(couplingMatrix, samples)
+            return gen6dNoDelayData(couplingMatrix, samples, verbose)
         elif couplingMatrix.shape == (12,12):
-            return gen12dNoDelayData(couplingMatrix,samples)
+            return gen12dNoDelayData(couplingMatrix,samples, verbose)
     else:
         if couplingMatrix.shape == (3,3):
-            return gen3dDelayData(couplingMatrix, np.ones((3,3)) * delay, samples)
+            return gen3dDelayData(couplingMatrix, np.ones((3,3)) * delay, samples, verbose)
         elif couplingMatrix.shape == (6,6):
-            return gen6dDelayData(couplingMatrix, np.ones((6,6)) * delay, samples)
+            return gen6dDelayData(couplingMatrix, np.ones((6,6)) * delay, samples, verbose)
     print("Error, no implementation of delayed 12x12 matrix")
     return
 
-def getCascade3dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcingNoise = 0.01):
+def getCascade3dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcingNoise = 0.01, verbose = True):
     
     if couplingMatrix.shape != (3,3):
         print("Error, coupling matrix not of shape (3,3)")
@@ -198,12 +204,13 @@ def getCascade3dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcin
     runner = bp.IntegratorRunner(integral,
                                 monitors=['x', 'y', 'z', 'c'],
                                 inits = [1.,1.,1.,0.],
-                                dt=dt)
+                                dt=dt,
+                                progress_bar=verbose)
     runner.run(samples / 10)
     stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100], runner.mon.c[::100])).reshape((4,-1))
     return stacked
 
-def getCascade2dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcingNoise = 0.01):
+def getCascade2dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcingNoise = 0.01, verbose = True):
     
     if couplingMatrix.shape != (2,2):
         print("Error, coupling matrix not of shape (2,2)")
@@ -221,12 +228,13 @@ def getCascade2dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcin
     runner = bp.IntegratorRunner(integral,
                                 monitors=['x', 'y', 'c'],
                                 inits = [1.,1.,0.],
-                                dt=dt)
+                                dt=dt,
+                                progress_bar=verbose)
     runner.run(samples / 10)
     stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100], runner.mon.c[::100])).reshape((3,-1))
     return stacked
 
-def getCascade6dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcingNoise = 0.01):
+def getCascade6dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcingNoise = 0.01, verbose = True):
     
     if couplingMatrix.shape != (6,6):
         print("Error, coupling matrix not of shape (6,6)")
@@ -244,7 +252,8 @@ def getCascade6dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcin
     runner = bp.IntegratorRunner(integral,
                                 monitors=['x', 'y', 'z', 'a', 'b','c','d'],
                                 inits = [1.,1.,1.,1.,1.,1.,0.],
-                                dt=dt)
+                                dt=dt,
+                                progress_bar=verbose)
     runner.run(samples / 10)
     stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100], 
                         runner.mon.a[::100], runner.mon.b[::100],runner.mon.c[::100], runner.mon.d[::100])).reshape((7,-1))

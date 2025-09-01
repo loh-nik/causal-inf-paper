@@ -5,7 +5,9 @@ import Visualization as vis
 #from matplotlib import pyplot as plt
 from progress.bar import Bar
 import time
+from itertools import product
 #import argparse
+from mpi4py import MPI
 
 # these matrices are used often so we just define them globally
 mediumCouplingMatrixCascade_LowDense = np.array([
@@ -194,7 +196,7 @@ def tpr_fpr_FromFull(a, axis=0):
 
 # returns a numpy array of shape (2, len(algorithms))
 # or shape (4, len(algorithms)) for evalType "full" 
-def getMetricOfRealization(couplingMatrix, algorithms, model, samples, alpha, couplingStrength, noiseScale, tauMax, seed, deltaTCascadeOutput, evalType, delayLength = 0, fullData = [], returnMatrices = False):
+def getMetricOfRealization(couplingMatrix, algorithms, model, samples, alpha, couplingStrength, noiseScale, tauMax, seed, deltaTCascadeOutput, evalType, delayLength = 0, fullData = [], returnMatrices = False, verbose =True):
     import GCSS
     import LKIF
     import PCMCI
@@ -209,7 +211,7 @@ def getMetricOfRealization(couplingMatrix, algorithms, model, samples, alpha, co
     for i in range(matrix.shape[0]):
         matrix[i,i] = couplingMatrix[i,i]
     if model == "Cascade":
-        fullData = np.array(DataGenerator.getCascadeDataBrainpy(matrix, samples, delayLength)).T
+        fullData = np.array(DataGenerator.getCascadeDataBrainpy(matrix, samples, delayLength, verbose)).T
     elif model == "VAR":
         fullData = np.array(DataGenerator.getVARData(matrix, samples, noiseScale, seed, delayLength))
     matrices = []
@@ -254,151 +256,171 @@ def getMetricOfRealization(couplingMatrix, algorithms, model, samples, alpha, co
         print("Error: Invalid evaluation type found")
     return metrics.T
 
-def delay6dEvaluations(plotOnly, delaySizes, samples, alpha, randomRuns, couplStrength):
+def delay6dEvaluations(plotOnly, delaySizes, samples, alpha, randomRuns, couplStrength, verbose = True, comm = None):
+    if not comm:
+        comm = MPI.COMM_WORLD
     if not plotOnly:
         # this data should have: 3 variables, 100 runs, 2000 samples per run
         truthMatrix = mediumCouplingMatrixCascade_LowDense
-        fullOut = []
-        for j in range(len(delaySizes)):
-            output = []
-            for i in range(randomRuns):
-                metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade", 
-                                                 samples = samples, alpha= alpha, couplingStrength= couplStrength, noiseScale= 0.01, tauMax= int(delaySizes[j] * 10) + 1,
-                                                  seed= 0, deltaTCascadeOutput= 0, evalType= "Full", delayLength=delaySizes[j])
-                output.append(metrics)
-            fullOut.append(output)
-        fullOut = np.array(fullOut)
-        np.save("./data/6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
-    else: 
+        fullOut = np.zeros((len(delaySizes), randomRuns, 4, 3))
+
+        seed = 0
+        truthMatrixVAR = mediumCouplingMatrixVAR_LowDense
+        fullOutVAR = np.zeros((len(delaySizes), randomRuns, 4, 3))
+        param_combs = list(product(np.arange(len(delaySizes)), np.arange(randomRuns)))
+        param_combs = param_combs[comm.Get_rank()::comm.Get_size()]
+        localFull = []
+        localFullVAR = []
+        for j,i in param_combs:
+            metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade", 
+                                                samples = samples, alpha= alpha, couplingStrength= couplStrength, noiseScale= 0.01, tauMax= int(delaySizes[j] * 10) + 1,
+                                                seed= 0, deltaTCascadeOutput= 0, evalType= "Full", delayLength=delaySizes[j], verbose=verbose)
+            localFull.append((j, i, metrics))
+
+            metrics = getMetricOfRealization(couplingMatrix = truthMatrixVAR, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "VAR", 
+                                                samples = samples, alpha= alpha, couplingStrength= couplStrength * 0.1, noiseScale= 0.01, tauMax= int(delaySizes[j] * 10) + 1,
+                                                seed= seed, deltaTCascadeOutput= 0, evalType= "Full", delayLength=int(delaySizes[j] * 10), verbose=verbose)
+            seed += 1
+            localFullVAR.append((j,i,metrics))
+
+        gathered = comm.gather(localFull, root=0)
+        gatheredVAR = comm.gather(localFullVAR, root = 0)
+        if comm.Get_rank() == 0:
+            for result in gathered:
+                for j, i, value in result:
+                    fullOut[j, i] = value
+            for result in gatheredVAR:
+                for j, i, value in result:
+                    fullOutVAR[j, i] = value
+            np.save("./data/6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
+            np.save("./data/VAR_6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
+    elif comm.Get_rank() == 0:
         fullOut = np.load("./data/6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy")
-    scores = MCCFromFull(fullOut, axis=2)
-    mean, stdDev = getMeanStdDev(scores, axis = 1)
-    # get central 80% of data
-    median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-    vis.saveMCCCurve(mean.T, delaySizes, "", "./diagrams/delays6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
-    vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
+        fullOutVAR = np.load("./data/VAR_6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy")
+    if comm.Get_rank() == 0:
+        scores = MCCFromFull(fullOut, axis=2)
+        mean, stdDev = getMeanStdDev(scores, axis = 1)
+        # get central 80% of data
+        median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
+        vis.saveMCCCurve(mean.T, delaySizes, "", "./diagrams/delays6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
+        vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
 
-    # VAR systems with additional delay, note that 1 time step delay is always in there due to time discretization, so we add between 1 and 30 time steps to that
-    if not plotOnly:
-        seed = 0
-        truthMatrix = mediumCouplingMatrixVAR_LowDense
-        fullOut = []
-        for j in range(len(delaySizes)):
-            output = []
-            for i in range(randomRuns):
-                metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "VAR", 
-                                                 samples = samples, alpha= alpha, couplingStrength= couplStrength * 0.1, noiseScale= 0.01, tauMax= int(delaySizes[j] * 10) + 1,
-                                                  seed= seed, deltaTCascadeOutput= 0, evalType= "Full", delayLength=delaySizes[j] * 10)
-                seed += 1
-                output.append(metrics)
-            fullOut.append(output)
-        fullOut = np.array(fullOut)
-        np.save("./data/VAR_6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
-    else: 
-        fullOut = np.load("./data/VAR_6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy")
-    scores = MCCFromFull(fullOut, axis=2)
-    mean, stdDev = getMeanStdDev(scores, axis = 1)
-    # get central 80% of data
-    median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-    vis.saveMCCCurve(mean.T, [int(d*10) for d in delaySizes], "", "./diagrams/delays6dVAR", stdDev.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
-    vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
+        # same for VAR systems
+        scores = MCCFromFull(fullOutVAR, axis=2)
+        mean, stdDev = getMeanStdDev(scores, axis = 1)
+        # get central 80% of data
+        median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
+        vis.saveMCCCurve(mean.T, [int(d*10) for d in delaySizes], "", "./diagrams/delays6dVAR", stdDev.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
+        vis.saveMCCCurve(median.T, [int(d*10) for d in delaySizes], "", "./diagrams/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
 
-def sample6dEvaluations(plotOnly, sampleCounts, alpha, randomRuns, tauMax, couplingStrength):
+def sample6dEvaluations(plotOnly, sampleCounts, alpha, randomRuns, tauMax, couplingStrength, verbose = True, comm = None):
+    if not comm:
+        comm = MPI.COMM_WORLD
     if not plotOnly:
         # this data should have: 3 variables, 100 runs, 2000 samples per run
         truthMatrix = mediumCouplingMatrixCascade_LowDense
-        fullOut = []
-        for j in range(len(sampleCounts)):
-            output = []
-            for i in range(randomRuns):
-                metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade", 
-                                                 samples = sampleCounts[j], alpha= alpha, couplingStrength= couplingStrength, noiseScale= 0.01, tauMax= tauMax,
-                                                  seed= 0, deltaTCascadeOutput= 0, evalType= "Full")
-                output.append(metrics)
-            fullOut.append(output)
-        fullOut = np.array(fullOut)
-        np.save("./data/6d_Samples_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
-    else: 
-        fullOut = np.load("./data/6d_Samples_"+str(randomRuns)+"_runs_metrics.npy")
-    scores = MCCFromFull(fullOut, axis=2)
-    mean, stdDev = getMeanStdDev(scores, axis = 1)
-    # get central 80% of data
-    median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-    vis.saveMCCCurve(mean.T, sampleCounts, "", "./diagrams/samples6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC", xscale ="log")
-    vis.saveMCCCurve(median.T, sampleCounts, "", "./diagrams/samples6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC",xscale ="log")
-
-    # VAR model
-    if not plotOnly:
+        fullOut = np.zeros((len(sampleCounts), randomRuns, 4, 3))
         seed = 0
-        truthMatrix = mediumCouplingMatrixVAR_LowDense
-        fullOut = []
-        for j in range(len(sampleCounts)):
-            output = []
-            for i in range(randomRuns):
-                metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "VAR", 
+        truthMatrixVAR = mediumCouplingMatrixVAR_LowDense
+        fullOutVAR = np.zeros((len(sampleCounts), randomRuns, 4, 3))
+        param_combs = list(product(np.arange(len(sampleCounts)), np.arange(randomRuns)))
+        param_combs = param_combs[comm.Get_rank()::comm.Get_size()]
+        localFull = []
+        localFullVAR = []
+        for j,i in param_combs:
+            metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade", 
+                                                samples = sampleCounts[j], alpha= alpha, couplingStrength= couplingStrength, noiseScale= 0.01, tauMax= tauMax,
+                                                seed= 0, deltaTCascadeOutput= 0, evalType= "Full", verbose=verbose)
+            localFull.append((j, i, metrics))
+
+            metrics = getMetricOfRealization(couplingMatrix = truthMatrixVAR, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "VAR", 
                                                  samples = sampleCounts[j], alpha= alpha, couplingStrength= couplingStrength*0.1, noiseScale= 0.01, tauMax= tauMax,
-                                                  seed= seed, deltaTCascadeOutput= 0, evalType= "Full")
-                seed += 1
-                output.append(metrics)
-            fullOut.append(output)
-        fullOut = np.array(fullOut)
-        np.save("./data/VAR_6d_Samples_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
-    else: 
-        fullOut = np.load("./data/VAR_6d_Samples_"+str(randomRuns)+"_runs_metrics.npy")
-    scores = MCCFromFull(fullOut, axis=2)
-    mean, stdDev = getMeanStdDev(scores, axis = 1)
-    # get central 80% of data
-    median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-    vis.saveMCCCurve(mean.T, sampleCounts, "", "./diagrams/samples6dVAR", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC", xscale ="log")
-    vis.saveMCCCurve(median.T, sampleCounts, "", "./diagrams/samples6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC")
+                                                  seed= seed, deltaTCascadeOutput= 0, evalType= "Full", verbose=verbose)
+            seed += 1
+            localFullVAR.append((j, i, metrics))
+        gathered = comm.gather(localFull, root=0)
+        gatheredVAR = comm.gather(localFullVAR, root = 0)
+        if comm.Get_rank() == 0:
+            for result in gathered:
+                for j, i, value in result:
+                    fullOut[j, i] = value
+            for result in gatheredVAR:
+                for j, i, value in result:
+                    fullOutVAR[j, i] = value
+        if comm.Get_rank() == 0:
+            np.save("./data/6d_Samples_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
+            np.save("./data/VAR_6d_Samples_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
+    elif comm.Get_rank() == 0:
+        fullOut = np.load("./data/6d_Samples_"+str(randomRuns)+"_runs_metrics.npy")
+        fullOutVAR = np.load("./data/VAR_6d_Samples_"+str(randomRuns)+"_runs_metrics.npy")
+    if comm.Get_rank() == 0:
+        scores = MCCFromFull(fullOut, axis=2)
+        mean, stdDev = getMeanStdDev(scores, axis = 1)
+        # get central 80% of data
+        median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
+        vis.saveMCCCurve(mean.T, sampleCounts, "", "./diagrams/samples6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC", xscale ="log")
+        vis.saveMCCCurve(median.T, sampleCounts, "", "./diagrams/samples6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC",xscale ="log")
+        
+        scores = MCCFromFull(fullOutVAR, axis=2)
+        mean, stdDev = getMeanStdDev(scores, axis = 1)
+        # get central 80% of data
+        median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
+        vis.saveMCCCurve(mean.T, sampleCounts, "", "./diagrams/samples6dVAR", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC", xscale ="log")
+        vis.saveMCCCurve(median.T, sampleCounts, "", "./diagrams/samples6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC")
 
-def couplStrength6dEvaluations(plotOnly, couplStrengths, samples, alpha, randomRuns, tauMax):
+def couplStrength6dEvaluations(plotOnly, couplStrengths, samples, alpha, randomRuns, tauMax, verbose = True, comm = None):
+    if not comm:
+        comm = MPI.COMM_WORLD
     if not plotOnly:
         # this data should have: 3 variables, 100 runs, 2000 samples per run
         truthMatrix = mediumCouplingMatrixCascade_LowDense
-        fullOut = []
-        for j in range(len(couplStrengths)):
-            output = []
-            for i in range(randomRuns):
+        fullOut = np.zeros((len(couplStrengths), randomRuns, 4, 3))
+        seed = 0
+        truthMatrixVAR = mediumCouplingMatrixVAR_LowDense
+        fullOutVAR = np.zeros((len(couplStrengths), randomRuns, 4, 3))
+        param_combs = list(product(np.arange(len(couplStrengths)), np.arange(randomRuns)))
+        param_combs = param_combs[comm.Get_rank()::comm.Get_size()]
+        localFull = []
+        localFullVAR = []
+        for j,i in param_combs:
                 metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade", 
                                                  samples = samples, alpha= alpha, couplingStrength=  couplStrengths[j] * 10, noiseScale= 0.01, tauMax= tauMax,
-                                                  seed= 0, deltaTCascadeOutput= 0, evalType= "Full")
-                output.append(metrics)
-            fullOut.append(output)
-        fullOut = np.array(fullOut)
-        np.save("./data/6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
-    else: 
-        fullOut = np.load("./data/6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy")
-    scores = MCCFromFull(fullOut, axis=2)
-    mean, stdDev = getMeanStdDev(scores, axis = 1)
-    # get central 90% of data
-    median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-    vis.saveMCCCurve(mean.T, couplStrengths*10, "", "./diagrams/coupl6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
-    vis.saveMCCCurve(median.T, couplStrengths*10, "", "./diagrams/coupl6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
-
-    if not plotOnly:
-        seed = 0
-        truthMatrix = mediumCouplingMatrixVAR_LowDense
-        fullOut = []
-        for j in range(len(couplStrengths)):
-            output = []
-            for i in range(randomRuns):
-                metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "VAR", 
+                                                  seed= 0, deltaTCascadeOutput= 0, evalType= "Full", verbose=verbose)
+                localFull.append((j, i, metrics))
+                metrics = getMetricOfRealization(couplingMatrix = truthMatrixVAR, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "VAR", 
                                                  samples = samples, alpha= alpha, couplingStrength= couplStrengths[j], noiseScale= 0.01, tauMax= tauMax,
-                                                  seed= seed, deltaTCascadeOutput= 0, evalType= "Full")
+                                                  seed= seed, deltaTCascadeOutput= 0, evalType= "Full", verbose=verbose)
                 seed += 1
-                output.append(metrics)
-            fullOut.append(output)
-        fullOut = np.array(fullOut)
-        np.save("./data/VAR_6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
-    else: 
-        fullOut = np.load("./data/VAR_6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy")
-    scores = MCCFromFull(fullOut, axis=2)
-    mean, stdDev = getMeanStdDev(scores, axis = 1)
-    # get central 90% of data
-    median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-    vis.saveMCCCurve(mean.T, couplStrengths, "", "./diagrams/coupl6dVAR", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
-    vis.saveMCCCurve(median.T, couplStrengths, "", "./diagrams/coupl6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
+                localFullVAR.append((j, i, metrics))
+        gathered = comm.gather(localFull, root=0)
+        gatheredVAR = comm.gather(localFullVAR, root = 0)
+        if comm.Get_rank() == 0:
+            for result in gathered:
+                for j, i, value in result:
+                    fullOut[j, i] = value
+            for result in gatheredVAR:
+                for j, i, value in result:
+                    fullOutVAR[j, i] = value
+        if comm.Get_rank() == 0:
+            np.save("./data/6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
+            np.save("./data/VAR_6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
+    elif comm.Get_rank() == 0: 
+        fullOut = np.load("./data/6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy")
+        fullOutVAR = np.load("./data/VAR_6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy")
+    if comm.Get_rank() == 0:
+        scores = MCCFromFull(fullOut, axis=2)
+        mean, stdDev = getMeanStdDev(scores, axis = 1)
+        # get central 90% of data
+        median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
+        vis.saveMCCCurve(mean.T, couplStrengths*10, "", "./diagrams/coupl6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
+        vis.saveMCCCurve(median.T, couplStrengths*10, "", "./diagrams/coupl6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
+
+        scores = MCCFromFull(fullOutVAR, axis=2)
+        mean, stdDev = getMeanStdDev(scores, axis = 1)
+        # get central 90% of data
+        median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
+        vis.saveMCCCurve(mean.T, couplStrengths, "", "./diagrams/coupl6dVAR", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
+        vis.saveMCCCurve(median.T, couplStrengths, "", "./diagrams/coupl6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
 
 def scale_lightness(rgb, scale_l):
     import colorsys
@@ -407,83 +429,91 @@ def scale_lightness(rgb, scale_l):
     # manipulate h, l, s values and return as rgb
     return colorsys.hls_to_rgb(h, min(1, l * scale_l), s = s)
 
-def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingStrength):
+def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingStrength, verbose = True, comm = None, rank = 0):
     import matplotlib as mpl
+    if not comm:
+        comm = MPI.COMM_WORLD
     defaultCols = mpl.color_sequences["tab10"]
     # low density: n-1 edges
     # high density: 2n (or 2n-1 for 3 nodes)
     cascMatrices = [defaultCouplingMatrixCascade_LowDense, mediumCouplingMatrixCascade_LowDense, largeCouplingMatrixCascade_LowDense, defaultCouplingMatrixCascade_HighDense, mediumCouplingMatrixCascade_HighDense, largeCouplingMatrixCascade_HighDense]
     VARMatrices = [defaultCouplingMatrixVAR_LowDense, mediumCouplingMatrixVAR_LowDense, largeCouplingMatrixVAR_LowDense, defaultCouplingMatrixVAR_HighDense, mediumCouplingMatrixVAR_HighDense, largeCouplingMatrixVAR_HighDense]
+    if len(cascMatrices) != len(VARMatrices):
+        raise ValueError("Matrices for cubic systems and VAR systems not identical length")
     
     if not plotOnly:
-        fullOut = []
-        for j in range(len(cascMatrices)):
-            output = []
-            for i in range(randomRuns):
-                metrics = getMetricOfRealization(couplingMatrix = cascMatrices[j], algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade", 
-                                                 samples = samples, alpha= alpha, couplingStrength= couplingStrength, noiseScale= 0.01, tauMax= tauMax,
-                                                  seed= 0, deltaTCascadeOutput= 0, evalType= "Full")
-                output.append(metrics)
-            fullOut.append(output)
-        fullOut = np.array(fullOut)
-        np.save("./data/6d_System_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
-    else: 
-        fullOut = np.load("./data/6d_System_"+str(randomRuns)+"_runs_metrics.npy")
-    scores = MCCFromFull(fullOut, axis=2)
-    mean, stdDev = getMeanStdDev(scores, axis = 1)
-    lowDense = mean[:3]
-    highDense = mean[3:]
-    final = np.append(lowDense, highDense, axis=1)
-
-    # get central 90% of data
-    #median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-
-    vis.saveMCCCurve(final[:,::3].T, [3,6,12], "", "./diagrams/SystemCascGCSS", [], show=False, save = True, rowLabels=["GCSS-LD", "GCSS-HD"], 
-                     xlabel = "Variable Count", ylabel ="MCC")
-    vis.saveMCCCurve(final[:,1::3].T, [3,6,12], "", "./diagrams/SystemCascLKIF", [], show=False, save = True, rowLabels=["LKIF-LD", "LKIF-HD"], 
-                     xlabel = "Variable Count", ylabel ="MCC")
-    vis.saveMCCCurve(final[:,2::3].T, [3,6,12], "", "./diagrams/SystemCascPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
-                     xlabel = "Variable Count", ylabel ="MCC")
-    
-    vis.saveMCCCurve(final.T, [3,6,12], "", "./diagrams/SystemCasc", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"], 
-                     colors=[defaultCols[0], defaultCols[1], defaultCols[2], scale_lightness(defaultCols[0], 1.6), scale_lightness(defaultCols[1], 1.6), scale_lightness(defaultCols[2], 1.6)], xlabel = "Variable Count", ylabel ="MCC")
-    #vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
-
-    if not plotOnly:
+        fullOut = np.zeros((len(cascMatrices), randomRuns, 4, 3))
         seed = 0
-        fullOut = []
-        for j in range(len(VARMatrices)):
-            output = []
-            for i in range(randomRuns):
-                metrics = getMetricOfRealization(couplingMatrix = VARMatrices[j], algorithms = ["GCSS", "LKIF", "PCMCI"], model= "VAR", 
+        fullOutVAR = np.zeros((len(cascMatrices), randomRuns, 4, 3))
+        param_combs = list(product(np.arange(len(cascMatrices)), np.arange(randomRuns)))
+        param_combs = param_combs[comm.Get_rank()::comm.Get_size()]
+        localFull = []
+        localFullVAR = []
+        for j,i in param_combs:
+            metrics = getMetricOfRealization(couplingMatrix = cascMatrices[j], algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade", 
+                                            samples = samples, alpha= alpha, couplingStrength= couplingStrength, noiseScale= 0.01, tauMax= tauMax,
+                                            seed= 0, deltaTCascadeOutput= 0, evalType= "Full", verbose=verbose)
+            localFull.append((j, i, metrics))
+            metrics = getMetricOfRealization(couplingMatrix = VARMatrices[j], algorithms = ["GCSS", "LKIF", "PCMCI"], model= "VAR", 
                                                  samples = samples, alpha= alpha, couplingStrength= couplingStrength*0.1, noiseScale= 0.01, tauMax= tauMax,
-                                                  seed= seed, deltaTCascadeOutput= 0, evalType= "Full")
-                seed += 1
-                output.append(metrics)
-            fullOut.append(output)
-        fullOut = np.array(fullOut)
-        np.save("./data/VAR_6d_System_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
+                                                  seed= seed, deltaTCascadeOutput= 0, evalType= "Full", verbose=verbose)
+            seed += 1
+            localFullVAR.append((j, i, metrics))
+        gathered = comm.gather(localFull, root=0)
+        gatheredVAR = comm.gather(localFullVAR, root = 0)
+        if comm.Get_rank() == 0:
+            for result in gathered:
+                for j, i, value in result:
+                    fullOut[j, i] = value
+            for result in gatheredVAR:
+                for j, i, value in result:
+                    fullOutVAR[j, i] = value
+        if not comm or comm.Get_rank() == 0:
+            np.save("./data/6d_System_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
+            np.save("./data/VAR_6d_System_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
+    elif not comm or comm.Get_rank() == 0:
+        fullOut = np.load("./data/6d_System_"+str(randomRuns)+"_runs_metrics.npy")
+        fullOutVAR = np.load("./data/VAR_6d_System_"+str(randomRuns)+"_runs_metrics.npy")
+    if not comm or comm.Get_rank() == 0:
+        scores = MCCFromFull(fullOut, axis=2)
+        mean, stdDev = getMeanStdDev(scores, axis = 1)
+        lowDense = mean[:3]
+        highDense = mean[3:]
+        final = np.append(lowDense, highDense, axis=1)
 
-    else: fullOut = np.load("./data/VAR_6d_System_"+str(randomRuns)+"_runs_metrics.npy")
-    scores = MCCFromFull(fullOut, axis=2)
-    mean, stdDev = getMeanStdDev(scores, axis = 1)
-    lowDense = mean[:3]
-    highDense = mean[3:]
-    final = np.append(lowDense, highDense, axis=1)
-    # get central 90% of data
-    #median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
+        # get central 90% of data
+        #median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
 
-    # decide how to display the results
-    vis.saveMCCCurve(final.T, [3,6,12], "", "./diagrams/SystemVAR", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"],
-                     colors=[defaultCols[0], defaultCols[1], defaultCols[2], scale_lightness(defaultCols[0], 1.6), scale_lightness(defaultCols[1], 1.6), scale_lightness(defaultCols[2], 1.6)], xlabel = "Variable Count", ylabel ="MCC")
-    vis.saveMCCCurve(final[:,::3].T, [3,6,12], "", "./diagrams/SystemVARGCSS", [], show=False, save = True, rowLabels=["GCSS-LD", "GCSS-HD"], 
-                     xlabel = "Variable Count", ylabel ="MCC")
-    vis.saveMCCCurve(final[:,1::3].T, [3,6,12], "", "./diagrams/SystemVARLKIF", [], show=False, save = True, rowLabels=["LKIF-LD", "LKIF-HD"], 
-                     xlabel = "Variable Count", ylabel ="MCC")
-    vis.saveMCCCurve(final[:,2::3].T, [3,6,12], "", "./diagrams/SystemVARPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
-                     xlabel = "Variable Count", ylabel ="MCC")
-    #vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
+        vis.saveMCCCurve(final[:,::3].T, [3,6,12], "", "./diagrams/SystemCascGCSS", [], show=False, save = True, rowLabels=["GCSS-LD", "GCSS-HD"], 
+                        xlabel = "Variable Count", ylabel ="MCC")
+        vis.saveMCCCurve(final[:,1::3].T, [3,6,12], "", "./diagrams/SystemCascLKIF", [], show=False, save = True, rowLabels=["LKIF-LD", "LKIF-HD"], 
+                        xlabel = "Variable Count", ylabel ="MCC")
+        vis.saveMCCCurve(final[:,2::3].T, [3,6,12], "", "./diagrams/SystemCascPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
+                        xlabel = "Variable Count", ylabel ="MCC")
+        
+        vis.saveMCCCurve(final.T, [3,6,12], "", "./diagrams/SystemCasc", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"], 
+                        colors=[defaultCols[0], defaultCols[1], defaultCols[2], scale_lightness(defaultCols[0], 1.6), scale_lightness(defaultCols[1], 1.6), scale_lightness(defaultCols[2], 1.6)], xlabel = "Variable Count", ylabel ="MCC")
+        #vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
 
+        scores = MCCFromFull(fullOutVAR, axis=2)
+        mean, stdDev = getMeanStdDev(scores, axis = 1)
+        lowDense = mean[:3]
+        highDense = mean[3:]
+        final = np.append(lowDense, highDense, axis=1)
+        # get central 90% of data
+        #median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
+
+        # decide how to display the results
+        vis.saveMCCCurve(final.T, [3,6,12], "", "./diagrams/SystemVAR", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"],
+                        colors=[defaultCols[0], defaultCols[1], defaultCols[2], scale_lightness(defaultCols[0], 1.6), scale_lightness(defaultCols[1], 1.6), scale_lightness(defaultCols[2], 1.6)], xlabel = "Variable Count", ylabel ="MCC")
+        vis.saveMCCCurve(final[:,::3].T, [3,6,12], "", "./diagrams/SystemVARGCSS", [], show=False, save = True, rowLabels=["GCSS-LD", "GCSS-HD"], 
+                        xlabel = "Variable Count", ylabel ="MCC")
+        vis.saveMCCCurve(final[:,1::3].T, [3,6,12], "", "./diagrams/SystemVARLKIF", [], show=False, save = True, rowLabels=["LKIF-LD", "LKIF-HD"], 
+                        xlabel = "Variable Count", ylabel ="MCC")
+        vis.saveMCCCurve(final[:,2::3].T, [3,6,12], "", "./diagrams/SystemVARPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
+                        xlabel = "Variable Count", ylabel ="MCC")
+        #vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
+        
 def nonStationaryTipping():
     loadData = False
     if not loadData:
@@ -541,82 +571,100 @@ def nonStationaryTipping():
     print(reducedInfoMean)
     print(reducedInfoStd)
 
-def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns):
+def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns, verbose = True, comm = None, rank = 0):
     """We increase forcing linearly over the course of 50 units of time (500 samples), up to some ceiling, then compare performances across ceiling heights.
     Experiment only conducted for nonlinear system, as there's no tipping in the VAR system"""
-    
+    if not comm:
+        comm = MPI.COMM_WORLD
     if not plotOnly:
         truthMatrix = mediumCouplingMatrixCascade_LowDense
         dim = 6
         metricsNormal = np.zeros((len(ceilings), randomRuns, 4, 3))
         metricsReducedInfo = np.zeros((len(ceilings), randomRuns, 4, 3))
         tipped = np.zeros(len(ceilings))
-        for i in range(len(ceilings)):
-            for j in range(randomRuns):
-                dT = lambda x,t : (t <= 50) * (-0.4 / 50) * ceilings[i]
-                data = DataGenerator.getCascade6dConfoundedBrainpy(dT, truthMatrix, samples, 0.001)
-                # if we cross the threshold between +1 and -1, we assume tipped
-                if np.min(data[:dim]) < 0: tipped[i] += 1
-                matrices = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "None", 
-                                                 samples = samples, alpha= alpha, couplingStrength= 1, noiseScale= 0.01, tauMax= tauMax,
-                                                  seed= 0, deltaTCascadeOutput= 0, evalType= "Full", fullData = data.T, returnMatrices=True)
-                matrices = matrices[:,:dim,:dim]
-                metricsNormal[i,j] = np.array([getFullMetrics(truthMatrix, matrix) for matrix in matrices]).T
-                matrices2 = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "None", 
-                                                 samples = samples, alpha= alpha, couplingStrength= 1, noiseScale= 0.01, tauMax= tauMax,
-                                                  seed= 0, deltaTCascadeOutput= 0, evalType= "Full", fullData = data[:dim].T, returnMatrices=True)
-                metricsReducedInfo[i,j] = np.array([getFullMetrics(truthMatrix, matrix) for matrix in matrices2]).T
-            tipped[i] = tipped[i] / randomRuns
-        np.save("./data/Casc_forcing6d.npy", metricsNormal)
-        np.save("./data/Casc_forcing_reducedInfo_6d.npy", metricsReducedInfo)
-        np.save("./data/Casc_forcing6d_tippedFraction.npy", tipped)
-    else: 
+        param_combs = list(product(np.arange(len(ceilings)), np.arange(randomRuns)))
+        param_combs = param_combs[comm.Get_rank()::comm.Get_size()]
+        localFullInfo = []
+        localReducedInfo = []
+        localTipped = []
+        for i,j in param_combs:
+            dT = lambda x,t : (t <= 50) * (-0.4 / 50) * ceilings[i]
+            data = DataGenerator.getCascade6dConfoundedBrainpy(dT, truthMatrix, samples, 0.001, verbose=verbose)
+            # if we cross the threshold between +1 and -1, we assume tipped
+            if np.min(data[:dim]) < 0: localTipped.append(i,j,1)
+            matrices = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "None", 
+                                                samples = samples, alpha= alpha, couplingStrength= 1, noiseScale= 0.01, tauMax= tauMax,
+                                                seed= 0, deltaTCascadeOutput= 0, evalType= "Full", fullData = data.T, returnMatrices=True, verbose=verbose)
+            matrices = matrices[:,:dim,:dim]
+            localFullInfo.append((i,j, np.array([getFullMetrics(truthMatrix, matrix) for matrix in matrices]).T))
+            matrices2 = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "None", 
+                                                samples = samples, alpha= alpha, couplingStrength= 1, noiseScale= 0.01, tauMax= tauMax,
+                                                seed= 0, deltaTCascadeOutput= 0, evalType= "Full", fullData = data[:dim].T, returnMatrices=True, verbose=verbose)
+            localReducedInfo.append((i,j, np.array([getFullMetrics(truthMatrix, matrix) for matrix in matrices2]).T))
+        gathered = comm.gather(localFullInfo, root=0)
+        gatheredRed = comm.gather(localReducedInfo, root = 0)
+        gatheredTipped = comm.gather(localTipped, root = 0)
+        if comm.Get_rank() == 0:
+            for result in gathered:
+                for j, i, value in result:
+                    metricsNormal[j, i] = value
+            for result in gatheredRed:
+                for j, i, value in result:
+                    metricsReducedInfo[j, i] = value
+            for result in gatheredTipped:
+                for i,j,value in result:
+                    tipped[i] += value
+            tipped = tipped / randomRuns
+            np.save("./data/Casc_forcing6d.npy", metricsNormal)
+            np.save("./data/Casc_forcing_reducedInfo_6d.npy", metricsReducedInfo)
+            np.save("./data/Casc_forcing6d_tippedFraction.npy", tipped)
+    elif comm.Get_rank() == 0:
         metricsNormal = np.load("./data/Casc_forcing6d.npy")
         metricsReducedInfo = np.load("./data/Casc_forcing_reducedInfo_6d.npy")
         tipped = np.load("./data/Casc_forcing6d_tippedFraction.npy")
-    
-    vis.saveMCCCurve(tipped, ceilings, "", "./diagrams/forcing6d_tippedFraction", xlabel="Forcing Strength", ylabel="Fraction of runs with tipping")
+    if comm.Get_rank() == 0:
+        vis.saveMCCCurve(tipped, ceilings, "", "./diagrams/forcing6d_tippedFraction", xlabel="Forcing Strength", ylabel="Fraction of runs with tipping")
 
-    fullInfoMCC = MCCFromFull(np.array(metricsNormal), axis=2)
-    fullInfoMean, fullInfoStd = getMeanStdDev(fullInfoMCC, axis = 1)
-    noInfoMCC = MCCFromFull(np.array(metricsReducedInfo), axis=2)
-    noInfoMean, noInfoStd = getMeanStdDev(noInfoMCC, axis = 1)
+        fullInfoMCC = MCCFromFull(np.array(metricsNormal), axis=2)
+        fullInfoMean, fullInfoStd = getMeanStdDev(fullInfoMCC, axis = 1)
+        noInfoMCC = MCCFromFull(np.array(metricsReducedInfo), axis=2)
+        noInfoMean, noInfoStd = getMeanStdDev(noInfoMCC, axis = 1)
 
-    gcssInfo = np.stack((fullInfoMean[:,0], noInfoMean[:,0]), axis=1)
-    lkifInfo = np.stack((fullInfoMean[:,1], noInfoMean[:,1]), axis=1)
-    pcmInfo = np.stack((fullInfoMean[:,2], noInfoMean[:,2]), axis=1)
-    gcssStd = np.stack((fullInfoStd[:,0], noInfoStd[:,0]), axis=1)
-    lkifStd = np.stack((fullInfoStd[:,1], noInfoStd[:,1]), axis=1)
-    pcmStd = np.stack((fullInfoStd[:,2], noInfoStd[:,2]), axis=1)
-    
-    vis.saveMCCCurve(fullInfoMean.T, ceilings, "", "./diagrams/forcing6d", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
-    vis.saveMCCCurve(noInfoMean.T, ceilings, "", "./diagrams/forcing6d_reducedInformation", noInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
-    
-    vis.saveMCCScatter(gcssInfo.T, ceilings, "", "./diagrams/forcing6d_gcss", gcssStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
-    vis.saveMCCScatter(lkifInfo.T, ceilings, "", "./diagrams/forcing6d_lkif", lkifStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
-    vis.saveMCCScatter(pcmInfo.T, ceilings, "", "./diagrams/forcing6d_pcmci", pcmStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
-    
-    fullInfoMCC = tpr_fpr_FromFull(np.array(metricsNormal), axis=2)
-    fullInfoMean, fullInfoStd = getMeanStdDev(fullInfoMCC, axis = 1)
-    noInfoMCC = tpr_fpr_FromFull(np.array(metricsReducedInfo), axis=2)
-    noInfoMean, noInfoStd = getMeanStdDev(noInfoMCC, axis = 1)
+        gcssInfo = np.stack((fullInfoMean[:,0], noInfoMean[:,0]), axis=1)
+        lkifInfo = np.stack((fullInfoMean[:,1], noInfoMean[:,1]), axis=1)
+        pcmInfo = np.stack((fullInfoMean[:,2], noInfoMean[:,2]), axis=1)
+        gcssStd = np.stack((fullInfoStd[:,0], noInfoStd[:,0]), axis=1)
+        lkifStd = np.stack((fullInfoStd[:,1], noInfoStd[:,1]), axis=1)
+        pcmStd = np.stack((fullInfoStd[:,2], noInfoStd[:,2]), axis=1)
+        
+        vis.saveMCCCurve(fullInfoMean.T, ceilings, "", "./diagrams/forcing6d", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
+        vis.saveMCCCurve(noInfoMean.T, ceilings, "", "./diagrams/forcing6d_reducedInformation", noInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
+        
+        vis.saveMCCScatter(gcssInfo.T, ceilings, "", "./diagrams/forcing6d_gcss", gcssStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
+        vis.saveMCCScatter(lkifInfo.T, ceilings, "", "./diagrams/forcing6d_lkif", lkifStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
+        vis.saveMCCScatter(pcmInfo.T, ceilings, "", "./diagrams/forcing6d_pcmci", pcmStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
+        
+        fullInfoMCC = tpr_fpr_FromFull(np.array(metricsNormal), axis=2)
+        fullInfoMean, fullInfoStd = getMeanStdDev(fullInfoMCC, axis = 1)
+        noInfoMCC = tpr_fpr_FromFull(np.array(metricsReducedInfo), axis=2)
+        noInfoMean, noInfoStd = getMeanStdDev(noInfoMCC, axis = 1)
 
-    gcssInfo = np.append(fullInfoMean[:,:,0], noInfoMean[:,:,0], axis=1)
-    lkifInfo = np.append(fullInfoMean[:,:,1], noInfoMean[:,:,1], axis=1)
-    pcmInfo = np.append(fullInfoMean[:,:,2], noInfoMean[:,:,2], axis=1)
-    gcssStd = np.append(fullInfoStd[:,:,0], noInfoStd[:,:,0], axis=1)
-    lkifStd = np.append(fullInfoStd[:,:,1], noInfoStd[:,:,1], axis=1)
-    pcmStd = np.append(fullInfoStd[:,:,2], noInfoStd[:,:,2], axis=1)
+        gcssInfo = np.append(fullInfoMean[:,:,0], noInfoMean[:,:,0], axis=1)
+        lkifInfo = np.append(fullInfoMean[:,:,1], noInfoMean[:,:,1], axis=1)
+        pcmInfo = np.append(fullInfoMean[:,:,2], noInfoMean[:,:,2], axis=1)
+        gcssStd = np.append(fullInfoStd[:,:,0], noInfoStd[:,:,0], axis=1)
+        lkifStd = np.append(fullInfoStd[:,:,1], noInfoStd[:,:,1], axis=1)
+        pcmStd = np.append(fullInfoStd[:,:,2], noInfoStd[:,:,2], axis=1)
 
-    print(gcssInfo.shape)
-    
-    # vis.saveMCCCurve(fullInfoMean.T, ceilings, "", "./diagrams/forcing6d_TPR", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
-    # vis.saveMCCCurve(noInfoMean.T, ceilings, "", "./diagrams/forcing6d_reducedInformation_TPR", noInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
-    
-    vis.saveMCCScatter(gcssInfo.T, ceilings, "", "./diagrams/forcing6d_gcss_TPR", gcssStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR", "Hidden Confounder TPR", "Hidden Confounder FPR"],figsize=(8,2), dpi=300)
-    vis.saveMCCScatter(lkifInfo.T, ceilings, "", "./diagrams/forcing6d_lkif_TPR", lkifStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],figsize=(8,2), dpi=300)
-    vis.saveMCCScatter(pcmInfo.T, ceilings, "", "./diagrams/forcing6d_pcmci_TPR", pcmStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],figsize=(8,2), dpi=300)
-    
+        print(gcssInfo.shape)
+        
+        # vis.saveMCCCurve(fullInfoMean.T, ceilings, "", "./diagrams/forcing6d_TPR", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
+        # vis.saveMCCCurve(noInfoMean.T, ceilings, "", "./diagrams/forcing6d_reducedInformation_TPR", noInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
+        
+        vis.saveMCCScatter(gcssInfo.T, ceilings, "", "./diagrams/forcing6d_gcss_TPR", gcssStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR", "Hidden Confounder TPR", "Hidden Confounder FPR"],figsize=(8,2), dpi=300)
+        vis.saveMCCScatter(lkifInfo.T, ceilings, "", "./diagrams/forcing6d_lkif_TPR", lkifStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],figsize=(8,2), dpi=300)
+        vis.saveMCCScatter(pcmInfo.T, ceilings, "", "./diagrams/forcing6d_pcmci_TPR", pcmStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],figsize=(8,2), dpi=300)
+
 
 def autoCorrEvaluations():
     loadCasc = False
@@ -1298,60 +1346,69 @@ def mainEvaluations(analysisIndex = None):
     print(str(int((endTime - startTime)/60))+ " minutes")
     
 def main():
-    from mpi4py import MPI
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-    size = comm.Get_size()
 
-    plotOnly = True
+    comm = MPI.COMM_WORLD
+
+    plotOnly = False
     randomRuns = 2
     alpha = 0.05
     samples = 1000
     couplingStrength = 1
     tauMax = [5,1,5]
 
-    if rank == 0:
-        sample6dEvaluations(plotOnly = plotOnly,
-        sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
-        alpha = alpha,
-        randomRuns = randomRuns,
-        tauMax = tauMax,
-        couplingStrength=couplingStrength)
-    
-    if rank == 1:
-        couplStrength6dEvaluations(plotOnly = plotOnly,
-        couplStrengths = np.array([0.01, 0.02, 0.05, 0.07,0.1,0.15,0.2,0.25,0.3]),
-        samples = samples,
-        alpha = alpha,
-        randomRuns = randomRuns,
-        tauMax = tauMax)
+    sample6dEvaluations(plotOnly = plotOnly,
+    sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
+    alpha = alpha,
+    randomRuns = randomRuns,
+    tauMax = tauMax,
+    couplingStrength=couplingStrength, 
+    verbose=False,
+    comm=comm)
+    print("Sample Evaluation finished")
 
-    if rank == 2:
-        delay6dEvaluations(plotOnly = plotOnly,
-        delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0],
-        samples = samples,
-        alpha = alpha,
-        randomRuns = randomRuns,
-        couplStrength=couplingStrength)
+    couplStrength6dEvaluations(plotOnly = plotOnly,
+    couplStrengths = np.array([0.01, 0.02, 0.05, 0.07,0.1,0.15,0.2,0.25,0.3]),
+    samples = samples,
+    alpha = alpha,
+    randomRuns = randomRuns,
+    tauMax = tauMax, 
+    verbose=False,
+    comm=comm)
+    print("Coupling Strength Evaluation finished")
 
-    if rank == 3:
-        system6dEvaluations(plotOnly = plotOnly,
-        alpha = alpha,
-        samples = samples,
-        randomRuns = randomRuns,
-        tauMax = tauMax,
-        couplingStrength=couplingStrength)
+    delay6dEvaluations(plotOnly = plotOnly,
+    delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0],
+    samples = samples,
+    alpha = alpha,
+    randomRuns = randomRuns,
+    couplStrength=couplingStrength, 
+    verbose=False,
+    comm=comm)
+    print("Delay Evaluation finished")
 
-    if rank == 4:
-        nonStationaryStable(plotOnly = plotOnly,
-        ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.8, 0.9, 1.0],
-        alpha = alpha,
-        samples = samples,
-        tauMax = tauMax,
-        randomRuns = randomRuns)
+    system6dEvaluations(plotOnly = plotOnly,
+    alpha = alpha,
+    samples = samples,
+    randomRuns = randomRuns,
+    tauMax = tauMax,
+    couplingStrength=couplingStrength, 
+    verbose=False,
+    comm=comm)
+    print("System Size/Density Evaluation finished")
+
+    nonStationaryStable(plotOnly = plotOnly,
+    ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    alpha = alpha,
+    samples = samples,
+    tauMax = tauMax,
+    randomRuns = randomRuns, 
+    verbose=False,
+    comm=comm)
+    print("Non-Stationarity Evaluation finished")
 
 if __name__ == "__main__":
     main()
+    # main()
     # nonStationaryStable(plotOnly = True,
     #     ceilings = [0, 0.1, 0.5, 0.8],
     #     alpha = 0.05,

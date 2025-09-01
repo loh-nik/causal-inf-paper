@@ -1,0 +1,20 @@
+#######################################################################################
+### conda added to PATH. Use 'source activate' rather than 'conda activate'.        ###
+### Do not run 'conda init' if prompted.                                            ###
+### 'conda init' will modify your shell outside of the `module` environment         ###
+#######################################################################################
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'mpi4py'
+Traceback (most recent call last):
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 2, in <module>
+    import DataGenerator
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/DataGenerator.py", line 5, in <module>
+Traceback (most recent call last):
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 2, in <module>
+    from progress.bar import Bar
+ModuleNotFoundError: No module named 'progress'
+    import DataGenerator
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/DataGenerator.py", line 5, in <module>
+    from progress.bar import Bar
+ModuleNotFoundError: No module named 'progress'
