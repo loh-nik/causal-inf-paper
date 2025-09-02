@@ -1,0 +1,9 @@
+#######################################################################################
+### conda added to PATH. Use 'source activate' rather than 'conda activate'.        ###
+### Do not run 'conda init' if prompted.                                            ###
+### 'conda init' will modify your shell outside of the `module` environment         ###
+#######################################################################################
+LLVM ERROR: Symbol not found: __gufunc__._ZN4dcor14_fast_dcov_avl26_generate_rowwise_internal12_3clocals_3e53_rowwise_distance_covariance_sqr_avl_generic_internalB3v74B64c8tJTIcFK2ZSsQUlDh0FJN_2fYggMKGF4YMQpVCwwRKAvVsbZ5BZWloMjWBAA_3dE5ArrayIdLi1E1A8readonly7alignedE5ArrayIdLi1E1A8readonly7alignedEb5ArrayIdLi1E1A7mutable7alignedE
+LLVM ERROR: Symbol not found: __gufunc__._ZN4dcor14_fast_dcov_avl26_generate_rowwise_internal12_3clocals_3e53_rowwise_distance_covariance_sqr_avl_generic_internalB3v74B64c8tJTIcFK2ZSsQUlDh0FJN_2fYggMKGF4YMQpVCwwRKAvVsbZ5BZWloMjWBAA_3dE5ArrayIdLi1E1A8readonly7alignedE5ArrayIdLi1E1A8readonly7alignedEb5ArrayIdLi1E1A7mutable7alignedE
+LLVM ERROR: Symbol not found: __gufunc__._ZN4dcor14_fast_dcov_avl26_generate_rowwise_internal12_3clocals_3e53_rowwise_distance_covariance_sqr_avl_generic_internalB3v74B64c8tJTIcFK2ZSsQUlDh0FJN_2fYggMKGF4YMQpVCwwRKAvVsbZ5BZWloMjWBAA_3dE5ArrayIdLi1E1A8readonly7alignedE5ArrayIdLi1E1A8readonly7alignedEb5ArrayIdLi1E1A7mutable7alignedE
+LLVM ERROR: Symbol not found: __gufunc__._ZN4dcor14_fast_dcov_avl26_generate_rowwise_internal12_3clocals_3e53_rowwise_distance_covariance_sqr_avl_generic_internalB3v74B64c8tJTIcFK2ZSsQUlDh0FJN_2fYggMKGF4YMQpVCwwRKAvVsbZ5BZWloMjWBAA_3dE5ArrayIdLi1E1A8readonly7alignedE5ArrayIdLi1E1A8readonly7alignedEb5ArrayIdLi1E1A7mutable7alignedE

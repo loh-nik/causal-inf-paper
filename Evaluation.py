@@ -1,13 +1,30 @@
-import numpy as np
-import DataGenerator
-
-import Visualization as vis
-#from matplotlib import pyplot as plt
-from progress.bar import Bar
-import time
-from itertools import product
-#import argparse
 from mpi4py import MPI
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
+# Some of these libraries use jit compilation on import, we avoid race conditions by importing once in the main rank
+if rank == 0:
+    print("Rank 0 importing PCMCI first...")
+    import PCMCI
+    import numpy as np
+    import DataGenerator
+    import Visualization as vis
+    import time
+    from itertools import product
+    import GCSS
+    import LKIF
+    comm.barrier()  # let others wait
+
+else:
+    comm.barrier()
+    import PCMCI
+    import numpy as np
+    import DataGenerator
+    import Visualization as vis
+    import time
+    from itertools import product
+    import GCSS
+    import LKIF
 
 # these matrices are used often so we just define them globally
 mediumCouplingMatrixCascade_LowDense = np.array([
@@ -197,9 +214,7 @@ def tpr_fpr_FromFull(a, axis=0):
 # returns a numpy array of shape (2, len(algorithms))
 # or shape (4, len(algorithms)) for evalType "full" 
 def getMetricOfRealization(couplingMatrix, algorithms, model, samples, alpha, couplingStrength, noiseScale, tauMax, seed, deltaTCascadeOutput, evalType, delayLength = 0, fullData = [], returnMatrices = False, verbose =True):
-    import GCSS
-    import LKIF
-    import PCMCI
+    
     tauList = False
     if type(tauMax) is list:
         if len(tauMax) != len(algorithms):
@@ -327,6 +342,7 @@ def sample6dEvaluations(plotOnly, sampleCounts, alpha, randomRuns, tauMax, coupl
         param_combs = param_combs[comm.Get_rank()::comm.Get_size()]
         localFull = []
         localFullVAR = []
+        print("Node " + str(comm.Get_rank()) + " executing " + str(len(param_combs)) + " combinations for sample test")
         for j,i in param_combs:
             metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade", 
                                                 samples = sampleCounts[j], alpha= alpha, couplingStrength= couplingStrength, noiseScale= 0.01, tauMax= tauMax,
@@ -338,6 +354,7 @@ def sample6dEvaluations(plotOnly, sampleCounts, alpha, randomRuns, tauMax, coupl
                                                   seed= seed, deltaTCascadeOutput= 0, evalType= "Full", verbose=verbose)
             seed += comm.Get_size()
             localFullVAR.append((j, i, metrics))
+        print("Node " + str(comm.Get_rank()) + " finished sample test")
         gathered = comm.gather(localFull, root=0)
         gatheredVAR = comm.gather(localFullVAR, root = 0)
         if comm.Get_rank() == 0:

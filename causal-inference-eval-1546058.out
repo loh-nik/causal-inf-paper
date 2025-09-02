@@ -1,0 +1,416 @@
+Python being used: /home/niklaslo/.conda/envs/causal-inf-env/bin/python
+MPI being used: /home/niklaslo/.conda/envs/causal-inf-env/bin/mpirun
+Testing numpy...
+1.24.1
+Testing mpi4py...
+3.1.5
+-------------------------------------------------------------
+Full Evaluation run
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+NUMBA_DISABLE_CACHE = 1
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   RANK 26 PID 1376156 RUNNING AT csm14c191
+=   KILLED BY SIGNAL: 15 (Terminated)
+===================================================================================
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   RANK 27 PID 1376157 RUNNING AT csm14c191
+=   KILLED BY SIGNAL: 15 (Terminated)
+===================================================================================
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   RANK 28 PID 1376158 RUNNING AT csm14c191
+=   KILLED BY SIGNAL: 15 (Terminated)
+===================================================================================
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   RANK 29 PID 1376159 RUNNING AT csm14c191
+=   KILLED BY SIGNAL: 15 (Terminated)
+===================================================================================

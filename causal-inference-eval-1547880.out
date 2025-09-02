@@ -1,0 +1,332 @@
+Python being used: /home/niklaslo/.conda/envs/causal-inf-env/bin/python
+MPI being used: /home/niklaslo/.conda/envs/causal-inf-env/bin/mpirun
+Testing numpy...
+1.24.1
+Testing mpi4py...
+3.1.5
+-------------------------------------------------------------
+Full Evaluation run
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+Numba cache: /p/tmp/niklaslo/numba_cache
+NUMBA_DISABLE_CACHE = 0
+[?2004l
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   RANK 10 PID 1897610 RUNNING AT csm14c191
+=   KILLED BY SIGNAL: 6 (Aborted)
+===================================================================================
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   RANK 11 PID 1897611 RUNNING AT csm14c191
+=   KILLED BY SIGNAL: 9 (Killed)
+===================================================================================
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   RANK 12 PID 1897612 RUNNING AT csm14c191
+=   KILLED BY SIGNAL: 9 (Killed)
+===================================================================================
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   RANK 13 PID 1897613 RUNNING AT csm14c191
+=   KILLED BY SIGNAL: 9 (Killed)
+===================================================================================

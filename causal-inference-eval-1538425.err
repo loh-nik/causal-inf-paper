@@ -1,0 +1,75 @@
+#######################################################################################
+### conda added to PATH. Use 'source activate' rather than 'conda activate'.        ###
+### Do not run 'conda init' if prompted.                                            ###
+### 'conda init' will modify your shell outside of the `module` environment         ###
+#######################################################################################
+Traceback (most recent call last):
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 1410, in <module>
+    main()
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 1359, in main
+    sample6dEvaluations(plotOnly = plotOnly,
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 331, in sample6dEvaluations
+    metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade",
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 202, in getMetricOfRealization
+    import PCMCI
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/PCMCI.py", line 6, in <module>
+    from tigramite.independence_tests.gpdc import GPDC
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/tigramite/independence_tests/gpdc.py", line 10, in <module>
+    import dcor
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/dcor/__init__.py", line 13, in <module>
+    from . import distances, homogeneity, independence
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/dcor/independence.py", line 14, in <module>
+    from ._dcor import u_distance_correlation_sqr
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/dcor/_dcor.py", line 35, in <module>
+    from ._fast_dcov_avl import _distance_covariance_sqr_terms_avl
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/dcor/_fast_dcov_avl.py", line 443, in <module>
+    _distance_covariance_sqr_avl_impl_compiled = numba.njit(
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/numba/core/decorators.py", line 236, in wrapper
+    disp.compile(sig)
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/numba/core/dispatcher.py", line 964, in compile
+    self._cache.save_overload(sig, cres)
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/numba/core/caching.py", line 652, in save_overload
+    self._save_overload(sig, data)
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/numba/core/caching.py", line 662, in _save_overload
+    self._cache_file.save(key, data)
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/numba/core/caching.py", line 466, in save
+    overloads = self._load_index()
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/numba/core/caching.py", line 503, in _load_index
+    data = f.read()
+OSError: [Errno 116] Stale file handle
+Traceback (most recent call last):
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 1410, in <module>
+    main()
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 1359, in main
+    sample6dEvaluations(plotOnly = plotOnly,
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 331, in sample6dEvaluations
+    metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["GCSS", "LKIF", "PCMCI"], model= "Cascade",
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 202, in getMetricOfRealization
+    import PCMCI
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/PCMCI.py", line 6, in <module>
+    from tigramite.independence_tests.gpdc import GPDC
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/tigramite/independence_tests/gpdc.py", line 10, in <module>
+    import dcor
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/dcor/__init__.py", line 13, in <module>
+    from . import distances, homogeneity, independence
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/dcor/independence.py", line 14, in <module>
+    from ._dcor import u_distance_correlation_sqr
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/dcor/_dcor.py", line 36, in <module>
+    from ._fast_dcov_mergesort import _distance_covariance_sqr_terms_mergesort
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/dcor/_fast_dcov_mergesort.py", line 303, in <module>
+    _distance_covariance_sqr_mergesort_generic_impl_compiled = numba.njit(
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/numba/core/decorators.py", line 236, in wrapper
+    disp.compile(sig)
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/numba/core/dispatcher.py", line 964, in compile
+    self._cache.save_overload(sig, cres)
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/numba/core/caching.py", line 652, in save_overload
+    self._save_overload(sig, data)
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/numba/core/caching.py", line 662, in _save_overload
+    self._cache_file.save(key, data)
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/numba/core/caching.py", line 466, in save
+    overloads = self._load_index()
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/numba/core/caching.py", line 503, in _load_index
+    data = f.read()
+OSError: [Errno 116] Stale file handle
+slurmstepd-csm14c182: error: *** JOB 1538425 ON csm14c182 CANCELLED AT 2025-09-01T20:43:57 DUE TO TIME LIMIT ***
+slurmstepd-csm14c182: error: *** STEP 1538425.0 ON csm14c182 CANCELLED AT 2025-09-01T20:43:57 DUE TO TIME LIMIT ***
