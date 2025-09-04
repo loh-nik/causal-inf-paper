@@ -129,7 +129,7 @@ def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowL
 
 def saveMCCScatter(scores, values, title, filename, errors = [], colors = [], rowLabels=[], show = False, save= True, 
                 xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=200, xlabel ="", ylabel ="", yAxisCut = False,
-                  yAxisLinearLim = 1, quantileLower = [], quantileHigher = [], marker = 'o'):
+                  yAxisLinearLim = 1, quantileLower = [], quantileHigher = [], marker = 'o', legend_outside = False, ylim = None):
     """Draws a plot with markers for data points, optionally with error bars.
     \nScores are the MCC score values, in a 2D array with first dimension as the number of data lines drawn, \
     and second dimension equaling values dimension. 
@@ -151,6 +151,8 @@ def saveMCCScatter(scores, values, title, filename, errors = [], colors = [], ro
         ax.axhline(y=yAxisLinearLim, color='gray', linewidth=1, linestyle='-')
     else:
         plt.yscale(yscale)
+    if ylim:
+        plt.ylim(ylim)
     plt.xlabel(xlabel, fontsize=14)
     plt.ylabel(ylabel, fontsize=14)
     plt.xticks(fontsize=14)
@@ -189,7 +191,10 @@ def saveMCCScatter(scores, values, title, filename, errors = [], colors = [], ro
                 else:
                     plt.scatter(values, scores[i], label = str(rowLabels[i]), marker=marker, color=colors[i])
         if showLegend:
-            plt.legend(fontsize=14)
+            if legend_outside:
+                plt.legend(fontsize=14, bbox_to_anchor=(1.04, 1), loc="upper left")
+            else:
+                plt.legend(fontsize=14)
     if save:
         plt.savefig(filename, dpi=dpi)
     if show:

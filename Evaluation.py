@@ -640,7 +640,7 @@ def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns, 
         metricsReducedInfo = np.load("./data/Casc_forcing_reducedInfo_6d.npy")
         tipped = np.load("./data/Casc_forcing6d_tippedFraction.npy")
     if comm.Get_rank() == 0:
-        vis.saveMCCCurve(tipped, ceilings, "", "./diagrams/forcing6d_tippedFraction", xlabel="Forcing Strength", ylabel="Fraction of runs with tipping")
+        vis.saveMCCCurve(tipped, ceilings, "", "./diagrams/forcing6d_tippedFraction", xlabel="Forcing Strength", ylabel="", figsize = (8,1.5),dpi=300)
 
         fullInfoMCC = MCCFromFull(np.array(metricsNormal), axis=2)
         fullInfoMean, fullInfoStd = getMeanStdDev(fullInfoMCC, axis = 1)
@@ -678,9 +678,9 @@ def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns, 
         # vis.saveMCCCurve(fullInfoMean.T, ceilings, "", "./diagrams/forcing6d_TPR", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
         # vis.saveMCCCurve(noInfoMean.T, ceilings, "", "./diagrams/forcing6d_reducedInformation_TPR", noInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
         
-        vis.saveMCCScatter(gcssInfo.T, ceilings, "", "./diagrams/forcing6d_gcss_TPR", gcssStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR", "Hidden Confounder TPR", "Hidden Confounder FPR"],figsize=(8,2), dpi=300)
-        vis.saveMCCScatter(lkifInfo.T, ceilings, "", "./diagrams/forcing6d_lkif_TPR", lkifStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],figsize=(8,2), dpi=300)
-        vis.saveMCCScatter(pcmInfo.T, ceilings, "", "./diagrams/forcing6d_pcmci_TPR", pcmStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],figsize=(8,2), dpi=300)
+        vis.saveMCCScatter(gcssInfo.T, ceilings, "", "./diagrams/forcing6d_gcss_TPR", gcssStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR", "Hidden Confounder TPR", "Hidden Confounder FPR"],figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
+        vis.saveMCCScatter(lkifInfo.T, ceilings, "", "./diagrams/forcing6d_lkif_TPR", lkifStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
+        vis.saveMCCScatter(pcmInfo.T, ceilings, "", "./diagrams/forcing6d_pcmci_TPR", pcmStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
 
 
 def autoCorrEvaluations():
@@ -1366,7 +1366,7 @@ def main():
 
     comm = MPI.COMM_WORLD
 
-    plotOnly = False
+    plotOnly = True
     randomRuns = 100
     alpha = 0.05
     samples = 1000
@@ -1424,7 +1424,24 @@ def main():
     if comm.Get_rank() == 0: print("Non-Stationarity Evaluation finished")
 
 if __name__ == "__main__":
-    main()
+    comm = MPI.COMM_WORLD
+
+    plotOnly = False
+    randomRuns = 15
+    alpha = 0.02
+    samples = 1000
+    couplingStrength = 1
+    tauMax = [5,1,3]
+
+    sample6dEvaluations(plotOnly = plotOnly,
+    sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
+    alpha = alpha,
+    randomRuns = randomRuns,
+    tauMax = tauMax,
+    couplingStrength=couplingStrength, 
+    verbose=False,
+    comm=comm)
+    if comm.Get_rank() == 0: print("Sample Evaluation finished")
     # main()
     # nonStationaryStable(plotOnly = True,
     #     ceilings = [0, 0.1, 0.5, 0.8],
