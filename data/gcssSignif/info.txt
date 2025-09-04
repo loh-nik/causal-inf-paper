@@ -1,0 +1,4 @@
+Compared to the main data, we here use a significance test with dimension q*pbic for GCSS, which might make it better for delay detection, let's see.
+And tau max are (1,1,1)
+
+--> Not a good idea, GCSS really bad now.

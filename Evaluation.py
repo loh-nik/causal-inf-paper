@@ -271,7 +271,7 @@ def getMetricOfRealization(couplingMatrix, algorithms, model, samples, alpha, co
         print("Error: Invalid evaluation type found")
     return metrics.T
 
-def delay6dEvaluations(plotOnly, delaySizes, samples, alpha, randomRuns, couplStrength, verbose = True, comm = None):
+def delay6dEvaluations(plotOnly, delaySizes, samples, alpha, randomRuns, couplStrength, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
     if not comm:
         comm = MPI.COMM_WORLD
     if not plotOnly:
@@ -307,28 +307,38 @@ def delay6dEvaluations(plotOnly, delaySizes, samples, alpha, randomRuns, couplSt
             for result in gatheredVAR:
                 for j, i, value in result:
                     fullOutVAR[j, i] = value
-            np.save("./data/6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
-            np.save("./data/VAR_6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
+            np.save(data_dir + "/6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
+            np.save(data_dir + "/VAR_6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
     elif comm.Get_rank() == 0:
-        fullOut = np.load("./data/6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy")
-        fullOutVAR = np.load("./data/VAR_6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy")
+        fullOut = np.load(data_dir + "/6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy")
+        fullOutVAR = np.load(data_dir + "/VAR_6d_multiDelay_"+str(randomRuns)+"_runs_metrics.npy")
     if comm.Get_rank() == 0:
         scores = MCCFromFull(fullOut, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis = 1)
         # get central 80% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-        vis.saveMCCCurve(mean.T, delaySizes, "", "./diagrams/delays6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
-        vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
+        vis.saveMCCCurve(mean.T, delaySizes, "", diag_dir + "/delays6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
+        vis.saveMCCCurve(median.T, delaySizes, "", diag_dir + "/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
 
         # same for VAR systems
         scores = MCCFromFull(fullOutVAR, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis = 1)
         # get central 80% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-        vis.saveMCCCurve(mean.T, [int(d*10) for d in delaySizes], "", "./diagrams/delays6dVAR", stdDev.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
-        vis.saveMCCCurve(median.T, [int(d*10) for d in delaySizes], "", "./diagrams/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
+        vis.saveMCCCurve(mean.T, [int(d*10) for d in delaySizes], "", diag_dir + "/delays6dVAR", stdDev.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
+        vis.saveMCCCurve(median.T, [int(d*10) for d in delaySizes], "", diag_dir + "/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
 
-def sample6dEvaluations(plotOnly, sampleCounts, alpha, randomRuns, tauMax, couplingStrength, verbose = True, comm = None):
+        scores = tpr_fpr_FromFull(fullOut, axis=2)
+        mean, stdDev = getMeanStdDev(scores, axis=1)
+        print(mean.shape)
+
+        mean = np.append(mean[:,0,:], mean[:,1,:], axis=1)
+        stdDev = np.append(stdDev[:,0,:], stdDev[:,1,:], axis=1)
+        print(mean.shape)
+
+        vis.saveMCCCurve(mean.T, delaySizes, "", diag_dir + "/delays6dCascades_TPR", stdDev.T, show=False, save = True, rowLabels=["GCSS-TPR", "LKIF-TPR", "PCMCI-TPR", "GCSS-FPR", "LKIF-FPR", "PCMCI-FPR"], xlabel = "Delay (no unit)", ylabel ="Rate")
+
+def sample6dEvaluations(plotOnly, sampleCounts, alpha, randomRuns, tauMax, couplingStrength, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
     if not comm:
         comm = MPI.COMM_WORLD
     if not plotOnly:
@@ -365,27 +375,37 @@ def sample6dEvaluations(plotOnly, sampleCounts, alpha, randomRuns, tauMax, coupl
                 for j, i, value in result:
                     fullOutVAR[j, i] = value
         if comm.Get_rank() == 0:
-            np.save("./data/6d_Samples_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
-            np.save("./data/VAR_6d_Samples_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
+            np.save(data_dir + "/6d_Samples_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
+            np.save(data_dir + "/VAR_6d_Samples_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
     elif comm.Get_rank() == 0:
-        fullOut = np.load("./data/6d_Samples_"+str(randomRuns)+"_runs_metrics.npy")
-        fullOutVAR = np.load("./data/VAR_6d_Samples_"+str(randomRuns)+"_runs_metrics.npy")
+        fullOut = np.load(data_dir + "/6d_Samples_"+str(randomRuns)+"_runs_metrics.npy")
+        fullOutVAR = np.load(data_dir + "/VAR_6d_Samples_"+str(randomRuns)+"_runs_metrics.npy")
     if comm.Get_rank() == 0:
         scores = MCCFromFull(fullOut, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis = 1)
         # get central 80% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-        vis.saveMCCCurve(mean.T, sampleCounts, "", "./diagrams/samples6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC", xscale ="log")
-        vis.saveMCCCurve(median.T, sampleCounts, "", "./diagrams/samples6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC",xscale ="log")
+        vis.saveMCCCurve(mean.T, sampleCounts, "", diag_dir + "/samples6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC", xscale ="log")
+        vis.saveMCCCurve(median.T, sampleCounts, "", diag_dir + "/samples6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC",xscale ="log")
         
         scores = MCCFromFull(fullOutVAR, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis = 1)
         # get central 80% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-        vis.saveMCCCurve(mean.T, sampleCounts, "", "./diagrams/samples6dVAR", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC", xscale ="log")
-        vis.saveMCCCurve(median.T, sampleCounts, "", "./diagrams/samples6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC")
+        vis.saveMCCCurve(mean.T, sampleCounts, "", diag_dir + "/samples6dVAR", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC", xscale ="log")
+        vis.saveMCCCurve(median.T, sampleCounts, "", diag_dir + "/samples6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC", xscale ="log")
+        
+        scores = tpr_fpr_FromFull(fullOut, axis=2)
+        mean, stdDev = getMeanStdDev(scores, axis=1)
+        print(mean.shape)
 
-def couplStrength6dEvaluations(plotOnly, couplStrengths, samples, alpha, randomRuns, tauMax, verbose = True, comm = None):
+        mean = np.append(mean[:,0,:], mean[:,1,:], axis=1)
+        stdDev = np.append(stdDev[:,0,:], stdDev[:,1,:], axis=1)
+        print(mean.shape)
+
+        vis.saveMCCCurve(mean.T, sampleCounts, "", diag_dir + "/samples6dCascades_TPR", stdDev.T, show=False, save = True, rowLabels=["GCSS-TPR", "LKIF-TPR", "PCMCI-TPR", "GCSS-FPR", "LKIF-FPR", "PCMCI-FPR"], xlabel = "Delay (no unit)", ylabel ="Rate", xscale ="log")
+
+def couplStrength6dEvaluations(plotOnly, couplStrengths, samples, alpha, randomRuns, tauMax, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
     if not comm:
         comm = MPI.COMM_WORLD
     if not plotOnly:
@@ -419,25 +439,36 @@ def couplStrength6dEvaluations(plotOnly, couplStrengths, samples, alpha, randomR
                 for j, i, value in result:
                     fullOutVAR[j, i] = value
         if comm.Get_rank() == 0:
-            np.save("./data/6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
-            np.save("./data/VAR_6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
+            np.save(data_dir + "/6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
+            np.save(data_dir + "/VAR_6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
     elif comm.Get_rank() == 0: 
-        fullOut = np.load("./data/6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy")
-        fullOutVAR = np.load("./data/VAR_6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy")
+        fullOut = np.load(data_dir + "/6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy")
+        fullOutVAR = np.load(data_dir + "/VAR_6d_CouplStren_"+str(randomRuns)+"_runs_metrics.npy")
     if comm.Get_rank() == 0:
         scores = MCCFromFull(fullOut, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis = 1)
         # get central 90% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-        vis.saveMCCCurve(mean.T, couplStrengths*10, "", "./diagrams/coupl6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
-        vis.saveMCCCurve(median.T, couplStrengths*10, "", "./diagrams/coupl6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
+        vis.saveMCCCurve(mean.T, couplStrengths*10, "", diag_dir + "/coupl6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
+        vis.saveMCCCurve(median.T, couplStrengths*10, "", diag_dir + "/coupl6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
 
         scores = MCCFromFull(fullOutVAR, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis = 1)
         # get central 90% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-        vis.saveMCCCurve(mean.T, couplStrengths, "", "./diagrams/coupl6dVAR", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
-        vis.saveMCCCurve(median.T, couplStrengths, "", "./diagrams/coupl6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
+        vis.saveMCCCurve(mean.T, couplStrengths, "", diag_dir + "/coupl6dVAR", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
+        vis.saveMCCCurve(median.T, couplStrengths, "", diag_dir + "/coupl6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
+
+        scores = tpr_fpr_FromFull(fullOut, axis=2)
+        mean, stdDev = getMeanStdDev(scores, axis=1)
+        print(mean.shape)
+
+        mean = np.append(mean[:,0,:], mean[:,1,:], axis=1)
+        stdDev = np.append(stdDev[:,0,:], stdDev[:,1,:], axis=1)
+        print(mean.shape)
+
+        vis.saveMCCCurve(mean.T, couplStrengths, "", diag_dir + "/coupl6dCascades_TPR", stdDev.T, show=False, save = True, rowLabels=["GCSS-TPR", "LKIF-TPR", "PCMCI-TPR", "GCSS-FPR", "LKIF-FPR", "PCMCI-FPR"], xlabel = "Delay (no unit)", ylabel ="Rate")
+
 
 def scale_lightness(rgb, scale_l):
     import colorsys
@@ -446,7 +477,7 @@ def scale_lightness(rgb, scale_l):
     # manipulate h, l, s values and return as rgb
     return colorsys.hls_to_rgb(h, min(1, l * scale_l), s = s)
 
-def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingStrength, verbose = True, comm = None, rank = 0):
+def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingStrength, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
     import matplotlib as mpl
     if not comm:
         comm = MPI.COMM_WORLD
@@ -486,11 +517,11 @@ def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingSt
                 for j, i, value in result:
                     fullOutVAR[j, i] = value
         if not comm or comm.Get_rank() == 0:
-            np.save("./data/6d_System_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
-            np.save("./data/VAR_6d_System_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
+            np.save(data_dir + "/6d_System_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
+            np.save(data_dir + "/VAR_6d_System_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
     elif not comm or comm.Get_rank() == 0:
-        fullOut = np.load("./data/6d_System_"+str(randomRuns)+"_runs_metrics.npy")
-        fullOutVAR = np.load("./data/VAR_6d_System_"+str(randomRuns)+"_runs_metrics.npy")
+        fullOut = np.load(data_dir + "/6d_System_"+str(randomRuns)+"_runs_metrics.npy")
+        fullOutVAR = np.load(data_dir + "/VAR_6d_System_"+str(randomRuns)+"_runs_metrics.npy")
     if not comm or comm.Get_rank() == 0:
         scores = MCCFromFull(fullOut, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis = 1)
@@ -501,16 +532,33 @@ def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingSt
         # get central 90% of data
         #median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
 
-        vis.saveMCCCurve(final[:,::3].T, [3,6,12], "", "./diagrams/SystemCascGCSS", [], show=False, save = True, rowLabels=["GCSS-LD", "GCSS-HD"], 
+        vis.saveMCCCurve(final[:,::3].T, [3,6,12], "", diag_dir + "/SystemCascGCSS", [], show=False, save = True, rowLabels=["GCSS-LD", "GCSS-HD"], 
                         xlabel = "Variable Count", ylabel ="MCC")
-        vis.saveMCCCurve(final[:,1::3].T, [3,6,12], "", "./diagrams/SystemCascLKIF", [], show=False, save = True, rowLabels=["LKIF-LD", "LKIF-HD"], 
+        vis.saveMCCCurve(final[:,1::3].T, [3,6,12], "", diag_dir + "/SystemCascLKIF", [], show=False, save = True, rowLabels=["LKIF-LD", "LKIF-HD"], 
                         xlabel = "Variable Count", ylabel ="MCC")
-        vis.saveMCCCurve(final[:,2::3].T, [3,6,12], "", "./diagrams/SystemCascPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
+        vis.saveMCCCurve(final[:,2::3].T, [3,6,12], "", diag_dir + "/SystemCascPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
                         xlabel = "Variable Count", ylabel ="MCC")
         
-        vis.saveMCCCurve(final.T, [3,6,12], "", "./diagrams/SystemCasc", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"], 
+        vis.saveMCCCurve(final.T, [3,6,12], "", diag_dir + "/SystemCasc", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"], 
                         colors=[defaultCols[0], defaultCols[1], defaultCols[2], scale_lightness(defaultCols[0], 1.6), scale_lightness(defaultCols[1], 1.6), scale_lightness(defaultCols[2], 1.6)], xlabel = "Variable Count", ylabel ="MCC")
-        #vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
+        #vis.saveMCCCurve(median.T, delaySizes, "", diag_dir + "/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
+
+        scores = tpr_fpr_FromFull(fullOut, axis=2)
+        mean, stdDev = getMeanStdDev(scores, axis=1)
+        lowDense = mean[:3]
+        highDense = mean[3:]
+        mean = np.append(lowDense, highDense, axis=2)
+
+        mean = np.append(mean[:,0,:], mean[:,1,:], axis=1)
+        #stdDev = np.append(stdDev[:,0,:], stdDev[:,1,:], axis=1)
+        print(mean.shape)
+
+        vis.saveMCCCurve(mean[:,::3].T, [3,6,12], "", diag_dir + "/SystemCascGCSS-TPR", [], show=False, save = True, rowLabels=["GCSS-LD-TPR", "GCSS-HD-TPR","GCSS-LD-FPR", "GCSS-HD-FPR"], 
+                        xlabel = "Variable Count", ylabel ="MCC")
+        vis.saveMCCCurve(mean[:,1::3].T, [3,6,12], "", diag_dir + "/SystemCascLKIF-TPR", [], show=False, save = True, rowLabels=["LKIF-LD-TPR", "LKIF-HD-TPR","LKIF-LD-FPR", "LKIF-HD-FPR"], 
+                        xlabel = "Variable Count", ylabel ="MCC")
+        vis.saveMCCCurve(mean[:,2::3].T, [3,6,12], "", diag_dir + "/SystemCascPCMCI-TPR", [], show=False, save = True, rowLabels=["PCMCI-LD-TPR", "PCMCI-HD-TPR","PCMCI-LD-FPR", "PCMCI-HD-FPR"], 
+                        xlabel = "Variable Count", ylabel ="MCC")
 
         scores = MCCFromFull(fullOutVAR, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis = 1)
@@ -521,15 +569,15 @@ def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingSt
         #median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
 
         # decide how to display the results
-        vis.saveMCCCurve(final.T, [3,6,12], "", "./diagrams/SystemVAR", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"],
+        vis.saveMCCCurve(final.T, [3,6,12], "", diag_dir + "/SystemVAR", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"],
                         colors=[defaultCols[0], defaultCols[1], defaultCols[2], scale_lightness(defaultCols[0], 1.6), scale_lightness(defaultCols[1], 1.6), scale_lightness(defaultCols[2], 1.6)], xlabel = "Variable Count", ylabel ="MCC")
-        vis.saveMCCCurve(final[:,::3].T, [3,6,12], "", "./diagrams/SystemVARGCSS", [], show=False, save = True, rowLabels=["GCSS-LD", "GCSS-HD"], 
+        vis.saveMCCCurve(final[:,::3].T, [3,6,12], "", diag_dir + "/SystemVARGCSS", [], show=False, save = True, rowLabels=["GCSS-LD", "GCSS-HD"], 
                         xlabel = "Variable Count", ylabel ="MCC")
-        vis.saveMCCCurve(final[:,1::3].T, [3,6,12], "", "./diagrams/SystemVARLKIF", [], show=False, save = True, rowLabels=["LKIF-LD", "LKIF-HD"], 
+        vis.saveMCCCurve(final[:,1::3].T, [3,6,12], "", diag_dir + "/SystemVARLKIF", [], show=False, save = True, rowLabels=["LKIF-LD", "LKIF-HD"], 
                         xlabel = "Variable Count", ylabel ="MCC")
-        vis.saveMCCCurve(final[:,2::3].T, [3,6,12], "", "./diagrams/SystemVARPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
+        vis.saveMCCCurve(final[:,2::3].T, [3,6,12], "", diag_dir + "/SystemVARPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
                         xlabel = "Variable Count", ylabel ="MCC")
-        #vis.saveMCCCurve(median.T, delaySizes, "", "./diagrams/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
+        #vis.saveMCCCurve(median.T, delaySizes, "", diag_dir + "/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
         
 def nonStationaryTipping():
     loadData = False
@@ -588,7 +636,7 @@ def nonStationaryTipping():
     print(reducedInfoMean)
     print(reducedInfoStd)
 
-def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns, verbose = True, comm = None, rank = 0):
+def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
     """We increase forcing linearly over the course of 50 units of time (500 samples), up to some ceiling, then compare performances across ceiling heights.
     Experiment only conducted for nonlinear system, as there's no tipping in the VAR system"""
     if not comm:
@@ -632,15 +680,15 @@ def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns, 
                 for i,j,value in result:
                     tipped[i] += value
             tipped = tipped / randomRuns
-            np.save("./data/Casc_forcing6d.npy", metricsNormal)
-            np.save("./data/Casc_forcing_reducedInfo_6d.npy", metricsReducedInfo)
-            np.save("./data/Casc_forcing6d_tippedFraction.npy", tipped)
+            np.save(data_dir + "/Casc_forcing6d.npy", metricsNormal)
+            np.save(data_dir + "/Casc_forcing_reducedInfo_6d.npy", metricsReducedInfo)
+            np.save(data_dir + "/Casc_forcing6d_tippedFraction.npy", tipped)
     elif comm.Get_rank() == 0:
-        metricsNormal = np.load("./data/Casc_forcing6d.npy")
-        metricsReducedInfo = np.load("./data/Casc_forcing_reducedInfo_6d.npy")
-        tipped = np.load("./data/Casc_forcing6d_tippedFraction.npy")
+        metricsNormal = np.load(data_dir + "/Casc_forcing6d.npy")
+        metricsReducedInfo = np.load(data_dir + "/Casc_forcing_reducedInfo_6d.npy")
+        tipped = np.load(data_dir + "/Casc_forcing6d_tippedFraction.npy")
     if comm.Get_rank() == 0:
-        vis.saveMCCCurve(tipped, ceilings, "", "./diagrams/forcing6d_tippedFraction", xlabel="Forcing Strength", ylabel="", figsize = (8,1.5),dpi=300)
+        vis.saveMCCCurve(tipped, ceilings, "", diag_dir + "/forcing6d_tippedFraction", xlabel="Forcing Strength", ylabel="", figsize = (8,1.5),dpi=300)
 
         fullInfoMCC = MCCFromFull(np.array(metricsNormal), axis=2)
         fullInfoMean, fullInfoStd = getMeanStdDev(fullInfoMCC, axis = 1)
@@ -654,12 +702,12 @@ def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns, 
         lkifStd = np.stack((fullInfoStd[:,1], noInfoStd[:,1]), axis=1)
         pcmStd = np.stack((fullInfoStd[:,2], noInfoStd[:,2]), axis=1)
         
-        vis.saveMCCCurve(fullInfoMean.T, ceilings, "", "./diagrams/forcing6d", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
-        vis.saveMCCCurve(noInfoMean.T, ceilings, "", "./diagrams/forcing6d_reducedInformation", noInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
+        vis.saveMCCCurve(fullInfoMean.T, ceilings, "", diag_dir + "/forcing6d", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
+        vis.saveMCCCurve(noInfoMean.T, ceilings, "", diag_dir + "/forcing6d_reducedInformation", noInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
         
-        vis.saveMCCScatter(gcssInfo.T, ceilings, "", "./diagrams/forcing6d_gcss", gcssStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
-        vis.saveMCCScatter(lkifInfo.T, ceilings, "", "./diagrams/forcing6d_lkif", lkifStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
-        vis.saveMCCScatter(pcmInfo.T, ceilings, "", "./diagrams/forcing6d_pcmci", pcmStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
+        vis.saveMCCScatter(gcssInfo.T, ceilings, "", diag_dir + "/forcing6d_gcss", gcssStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
+        vis.saveMCCScatter(lkifInfo.T, ceilings, "", diag_dir + "/forcing6d_lkif", lkifStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
+        vis.saveMCCScatter(pcmInfo.T, ceilings, "", diag_dir + "/forcing6d_pcmci", pcmStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
         
         fullInfoMCC = tpr_fpr_FromFull(np.array(metricsNormal), axis=2)
         fullInfoMean, fullInfoStd = getMeanStdDev(fullInfoMCC, axis = 1)
@@ -675,12 +723,12 @@ def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns, 
 
         print(gcssInfo.shape)
         
-        # vis.saveMCCCurve(fullInfoMean.T, ceilings, "", "./diagrams/forcing6d_TPR", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
-        # vis.saveMCCCurve(noInfoMean.T, ceilings, "", "./diagrams/forcing6d_reducedInformation_TPR", noInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
+        # vis.saveMCCCurve(fullInfoMean.T, ceilings, "", diag_dir + "/forcing6d_TPR", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
+        # vis.saveMCCCurve(noInfoMean.T, ceilings, "", diag_dir + "/forcing6d_reducedInformation_TPR", noInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
         
-        vis.saveMCCScatter(gcssInfo.T, ceilings, "", "./diagrams/forcing6d_gcss_TPR", gcssStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR", "Hidden Confounder TPR", "Hidden Confounder FPR"],figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
-        vis.saveMCCScatter(lkifInfo.T, ceilings, "", "./diagrams/forcing6d_lkif_TPR", lkifStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
-        vis.saveMCCScatter(pcmInfo.T, ceilings, "", "./diagrams/forcing6d_pcmci_TPR", pcmStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
+        vis.saveMCCScatter(gcssInfo.T, ceilings, "", diag_dir + "/forcing6d_gcss_TPR", gcssStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR", "Hidden Confounder TPR", "Hidden Confounder FPR"],figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
+        vis.saveMCCScatter(lkifInfo.T, ceilings, "", diag_dir + "/forcing6d_lkif_TPR", lkifStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
+        vis.saveMCCScatter(pcmInfo.T, ceilings, "", diag_dir + "/forcing6d_pcmci_TPR", pcmStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
 
 
 def autoCorrEvaluations():
@@ -1366,12 +1414,27 @@ def main():
 
     comm = MPI.COMM_WORLD
 
+    data_dir = "./data/tauMax_1"
+    diag_dir = "./diagrams/tauMax_1"
+    
     plotOnly = True
     randomRuns = 100
     alpha = 0.05
     samples = 1000
     couplingStrength = 1
-    tauMax = [5,1,5]
+    tauMax = [1,1,1]
+
+    delay6dEvaluations(plotOnly = plotOnly,
+    delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0],
+    samples = samples,
+    alpha = alpha,
+    randomRuns = randomRuns,
+    couplStrength=couplingStrength, 
+    verbose=False,
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
+    if comm.Get_rank() == 0: print("Delay Evaluation finished")
 
     sample6dEvaluations(plotOnly = plotOnly,
     sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
@@ -1380,7 +1443,9 @@ def main():
     tauMax = tauMax,
     couplingStrength=couplingStrength, 
     verbose=False,
-    comm=comm)
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("Sample Evaluation finished")
 
     couplStrength6dEvaluations(plotOnly = plotOnly,
@@ -1390,19 +1455,12 @@ def main():
     randomRuns = randomRuns,
     tauMax = tauMax, 
     verbose=False,
-    comm=comm)
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("Coupling Strength Evaluation finished")
 
-    delay6dEvaluations(plotOnly = plotOnly,
-    delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0],
-    samples = samples,
-    alpha = alpha,
-    randomRuns = randomRuns,
-    couplStrength=couplingStrength, 
-    verbose=False,
-    comm=comm)
-    if comm.Get_rank() == 0: print("Delay Evaluation finished")
-
+    
     system6dEvaluations(plotOnly = plotOnly,
     alpha = alpha,
     samples = samples,
@@ -1410,7 +1468,9 @@ def main():
     tauMax = tauMax,
     couplingStrength=couplingStrength, 
     verbose=False,
-    comm=comm)
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("System Size/Density Evaluation finished")
 
     nonStationaryStable(plotOnly = plotOnly,
@@ -1420,29 +1480,16 @@ def main():
     tauMax = tauMax,
     randomRuns = randomRuns, 
     verbose=False,
-    comm=comm)
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("Non-Stationarity Evaluation finished")
 
+    GCSS.close_octave()
+
 if __name__ == "__main__":
-    comm = MPI.COMM_WORLD
 
-    plotOnly = False
-    randomRuns = 15
-    alpha = 0.02
-    samples = 1000
-    couplingStrength = 1
-    tauMax = [5,1,3]
-
-    sample6dEvaluations(plotOnly = plotOnly,
-    sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    alpha = alpha,
-    randomRuns = randomRuns,
-    tauMax = tauMax,
-    couplingStrength=couplingStrength, 
-    verbose=False,
-    comm=comm)
-    if comm.Get_rank() == 0: print("Sample Evaluation finished")
-    # main()
+    main()
     # nonStationaryStable(plotOnly = True,
     #     ceilings = [0, 0.1, 0.5, 0.8],
     #     alpha = 0.05,

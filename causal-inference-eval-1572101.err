@@ -1,0 +1,27 @@
+#######################################################################################
+### conda added to PATH. Use 'source activate' rather than 'conda activate'.        ###
+### Do not run 'conda init' if prompted.                                            ###
+### 'conda init' will modify your shell outside of the `module` environment         ###
+#######################################################################################
+Exception ignored in atexit callback: <bound method OctaveEngine._cleanup of <octave_kernel.kernel.OctaveEngine object at 0x7f7ff88ac580>>
+Traceback (most recent call last):
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/octave_kernel/kernel.py", line 500, in _cleanup
+Exception ignored in atexit callback: <bound method OctaveEngine._cleanup of <octave_kernel.kernel.OctaveEngine object at 0x7fc44e0b0550>>
+Traceback (most recent call last):
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/octave_kernel/kernel.py", line 500, in _cleanup
+Exception ignored in atexit callback: <bound method OctaveEngine._cleanup of <octave_kernel.kernel.OctaveEngine object at 0x7fd738fdc550>>
+Traceback (most recent call last):
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/octave_kernel/kernel.py", line 500, in _cleanup
+Exception ignored in atexit callback: <bound method OctaveEngine._cleanup of <octave_kernel.kernel.OctaveEngine object at 0x7f1b96d40520>>
+Traceback (most recent call last):
+  File "/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/octave_kernel/kernel.py", line 500, in _cleanup
+    os.remove(workspace)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/niklaslo/causal_inf/Causal-Inference-Pipeline/octave-workspace'
+    os.remove(workspace)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/niklaslo/causal_inf/Causal-Inference-Pipeline/octave-workspace'
+    os.remove(workspace)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/niklaslo/causal_inf/Causal-Inference-Pipeline/octave-workspace'
+    os.remove(workspace)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/niklaslo/causal_inf/Causal-Inference-Pipeline/octave-workspace'
+slurmstepd-csm14c188: error: *** JOB 1572101 ON csm14c188 CANCELLED AT 2025-09-04T14:40:59 DUE TO TIME LIMIT ***
+slurmstepd-csm14c188: error: *** STEP 1572101.0 ON csm14c188 CANCELLED AT 2025-09-04T14:40:59 DUE TO TIME LIMIT ***

@@ -1,7 +1,7 @@
 import numpy as np
 import oct2py
 from oct2py import octave
-oc = oct2py.Oct2Py()
+#oc = oct2py.Oct2Py()
 octave.addpath("./StateSpaceGC")
 
 def significanceMatrix(G, model_ord, samples, alpha):
@@ -42,6 +42,13 @@ def gcss(X, alpha, tau_max, returnAll = False):
     if returnAll:
         return np.array(G)
     return np.array(G)*signif
+
+def close_octave():
+    if octave:
+        try:
+            octave.exit()
+        except Exception as e:
+            print(f"Failed to close Oct2Py: {e}")
 
 # from matplotlib import pyplot as plt
 

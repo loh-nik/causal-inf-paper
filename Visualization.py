@@ -67,6 +67,10 @@ def saveROCCurve(TPR, FPR, values, title, filename, colors = [], rowLabels = [],
 def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowLabels=[], show = False, save= True, 
                 xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=200, xlabel ="", ylabel ="", yAxisCut = False,
                   yAxisLinearLim = 1, quantileLower = [], quantileHigher = []):
+    """Draws a plot with lines for data rows, optionally with error bars.
+    \nScores are the MCC score values, in a 2D array with first dimension as the number of data lines drawn, \
+    and second dimension equaling values dimension. 
+    \nValues are drawn on the x-axis, e.g. number of samples"""
     fig = plt.figure(figsize=figsize, layout ='constrained')
     if scores.shape[0] != len(values) and scores.shape[1] != len(values):
         print("Value list doesn't match any dimension of data")

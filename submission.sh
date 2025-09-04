@@ -3,11 +3,11 @@
 #SBATCH --qos=short
 #SBATCH --job-name=causal-inference-eval
 #SBATCH --account=dominoes
-#SBATCH --ntasks=73
+#SBATCH --ntasks=100
 #SBATCH --cpus-per-task=1
 #SBATCH --output=%x-%j.out
 #SBATCH --error=%x-%j.err
-#SBATCH --time=06:00:00
+#SBATCH --time=01:00:00
 
 module load intel/oneAPI
 module load anaconda
@@ -28,4 +28,4 @@ python -c "import mpi4py; print(mpi4py.__version__)"
 
 echo "-------------------------------------------------------------"
 echo "Full Evaluation run"
-mpirun -n 73 python Evaluation.py
+mpirun -n 100 python Evaluation.py

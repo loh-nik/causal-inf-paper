@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# sometimes i zip diagrams to transfer them to my local machine for easier paper writing
+*.zip
+
 # Distribution / packaging
 .Python
 build/
