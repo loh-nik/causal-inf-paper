@@ -131,6 +131,85 @@ def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowL
     else:
         plt.close()
 
+def saveMCCCurveSubplot(subplotRows, subplotCols, scores, values, title, filename, errors = [], colors = [], rowLabels=[], show = False, save= True, 
+                xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=200, xlabel ="", ylabel ="", yAxisCut = False,
+                  yAxisLinearLim = 1, quantileLower = [], quantileHigher = [], share_x_axis = True):
+    """Draws subplots with lines for data rows, optionally with error bars.
+    \nScores are the MCC score values, in a 3D array with first dimension as the number of subplots, second dim as data lines drawn, \
+    and third dimension equaling values dimension. 
+    \nValues are drawn on the x-axis, e.g. number of samples"""
+    fig, axes = plt.subplots(subplotRows, subplotCols, figsize=figsize, layout ='constrained')
+    if len(values) not in scores.shape:
+        print("Value list doesn't match any dimension of data")
+        exit()
+    if len(errors) > 0 and errors.shape != scores.shape:
+        print("Errors shape doesn't match scores shape")
+        exit()
+    #plt.suptitle(title, fontsize=15)
+    for i, scoreTuple in enumerate(scores):
+        ax = axes[i]
+        if len(errors) > 0:
+            errorTuple = errors[i]
+        if len(colors) > 0:
+            colorTuple = colors[i]
+        if len(rowLabels) > 0:
+            rowLabelTuple = rowLabels[i]
+        ax.set_xscale(xscale)
+        if yAxisCut:
+            ax.set_yscale("symlog", linthresh = yAxisLinearLim)
+            ax.set_yticks(np.append(np.arange(0,1,0.1), range(1,8)), labels=["0","","","","","0.5","","","","","1","","","","5","",""])
+            ax.grid(True, axis="y", color='lightgray', linestyle='-', linewidth=0.5)
+            ax.axhline(y=yAxisLinearLim, color='gray', linewidth=1, linestyle='-')
+        else:
+            ax.set_yscale(yscale)
+        if share_x_axis and i < len(axes) - 1:
+            ax.set_xlabel('')
+            ax.tick_params(labelbottom=False)
+        else:
+            ax.set_xlabel(xlabel, fontsize=14)
+        ax.set_ylabel(ylabel, fontsize=14)
+        ax.tick_params(axis='x', labelsize=14)
+        ax.tick_params(axis='y', labelsize=14)
+        if len(scoreTuple.shape) == 1:
+            ax.plot(values, scoreTuple)
+            if len(errorTuple) > 0:
+                ax.fill_between(values, scoreTuple + errorTuple, scoreTuple - errorTuple, alpha = 0.2)
+            elif len(quantileLower) > 0:
+                ax.fill_between(values, quantileLower, quantileHigher, alpha = 0.2)
+        else:
+            showLegend = True
+            if len(rowLabels) == 0:
+                rowLabelTuple = np.zeros(scoreTuple.shape[0])
+                showLegend = False
+            elif len(rowLabelTuple) != scoreTuple.shape[0]:
+                print("Error: Not enough labels provided for Score data")
+                exit()
+            if len(colors) > 0 and len(colorTuple) != scoreTuple.shape[0]:
+                print("Error: Not enough colors provided for Score data")
+                exit()
+            for i in range(scoreTuple.shape[0]):
+                if len(colors) == 0:
+                    ax.plot(values, scoreTuple[i], label = str(rowLabelTuple[i]))
+                    if len(errors) > 0:
+                        ax.fill_between(values, scoreTuple[i] + errorTuple[i], scoreTuple[i] - errorTuple[i], alpha = 0.2)
+                    elif len(quantileLower) > 0:
+                        ax.fill_between(values, quantileLower[i], quantileHigher[i], alpha = 0.2)
+                else:
+                    ax.plot(values, scoreTuple[i], label = str(rowLabelTuple[i]), color=colorTuple[i])
+                    if len(errors) > 0:
+                        ax.fill_between(values, scoreTuple[i] + errorTuple[i], scoreTuple[i] - errorTuple[i], alpha = 0.2, color= colorTuple[i])
+                    elif len(quantileLower) > 0:
+                        ax.fill_between(values, quantileLower[i], quantileHigher[i], alpha = 0.2, color= colorTuple[i])
+            if showLegend:
+                ax.legend(fontsize=14)
+    # plt.subplots_adjust(hspace=0)
+    if save:
+        plt.savefig(filename, dpi=dpi)
+    if show:
+        plt.show()
+    else:
+        plt.close()
+
 def saveMCCScatter(scores, values, title, filename, errors = [], colors = [], rowLabels=[], show = False, save= True, 
                 xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=200, xlabel ="", ylabel ="", yAxisCut = False,
                   yAxisLinearLim = 1, quantileLower = [], quantileHigher = [], marker = 'o', legend_outside = False, ylim = None):

@@ -33,6 +33,8 @@ def gcss(X, alpha, tau_max, returnAll = False):
     q, N = X.shape
     _, pbic = octave.ar_IC(X, tau_max, False, nout=2, verbose=False)
     pbic = max(pbic, tau_max)
+    if pbic != tau_max:
+        print("GCSS pbic order greater than given tau_max")
     # fix model order to num_variables * tau_max 
     m,A,C,K,V = octave.s4sid_CCA(X, pbic, int(pbic*q), nout=5,verbose=False)
     G = octave.iss_PWGC(A,C,K,V, nout=1,verbose=False)

@@ -317,16 +317,16 @@ def delay6dEvaluations(plotOnly, delaySizes, samples, alpha, randomRuns, couplSt
         mean, stdDev = getMeanStdDev(scores, axis = 1)
         # get central 80% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-        vis.saveMCCCurve(mean.T, delaySizes, "", diag_dir + "/delays6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
-        vis.saveMCCCurve(median.T, delaySizes, "", diag_dir + "/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
+        vis.saveMCCCurve(mean.T, delaySizes, "", diag_dir + "/delays6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="Matthews Correlation Coefficient")
+        vis.saveMCCCurve(median.T, delaySizes, "", diag_dir + "/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="Matthews Correlation Coefficient")
 
         # same for VAR systems
         scores = MCCFromFull(fullOutVAR, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis = 1)
         # get central 80% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-        vis.saveMCCCurve(mean.T, [int(d*10) for d in delaySizes], "", diag_dir + "/delays6dVAR", stdDev.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
-        vis.saveMCCCurve(median.T, [int(d*10) for d in delaySizes], "", diag_dir + "/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
+        vis.saveMCCCurve(mean.T, [int(d*10) for d in delaySizes], "", diag_dir + "/delays6dVAR", stdDev.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="Matthews Correlation Coefficient")
+        vis.saveMCCCurve(median.T, [int(d*10) for d in delaySizes], "", diag_dir + "/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="Matthews Correlation Coefficient")
 
         scores = tpr_fpr_FromFull(fullOut, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis=1)
@@ -385,15 +385,15 @@ def sample6dEvaluations(plotOnly, sampleCounts, alpha, randomRuns, tauMax, coupl
         mean, stdDev = getMeanStdDev(scores, axis = 1)
         # get central 80% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-        vis.saveMCCCurve(mean.T, sampleCounts, "", diag_dir + "/samples6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC", xscale ="log")
-        vis.saveMCCCurve(median.T, sampleCounts, "", diag_dir + "/samples6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC",xscale ="log")
+        vis.saveMCCCurve(mean.T, sampleCounts, "", diag_dir + "/samples6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="Matthews Correlation Coefficient", xscale ="log")
+        vis.saveMCCCurve(median.T, sampleCounts, "", diag_dir + "/samples6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="Matthews Correlation Coefficient",xscale ="log")
         
         scores = MCCFromFull(fullOutVAR, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis = 1)
         # get central 80% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-        vis.saveMCCCurve(mean.T, sampleCounts, "", diag_dir + "/samples6dVAR", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC", xscale ="log")
-        vis.saveMCCCurve(median.T, sampleCounts, "", diag_dir + "/samples6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="MCC", xscale ="log")
+        vis.saveMCCCurve(mean.T, sampleCounts, "", diag_dir + "/samples6dVAR", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="Matthews Correlation Coefficient", xscale ="log")
+        vis.saveMCCCurve(median.T, sampleCounts, "", diag_dir + "/samples6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="Matthews Correlation Coefficient", xscale ="log")
         
         scores = tpr_fpr_FromFull(fullOut, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis=1)
@@ -449,15 +449,15 @@ def couplStrength6dEvaluations(plotOnly, couplStrengths, samples, alpha, randomR
         mean, stdDev = getMeanStdDev(scores, axis = 1)
         # get central 90% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-        vis.saveMCCCurve(mean.T, couplStrengths*10, "", diag_dir + "/coupl6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
-        vis.saveMCCCurve(median.T, couplStrengths*10, "", diag_dir + "/coupl6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
+        vis.saveMCCCurve(mean.T, couplStrengths*10, "", diag_dir + "/coupl6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="Matthews Correlation Coefficient")
+        vis.saveMCCCurve(median.T, couplStrengths*10, "", diag_dir + "/coupl6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="Matthews Correlation Coefficient")
 
         scores = MCCFromFull(fullOutVAR, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis = 1)
         # get central 90% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-        vis.saveMCCCurve(mean.T, couplStrengths, "", diag_dir + "/coupl6dVAR", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
-        vis.saveMCCCurve(median.T, couplStrengths, "", diag_dir + "/coupl6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="MCC")
+        vis.saveMCCCurve(mean.T, couplStrengths, "", diag_dir + "/coupl6dVAR", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="Matthews Correlation Coefficient")
+        vis.saveMCCCurve(median.T, couplStrengths, "", diag_dir + "/coupl6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="Matthews Correlation Coefficient")
 
         scores = tpr_fpr_FromFull(fullOut, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis=1)
@@ -532,16 +532,20 @@ def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingSt
         # get central 90% of data
         #median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
 
-        vis.saveMCCCurve(final[:,::3].T, [3,6,12], "", diag_dir + "/SystemCascGCSS", [], show=False, save = True, rowLabels=["GCSS-LD", "GCSS-HD"], 
-                        xlabel = "Variable Count", ylabel ="MCC")
+        vis.saveMCCCurve(final[:,::3].T, [3,6,12], "", diag_dir + "/SystemCascGCSS", [], show=False, save = True, rowLabels=["Low Density", "High Density"], 
+                        xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
         vis.saveMCCCurve(final[:,1::3].T, [3,6,12], "", diag_dir + "/SystemCascLKIF", [], show=False, save = True, rowLabels=["LKIF-LD", "LKIF-HD"], 
-                        xlabel = "Variable Count", ylabel ="MCC")
+                        xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
         vis.saveMCCCurve(final[:,2::3].T, [3,6,12], "", diag_dir + "/SystemCascPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
-                        xlabel = "Variable Count", ylabel ="MCC")
+                        xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
+        
+        vis.saveMCCCurveSubplot(3, 1, np.array([final[:,::3].T, final[:,1::3].T, final[:,2::3].T]), [3,6,12], "", diag_dir + "/SystemCascSubplots",
+                                 [], show=False, save = True, rowLabels=[], figsize=(4,10),
+                        xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
         
         vis.saveMCCCurve(final.T, [3,6,12], "", diag_dir + "/SystemCasc", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"], 
-                        colors=[defaultCols[0], defaultCols[1], defaultCols[2], scale_lightness(defaultCols[0], 1.6), scale_lightness(defaultCols[1], 1.6), scale_lightness(defaultCols[2], 1.6)], xlabel = "Variable Count", ylabel ="MCC")
-        #vis.saveMCCCurve(median.T, delaySizes, "", diag_dir + "/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="MCC")
+                        colors=[defaultCols[0], defaultCols[1], defaultCols[2], scale_lightness(defaultCols[0], 1.6), scale_lightness(defaultCols[1], 1.6), scale_lightness(defaultCols[2], 1.6)], xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
+        #vis.saveMCCCurve(median.T, delaySizes, "", diag_dir + "/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="Matthews Correlation Coefficient")
 
         scores = tpr_fpr_FromFull(fullOut, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis=1)
@@ -554,11 +558,11 @@ def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingSt
         print(mean.shape)
 
         vis.saveMCCCurve(mean[:,::3].T, [3,6,12], "", diag_dir + "/SystemCascGCSS-TPR", [], show=False, save = True, rowLabels=["GCSS-LD-TPR", "GCSS-HD-TPR","GCSS-LD-FPR", "GCSS-HD-FPR"], 
-                        xlabel = "Variable Count", ylabel ="MCC")
+                        xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
         vis.saveMCCCurve(mean[:,1::3].T, [3,6,12], "", diag_dir + "/SystemCascLKIF-TPR", [], show=False, save = True, rowLabels=["LKIF-LD-TPR", "LKIF-HD-TPR","LKIF-LD-FPR", "LKIF-HD-FPR"], 
-                        xlabel = "Variable Count", ylabel ="MCC")
+                        xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
         vis.saveMCCCurve(mean[:,2::3].T, [3,6,12], "", diag_dir + "/SystemCascPCMCI-TPR", [], show=False, save = True, rowLabels=["PCMCI-LD-TPR", "PCMCI-HD-TPR","PCMCI-LD-FPR", "PCMCI-HD-FPR"], 
-                        xlabel = "Variable Count", ylabel ="MCC")
+                        xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
 
         scores = MCCFromFull(fullOutVAR, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis = 1)
@@ -570,14 +574,14 @@ def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingSt
 
         # decide how to display the results
         vis.saveMCCCurve(final.T, [3,6,12], "", diag_dir + "/SystemVAR", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"],
-                        colors=[defaultCols[0], defaultCols[1], defaultCols[2], scale_lightness(defaultCols[0], 1.6), scale_lightness(defaultCols[1], 1.6), scale_lightness(defaultCols[2], 1.6)], xlabel = "Variable Count", ylabel ="MCC")
+                        colors=[defaultCols[0], defaultCols[1], defaultCols[2], scale_lightness(defaultCols[0], 1.6), scale_lightness(defaultCols[1], 1.6), scale_lightness(defaultCols[2], 1.6)], xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
         vis.saveMCCCurve(final[:,::3].T, [3,6,12], "", diag_dir + "/SystemVARGCSS", [], show=False, save = True, rowLabels=["GCSS-LD", "GCSS-HD"], 
-                        xlabel = "Variable Count", ylabel ="MCC")
+                        xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
         vis.saveMCCCurve(final[:,1::3].T, [3,6,12], "", diag_dir + "/SystemVARLKIF", [], show=False, save = True, rowLabels=["LKIF-LD", "LKIF-HD"], 
-                        xlabel = "Variable Count", ylabel ="MCC")
+                        xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
         vis.saveMCCCurve(final[:,2::3].T, [3,6,12], "", diag_dir + "/SystemVARPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
-                        xlabel = "Variable Count", ylabel ="MCC")
-        #vis.saveMCCCurve(median.T, delaySizes, "", diag_dir + "/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="MCC")
+                        xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
+        #vis.saveMCCCurve(median.T, delaySizes, "", diag_dir + "/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="Matthews Correlation Coefficient")
         
 def nonStationaryTipping():
     loadData = False
@@ -758,7 +762,7 @@ def autoCorrEvaluations():
     scores = MCCFromFull(fullOut, axis=2)
     mean, stdDev = getMeanStdDev(scores, axis = 1)
     
-    vis.saveMCCCurve(mean.T, autoCorrelations, "", "./diagrams/autoCorrCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Mean Reversion Rate", ylabel ="MCC")
+    vis.saveMCCCurve(mean.T, autoCorrelations, "", "./diagrams/autoCorrCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Mean Reversion Rate", ylabel ="Matthews Correlation Coefficient")
 
     print("Cascade data finished")
 
@@ -787,7 +791,7 @@ def autoCorrEvaluations():
     scores = MCCFromFull(fullOut, axis=2)
     mean, stdDev = getMeanStdDev(scores, axis = 1)
     
-    vis.saveMCCCurve(mean.T, autoCorrelations, "", "./diagrams/autoCorrVAR", stdDev.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Autocorrelation per time step", ylabel ="MCC")
+    vis.saveMCCCurve(mean.T, autoCorrelations, "", "./diagrams/autoCorrVAR", stdDev.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Autocorrelation per time step", ylabel ="Matthews Correlation Coefficient")
 
 def mainEvaluations(analysisIndex = None):
 
@@ -1414,6 +1418,7 @@ def main():
 
     comm = MPI.COMM_WORLD
 
+    # my main experiment for the paper is in "./data/tauMax_1"
     data_dir = "./data/tauMax_1"
     diag_dir = "./diagrams/tauMax_1"
     
@@ -1423,6 +1428,19 @@ def main():
     samples = 1000
     couplingStrength = 1
     tauMax = [1,1,1]
+
+    system6dEvaluations(plotOnly = plotOnly,
+    alpha = alpha,
+    samples = samples,
+    randomRuns = randomRuns,
+    tauMax = tauMax,
+    couplingStrength=couplingStrength, 
+    verbose=False,
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
+    if comm.Get_rank() == 0: print("System Size/Density Evaluation finished")
+    exit()
 
     delay6dEvaluations(plotOnly = plotOnly,
     delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0],
@@ -1460,18 +1478,6 @@ def main():
     diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("Coupling Strength Evaluation finished")
 
-    
-    system6dEvaluations(plotOnly = plotOnly,
-    alpha = alpha,
-    samples = samples,
-    randomRuns = randomRuns,
-    tauMax = tauMax,
-    couplingStrength=couplingStrength, 
-    verbose=False,
-    comm=comm,
-    data_dir=data_dir,
-    diag_dir=diag_dir)
-    if comm.Get_rank() == 0: print("System Size/Density Evaluation finished")
 
     nonStationaryStable(plotOnly = plotOnly,
     ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
