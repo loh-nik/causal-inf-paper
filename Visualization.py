@@ -4,13 +4,12 @@ import numpy as np
 #import networkx as nx
 import seaborn as sns
 
-
 def saveBoxPlot(distributions):
     plt.boxplot(distributions)
     plt.show()
 
 def saveROCCurve(TPR, FPR, values, title, filename, colors = [], rowLabels = [], show = False, save=True, annotateBest = True,
-                 xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=100, xlabel ="", ylabel =""):
+                 xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=300, xlabel ="", ylabel =""):
     fig = plt.figure(figsize=figsize, layout="constrained")
     #plt.suptitle(title, fontsize=15)
     plt.xscale(xscale)
@@ -65,7 +64,7 @@ def saveROCCurve(TPR, FPR, values, title, filename, colors = [], rowLabels = [],
         plt.close()
 
 def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowLabels=[], show = False, save= True, 
-                xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=200, xlabel ="", ylabel ="", yAxisCut = False,
+                xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=300, xlabel ="", ylabel ="", yAxisCut = False,
                   yAxisLinearLim = 1, quantileLower = [], quantileHigher = []):
     """Draws a plot with lines for data rows, optionally with error bars.
     \nScores are the MCC score values, in a 2D array with first dimension as the number of data lines drawn, \
@@ -132,8 +131,8 @@ def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowL
         plt.close()
 
 def saveMCCCurveSubplot(subplotRows, subplotCols, scores, values, title, filename, errors = [], colors = [], rowLabels=[], show = False, save= True, 
-                xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=200, xlabel ="", ylabel ="", yAxisCut = False,
-                  yAxisLinearLim = 1, quantileLower = [], quantileHigher = [], share_x_axis = True):
+                xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=300, xlabel ="", ylabel ="", yAxisCut = False,
+                  yAxisLinearLim = 1, quantileLower = [], quantileHigher = [], share_x_axis = True, ylabelLoc = 1):
     """Draws subplots with lines for data rows, optionally with error bars.
     \nScores are the MCC score values, in a 3D array with first dimension as the number of subplots, second dim as data lines drawn, \
     and third dimension equaling values dimension. 
@@ -167,7 +166,8 @@ def saveMCCCurveSubplot(subplotRows, subplotCols, scores, values, title, filenam
             ax.tick_params(labelbottom=False)
         else:
             ax.set_xlabel(xlabel, fontsize=14)
-        ax.set_ylabel(ylabel, fontsize=14)
+        if ylabelLoc < 0 or ylabelLoc == i:
+            ax.set_ylabel(ylabel, fontsize=14)
         ax.tick_params(axis='x', labelsize=14)
         ax.tick_params(axis='y', labelsize=14)
         if len(scoreTuple.shape) == 1:
@@ -211,8 +211,8 @@ def saveMCCCurveSubplot(subplotRows, subplotCols, scores, values, title, filenam
         plt.close()
 
 def saveMCCScatter(scores, values, title, filename, errors = [], colors = [], rowLabels=[], show = False, save= True, 
-                xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=200, xlabel ="", ylabel ="", yAxisCut = False,
-                  yAxisLinearLim = 1, quantileLower = [], quantileHigher = [], marker = 'o', legend_outside = False, ylim = None):
+                xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=300, xlabel ="", ylabel ="", yAxisCut = False,
+                  yAxisLinearLim = 1, quantileLower = [], quantileHigher = [], marker = '_', legend_outside = False, ylim = None):
     """Draws a plot with markers for data points, optionally with error bars.
     \nScores are the MCC score values, in a 2D array with first dimension as the number of data lines drawn, \
     and second dimension equaling values dimension. 
@@ -242,9 +242,9 @@ def saveMCCScatter(scores, values, title, filename, errors = [], colors = [], ro
     plt.yticks(fontsize=14)
     if len(scores.shape) == 1:
         if len(errors) > 0:
-            plt.errorbar(values, scores, errors, fmt=marker, alpha = 0.2)
+            plt.errorbar(values, scores, errors, fmt=marker, markersize=10, alpha = 0.3)
         elif len(quantileLower) > 0:
-            plt.errorbar(values, scores, np.stack((quantileLower, quantileHigher), axis=0), fmt=marker, alpha = 0.2)
+            plt.errorbar(values, scores, np.stack((quantileLower, quantileHigher), axis=0), fmt=marker, alpha = 0.3)
         else:
             plt.scatter(values, scores, marker=marker)
     else:
@@ -261,16 +261,18 @@ def saveMCCScatter(scores, values, title, filename, errors = [], colors = [], ro
         for i in range(scores.shape[0]):
             if len(colors) == 0:
                 if len(errors) > 0:
-                    plt.errorbar(values, scores[i], errors[i], fmt=marker, alpha = 0.2,label = str(rowLabels[i]))
+                    plt.errorbar(values, scores[i], errors[i], fmt=marker, markersize=15, alpha = 0.3,label = str(rowLabels[i]))
                 elif len(quantileLower) > 0:
-                    plt.errorbar(values, scores[i], np.stack((quantileLower[i], quantileHigher[i]), axis=0), fmt=marker, alpha = 0.2,label = str(rowLabels[i]))
+                    plt.errorbar(values, scores[i], np.stack((quantileLower[i], quantileHigher[i]), axis=0), fmt=marker, alpha = 0.3,label = str(rowLabels[i]))
                 else:
                     plt.scatter(values, scores[i],  marker=marker,label = str(rowLabels[i]))
             else:
                 if len(errors) > 0:
-                    plt.errorbar(values, scores[i],errors[i], fmt=marker, alpha = 0.2, color= colors[i],label = str(rowLabels[i]))
+                    plt.errorbar(values, scores[i],errors[i], fmt="none", markersize=15, alpha = 0.3, color= colors[i])
+                    plt.errorbar(values, scores[i], fmt=marker, markersize=15, alpha = 1.0, color= colors[i],label = str(rowLabels[i]))
+                    plt.plot(values, scores[i], color = colors[i], alpha=0.2)
                 elif len(quantileLower) > 0:
-                    plt.errorbar(values, scores[i], np.stack((quantileLower[i], quantileHigher[i]), axis=0), fmt=marker, alpha = 0.2, color= colors[i],label = str(rowLabels[i]))
+                    plt.errorbar(values, scores[i], np.stack((quantileLower[i], quantileHigher[i]), axis=0), fmt=marker, alpha = 0.3, color= colors[i],label = str(rowLabels[i]))
                 else:
                     plt.scatter(values, scores[i], label = str(rowLabels[i]), marker=marker, color=colors[i])
         if showLegend:
@@ -320,7 +322,7 @@ def saveDecisionBoundaries(data, labels, filename, show = False, save = True):
     else:
         plt.close()
 
-def saveCouplingMatrixGraph(matrix, title, filename, show = False, save= True, figsize=(4,4.5), dpi=100):
+def saveCouplingMatrixGraph(matrix, title, filename, show = False, save= True, figsize=(4,4.5), dpi=300):
     from tigramite import plotting as tp
     ax = plt.subplots(1,1,layout="constrained", figsize=figsize)
     plt.title(title, fontsize=17)
@@ -346,7 +348,7 @@ def saveCouplingMatrixGraph(matrix, title, filename, show = False, save= True, f
     else: 
         plt.close()
 
-def saveHeatmap(textValues, colorValues, title, filename, show=False, save=True, figsize = (4.5,4), dpi=200, xlabel= "", ylabel ="", xtickLabels = [], ytickLabels=[]):
+def saveHeatmap(textValues, colorValues, title, filename, show=False, save=True, figsize = (4.5,4), dpi=300, xlabel= "", ylabel ="", xtickLabels = [], ytickLabels=[]):
     fig = plt.figure(figsize=figsize, layout="constrained")
     #plt.suptitle(title, fontsize=15)
     ax = sns.heatmap(colorValues, cmap = "Wistia", annot = textValues, annot_kws={"fontsize": 14})

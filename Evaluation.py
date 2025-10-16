@@ -5,10 +5,10 @@ rank = comm.Get_rank()
 # Some of these libraries use jit compilation on import, we avoid race conditions by importing once in the main rank
 if rank == 0:
     print("Rank 0 importing PCMCI first...")
+    import Visualization as vis
+    import DataGenerator
     import PCMCI
     import numpy as np
-    import DataGenerator
-    import Visualization as vis
     import time
     from itertools import product
     import GCSS
@@ -477,6 +477,12 @@ def scale_lightness(rgb, scale_l):
     # manipulate h, l, s values and return as rgb
     return colorsys.hls_to_rgb(h, min(1, l * scale_l), s = s)
 
+def subtractedMatrix(matrix, desiredDim):
+    result = []
+    for i in range(desiredDim):
+        result.append(matrix[i][:desiredDim])
+    return result
+
 def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingStrength, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
     import matplotlib as mpl
     if not comm:
@@ -484,8 +490,28 @@ def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingSt
     defaultCols = mpl.color_sequences["tab10"]
     # low density: n-1 edges
     # high density: 2n (or 2n-1 for 3 nodes)
-    cascMatrices = [defaultCouplingMatrixCascade_LowDense, mediumCouplingMatrixCascade_LowDense, largeCouplingMatrixCascade_LowDense, defaultCouplingMatrixCascade_HighDense, mediumCouplingMatrixCascade_HighDense, largeCouplingMatrixCascade_HighDense]
-    VARMatrices = [defaultCouplingMatrixVAR_LowDense, mediumCouplingMatrixVAR_LowDense, largeCouplingMatrixVAR_LowDense, defaultCouplingMatrixVAR_HighDense, mediumCouplingMatrixVAR_HighDense, largeCouplingMatrixVAR_HighDense]
+    sizes = [3,4,5,6,7,8,9,10,11,12]
+    sizeLen = len(sizes)
+    cascMatrices = [
+        defaultCouplingMatrixCascade_LowDense,
+                    subtractedMatrix(mediumCouplingMatrixCascade_LowDense, 4),subtractedMatrix(mediumCouplingMatrixCascade_LowDense, 5), mediumCouplingMatrixCascade_LowDense,
+                     subtractedMatrix(largeCouplingMatrixCascade_LowDense, 7),subtractedMatrix(largeCouplingMatrixCascade_LowDense, 8),subtractedMatrix(largeCouplingMatrixCascade_LowDense, 9),subtractedMatrix(largeCouplingMatrixCascade_LowDense, 10),
+                      subtractedMatrix(largeCouplingMatrixCascade_LowDense, 11), largeCouplingMatrixCascade_LowDense, 
+                      defaultCouplingMatrixCascade_HighDense, 
+                      subtractedMatrix(mediumCouplingMatrixCascade_HighDense, 4),subtractedMatrix(mediumCouplingMatrixCascade_HighDense, 5), mediumCouplingMatrixCascade_HighDense,
+                     subtractedMatrix(largeCouplingMatrixCascade_HighDense, 7),subtractedMatrix(largeCouplingMatrixCascade_HighDense, 8),subtractedMatrix(largeCouplingMatrixCascade_HighDense, 9),subtractedMatrix(largeCouplingMatrixCascade_HighDense, 10),
+                      subtractedMatrix(largeCouplingMatrixCascade_HighDense, 11), largeCouplingMatrixCascade_HighDense
+                      ]
+    VARMatrices = [
+        defaultCouplingMatrixVAR_LowDense,
+                    subtractedMatrix(mediumCouplingMatrixVAR_LowDense, 4),subtractedMatrix(mediumCouplingMatrixVAR_LowDense, 5), mediumCouplingMatrixVAR_LowDense,
+                     subtractedMatrix(largeCouplingMatrixVAR_LowDense, 7),subtractedMatrix(largeCouplingMatrixVAR_LowDense, 8),subtractedMatrix(largeCouplingMatrixVAR_LowDense, 9),subtractedMatrix(largeCouplingMatrixVAR_LowDense, 10),
+                      subtractedMatrix(largeCouplingMatrixVAR_LowDense, 11), largeCouplingMatrixVAR_LowDense, 
+                      defaultCouplingMatrixVAR_HighDense, 
+                      subtractedMatrix(mediumCouplingMatrixVAR_HighDense, 4),subtractedMatrix(mediumCouplingMatrixVAR_HighDense, 5), mediumCouplingMatrixVAR_HighDense,
+                     subtractedMatrix(largeCouplingMatrixVAR_HighDense, 7),subtractedMatrix(largeCouplingMatrixVAR_HighDense, 8),subtractedMatrix(largeCouplingMatrixVAR_HighDense, 9),subtractedMatrix(largeCouplingMatrixVAR_HighDense, 10),
+                      subtractedMatrix(largeCouplingMatrixVAR_HighDense, 11), largeCouplingMatrixVAR_HighDense
+                      ]
     if len(cascMatrices) != len(VARMatrices):
         raise ValueError("Matrices for cubic systems and VAR systems not identical length")
     
@@ -525,43 +551,46 @@ def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingSt
     if not comm or comm.Get_rank() == 0:
         scores = MCCFromFull(fullOut, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis = 1)
-        lowDense = mean[:3]
-        highDense = mean[3:]
+        lowDense = mean[:sizeLen]
+        highDense = mean[sizeLen:]
+        lowDenseErr = stdDev[:sizeLen]
+        highDenseErr = stdDev[sizeLen:]
         final = np.append(lowDense, highDense, axis=1)
+        finalErr = np.append(lowDenseErr, highDenseErr, axis=1)
 
         # get central 90% of data
         #median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
 
-        vis.saveMCCCurve(final[:,::3].T, [3,6,12], "", diag_dir + "/SystemCascGCSS", [], show=False, save = True, rowLabels=["Low Density", "High Density"], 
+        vis.saveMCCCurve(final[:,::3].T, sizes, "", diag_dir + "/SystemCascGCSS", [], show=False, save = True, rowLabels=["Low Density", "High Density"], 
                         xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
-        vis.saveMCCCurve(final[:,1::3].T, [3,6,12], "", diag_dir + "/SystemCascLKIF", [], show=False, save = True, rowLabels=["LKIF-LD", "LKIF-HD"], 
+        vis.saveMCCCurve(final[:,1::3].T, sizes, "", diag_dir + "/SystemCascLKIF", [], show=False, save = True, rowLabels=["LKIF-LD", "LKIF-HD"], 
                         xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
-        vis.saveMCCCurve(final[:,2::3].T, [3,6,12], "", diag_dir + "/SystemCascPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
-                        xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
-        
-        vis.saveMCCCurveSubplot(3, 1, np.array([final[:,::3].T, final[:,1::3].T, final[:,2::3].T]), [3,6,12], "", diag_dir + "/SystemCascSubplots",
-                                 [], show=False, save = True, rowLabels=[], figsize=(4,10),
+        vis.saveMCCCurve(final[:,2::3].T, sizes, "", diag_dir + "/SystemCascPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
                         xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
         
-        vis.saveMCCCurve(final.T, [3,6,12], "", diag_dir + "/SystemCasc", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"], 
+        vis.saveMCCCurveSubplot(3, 1, np.array([final[:,::3].T, final[:,1::3].T, final[:,2::3].T]), sizes, "", diag_dir + "/SystemCascSubplots",
+                                 errors = np.array([finalErr[:,::3].T, finalErr[:,1::3].T, finalErr[:,2::3].T]), show=False, save = True, rowLabels=[], figsize=(4,10),
+                        xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
+        
+        vis.saveMCCCurve(final.T, sizes, "", diag_dir + "/SystemCasc", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"], 
                         colors=[defaultCols[0], defaultCols[1], defaultCols[2], scale_lightness(defaultCols[0], 1.6), scale_lightness(defaultCols[1], 1.6), scale_lightness(defaultCols[2], 1.6)], xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
         #vis.saveMCCCurve(median.T, delaySizes, "", diag_dir + "/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="Matthews Correlation Coefficient")
 
         scores = tpr_fpr_FromFull(fullOut, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis=1)
-        lowDense = mean[:3]
-        highDense = mean[3:]
+        lowDense = mean[:sizeLen]
+        highDense = mean[sizeLen:]
         mean = np.append(lowDense, highDense, axis=2)
 
         mean = np.append(mean[:,0,:], mean[:,1,:], axis=1)
         #stdDev = np.append(stdDev[:,0,:], stdDev[:,1,:], axis=1)
         print(mean.shape)
 
-        vis.saveMCCCurve(mean[:,::3].T, [3,6,12], "", diag_dir + "/SystemCascGCSS-TPR", [], show=False, save = True, rowLabels=["GCSS-LD-TPR", "GCSS-HD-TPR","GCSS-LD-FPR", "GCSS-HD-FPR"], 
+        vis.saveMCCCurve(mean[:,::3].T, sizes, "", diag_dir + "/SystemCascGCSS-TPR", [], show=False, save = True, rowLabels=["GCSS-LD-TPR", "GCSS-HD-TPR","GCSS-LD-FPR", "GCSS-HD-FPR"], 
                         xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
-        vis.saveMCCCurve(mean[:,1::3].T, [3,6,12], "", diag_dir + "/SystemCascLKIF-TPR", [], show=False, save = True, rowLabels=["LKIF-LD-TPR", "LKIF-HD-TPR","LKIF-LD-FPR", "LKIF-HD-FPR"], 
+        vis.saveMCCCurve(mean[:,1::3].T, sizes, "", diag_dir + "/SystemCascLKIF-TPR", [], show=False, save = True, rowLabels=["LKIF-LD-TPR", "LKIF-HD-TPR","LKIF-LD-FPR", "LKIF-HD-FPR"], 
                         xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
-        vis.saveMCCCurve(mean[:,2::3].T, [3,6,12], "", diag_dir + "/SystemCascPCMCI-TPR", [], show=False, save = True, rowLabels=["PCMCI-LD-TPR", "PCMCI-HD-TPR","PCMCI-LD-FPR", "PCMCI-HD-FPR"], 
+        vis.saveMCCCurve(mean[:,2::3].T, sizes, "", diag_dir + "/SystemCascPCMCI-TPR", [], show=False, save = True, rowLabels=["PCMCI-LD-TPR", "PCMCI-HD-TPR","PCMCI-LD-FPR", "PCMCI-HD-FPR"], 
                         xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
 
         scores = MCCFromFull(fullOutVAR, axis=2)
@@ -573,13 +602,13 @@ def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingSt
         #median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
 
         # decide how to display the results
-        vis.saveMCCCurve(final.T, [3,6,12], "", diag_dir + "/SystemVAR", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"],
+        vis.saveMCCCurve(final.T, sizes, "", diag_dir + "/SystemVAR", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"],
                         colors=[defaultCols[0], defaultCols[1], defaultCols[2], scale_lightness(defaultCols[0], 1.6), scale_lightness(defaultCols[1], 1.6), scale_lightness(defaultCols[2], 1.6)], xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
-        vis.saveMCCCurve(final[:,::3].T, [3,6,12], "", diag_dir + "/SystemVARGCSS", [], show=False, save = True, rowLabels=["GCSS-LD", "GCSS-HD"], 
+        vis.saveMCCCurve(final[:,::3].T, sizes, "", diag_dir + "/SystemVARGCSS", [], show=False, save = True, rowLabels=["GCSS-LD", "GCSS-HD"], 
                         xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
-        vis.saveMCCCurve(final[:,1::3].T, [3,6,12], "", diag_dir + "/SystemVARLKIF", [], show=False, save = True, rowLabels=["LKIF-LD", "LKIF-HD"], 
+        vis.saveMCCCurve(final[:,1::3].T, sizes, "", diag_dir + "/SystemVARLKIF", [], show=False, save = True, rowLabels=["LKIF-LD", "LKIF-HD"], 
                         xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
-        vis.saveMCCCurve(final[:,2::3].T, [3,6,12], "", diag_dir + "/SystemVARPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
+        vis.saveMCCCurve(final[:,2::3].T, sizes, "", diag_dir + "/SystemVARPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
                         xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
         #vis.saveMCCCurve(median.T, delaySizes, "", diag_dir + "/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="Matthews Correlation Coefficient")
         
@@ -729,10 +758,15 @@ def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns, 
         
         # vis.saveMCCCurve(fullInfoMean.T, ceilings, "", diag_dir + "/forcing6d_TPR", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
         # vis.saveMCCCurve(noInfoMean.T, ceilings, "", diag_dir + "/forcing6d_reducedInformation_TPR", noInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
-        
-        vis.saveMCCScatter(gcssInfo.T, ceilings, "", diag_dir + "/forcing6d_gcss_TPR", gcssStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR", "Hidden Confounder TPR", "Hidden Confounder FPR"],figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
-        vis.saveMCCScatter(lkifInfo.T, ceilings, "", diag_dir + "/forcing6d_lkif_TPR", lkifStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
-        vis.saveMCCScatter(pcmInfo.T, ceilings, "", diag_dir + "/forcing6d_pcmci_TPR", pcmStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
+        import matplotlib as mpl
+        defaultCols = mpl.color_sequences["tab10"]
+        flippedCols = [defaultCols[0], defaultCols[2], defaultCols[1], defaultCols[3]]
+        vis.saveMCCScatter(gcssInfo.T, ceilings, "", diag_dir + "/forcing6d_gcss_TPR", gcssStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR", "Hidden Confounder TPR", "Hidden Confounder FPR"],
+                           colors = flippedCols, figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
+        vis.saveMCCScatter(lkifInfo.T, ceilings, "", diag_dir + "/forcing6d_lkif_TPR", lkifStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],
+                           colors = flippedCols, figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
+        vis.saveMCCScatter(pcmInfo.T, ceilings, "", diag_dir + "/forcing6d_pcmci_TPR", pcmStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],
+                           colors = flippedCols, figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
 
 
 def autoCorrEvaluations():
@@ -938,15 +972,15 @@ def mainEvaluations(analysisIndex = None):
     checkCouplingMatrices = False
     showCouplingMatrices = False
     if checkCouplingMatrices:
-        vis.saveCouplingMatrixGraph(defaultCouplingMatrixVAR, "", matrixFolder+"SmallMedDense", showCouplingMatrices, saveCouplingMatrices, dpi=200)
-        vis.saveCouplingMatrixGraph(defaultCouplingMatrixVAR_HighDense, "", matrixFolder+"SmallHighDense", showCouplingMatrices, saveCouplingMatrices, dpi=200)
-        vis.saveCouplingMatrixGraph(defaultCouplingMatrixVAR_LowDense, "", matrixFolder+"SmallLowDense", showCouplingMatrices, saveCouplingMatrices, dpi=200)
-        vis.saveCouplingMatrixGraph(mediumCouplingMatrixVAR, "", matrixFolder+"MedMedDense", showCouplingMatrices, saveCouplingMatrices, dpi=200)
-        vis.saveCouplingMatrixGraph(mediumCouplingMatrixVAR_HighDense, "", matrixFolder+"MedHighDense", showCouplingMatrices, saveCouplingMatrices, dpi=200)
-        vis.saveCouplingMatrixGraph(mediumCouplingMatrixVAR_LowDense, "", matrixFolder+"MedLowDense", showCouplingMatrices, saveCouplingMatrices, dpi=200)
-        vis.saveCouplingMatrixGraph(largeCouplingMatrixVAR, "", matrixFolder+"LargeMedDense", showCouplingMatrices, saveCouplingMatrices, dpi=200)
-        vis.saveCouplingMatrixGraph(largeCouplingMatrixVAR_HighDense, "", matrixFolder+"LargeHighDense", showCouplingMatrices, saveCouplingMatrices, dpi=200)
-        vis.saveCouplingMatrixGraph(largeCouplingMatrixVAR_LowDense, "", matrixFolder+"LargeLowDense", showCouplingMatrices, saveCouplingMatrices, dpi=200)
+        vis.saveCouplingMatrixGraph(defaultCouplingMatrixVAR, "", matrixFolder+"SmallMedDense", showCouplingMatrices, saveCouplingMatrices, dpi=300)
+        vis.saveCouplingMatrixGraph(defaultCouplingMatrixVAR_HighDense, "", matrixFolder+"SmallHighDense", showCouplingMatrices, saveCouplingMatrices, dpi=300)
+        vis.saveCouplingMatrixGraph(defaultCouplingMatrixVAR_LowDense, "", matrixFolder+"SmallLowDense", showCouplingMatrices, saveCouplingMatrices, dpi=300)
+        vis.saveCouplingMatrixGraph(mediumCouplingMatrixVAR, "", matrixFolder+"MedMedDense", showCouplingMatrices, saveCouplingMatrices, dpi=300)
+        vis.saveCouplingMatrixGraph(mediumCouplingMatrixVAR_HighDense, "", matrixFolder+"MedHighDense", showCouplingMatrices, saveCouplingMatrices, dpi=300)
+        vis.saveCouplingMatrixGraph(mediumCouplingMatrixVAR_LowDense, "", matrixFolder+"MedLowDense", showCouplingMatrices, saveCouplingMatrices, dpi=300)
+        vis.saveCouplingMatrixGraph(largeCouplingMatrixVAR, "", matrixFolder+"LargeMedDense", showCouplingMatrices, saveCouplingMatrices, dpi=300)
+        vis.saveCouplingMatrixGraph(largeCouplingMatrixVAR_HighDense, "", matrixFolder+"LargeHighDense", showCouplingMatrices, saveCouplingMatrices, dpi=300)
+        vis.saveCouplingMatrixGraph(largeCouplingMatrixVAR_LowDense, "", matrixFolder+"LargeLowDense", showCouplingMatrices, saveCouplingMatrices, dpi=300)
 
     runsPerConfigAlpha = 10
     runsPerConfigTauMax = 20
@@ -1100,27 +1134,27 @@ def mainEvaluations(analysisIndex = None):
         resultsSize = np.average(tpr_fpr_FromFull(resultsSize, axis= 2), axis= 4)
         resultsDense = np.average(tpr_fpr_FromFull(resultsDense, axis= 2), axis=4)
         # visualization for default configuration with 3 vertices, 4 edges
-        vis.saveROCCurve(resultsSize[0,:,0,0,:], resultsSize[0,:,1,0,:], alphas, "GCSS ROC Curve for alpha values", folder+"GCSS_Alpha_VAR_Cascade", rowLabels=["VAR", "Cascade"], show=showDiagrams, save=doSave, dpi=200, xlabel="False Positive Rate", ylabel ="True Positive Rate")
-        vis.saveROCCurve(resultsSize[0,:,0,1,:], resultsSize[0,:,1,1,:], alphas, "LKIF ROC Curve for alpha values", folder+"LKIF_Alpha_VAR_Cascade", rowLabels=["VAR", "Cascade"], show=showDiagrams, save=doSave, dpi=200, xlabel="False Positive Rate", ylabel ="True Positive Rate")
-        vis.saveROCCurve(resultsSize[0,:,0,2,:], resultsSize[0,:,1,2,:], alphas, "PCMCI ROC Curve for alpha values", folder+"PCMCI_Alpha_VAR_Cascade", rowLabels=["VAR", "Cascade"], show=showDiagrams, save=doSave, dpi=200, xlabel="False Positive Rate", ylabel ="True Positive Rate")
+        vis.saveROCCurve(resultsSize[0,:,0,0,:], resultsSize[0,:,1,0,:], alphas, "GCSS ROC Curve for alpha values", folder+"GCSS_Alpha_VAR_Cascade", rowLabels=["VAR", "Cascade"], show=showDiagrams, save=doSave, dpi=300, xlabel="False Positive Rate", ylabel ="True Positive Rate")
+        vis.saveROCCurve(resultsSize[0,:,0,1,:], resultsSize[0,:,1,1,:], alphas, "LKIF ROC Curve for alpha values", folder+"LKIF_Alpha_VAR_Cascade", rowLabels=["VAR", "Cascade"], show=showDiagrams, save=doSave, dpi=300, xlabel="False Positive Rate", ylabel ="True Positive Rate")
+        vis.saveROCCurve(resultsSize[0,:,0,2,:], resultsSize[0,:,1,2,:], alphas, "PCMCI ROC Curve for alpha values", folder+"PCMCI_Alpha_VAR_Cascade", rowLabels=["VAR", "Cascade"], show=showDiagrams, save=doSave, dpi=300, xlabel="False Positive Rate", ylabel ="True Positive Rate")
 
         # for ease of notation: reshape
         resultsSize = np.reshape(resultsSize,(6, resultsSize.shape[2], resultsSize.shape[3],resultsSize.shape[4]),order="F")
         vis.saveROCCurve(resultsSize[:,0,0,:], resultsSize[:,1,0,:], alphas, "GCSS ROC Curve for system sizes", folder+"GCSS_Alpha_Size", colors=[(0.3,0,0), (0.6,0,0), (0.9,0.2,0.2), (0,0,0.3), (0,0,0.6), (0.2,0.2,0.9)],
-                        rowLabels=["VAR Small", "VAR Medium", "VAR Large", "Cascade Small", "Cascade Medium", "Cascade Large"], show=showDiagrams, save=doSave, dpi=200, xlabel="False Positive Rate", ylabel ="True Positive Rate", annotateBest=False)
+                        rowLabels=["VAR Small", "VAR Medium", "VAR Large", "Cascade Small", "Cascade Medium", "Cascade Large"], show=showDiagrams, save=doSave, dpi=300, xlabel="False Positive Rate", ylabel ="True Positive Rate", annotateBest=False)
         vis.saveROCCurve(resultsSize[:,0,1,:], resultsSize[:,1,1,:], alphas, "LKIF ROC Curve for system sizes", folder+"LKIF_Alpha_Size", colors=[(0.3,0,0), (0.6,0,0), (0.9,0.2,0.2), (0,0,0.3), (0,0,0.6), (0.2,0.2,0.9)],
-                        rowLabels=["VAR Small", "VAR Medium", "VAR Large", "Cascade Small", "Cascade Medium", "Cascade Large"], show=showDiagrams, save=doSave, dpi=200, xlabel="False Positive Rate", ylabel ="True Positive Rate", annotateBest=False)
+                        rowLabels=["VAR Small", "VAR Medium", "VAR Large", "Cascade Small", "Cascade Medium", "Cascade Large"], show=showDiagrams, save=doSave, dpi=300, xlabel="False Positive Rate", ylabel ="True Positive Rate", annotateBest=False)
         vis.saveROCCurve(resultsSize[:,0,2,:], resultsSize[:,1,2,:], alphas, "PCMCI ROC Curve for system sizes", folder+"PCMCI_Alpha_Size", colors=[(0.3,0,0), (0.6,0,0), (0.9,0.2,0.2), (0,0,0.3), (0,0,0.6), (0.2,0.2,0.9)],
-                        rowLabels=["VAR Small", "VAR Medium", "VAR Large", "Cascade Small", "Cascade Medium", "Cascade Large"], show=showDiagrams, save=doSave, dpi=200, xlabel="False Positive Rate", ylabel ="True Positive Rate", annotateBest=False)
+                        rowLabels=["VAR Small", "VAR Medium", "VAR Large", "Cascade Small", "Cascade Medium", "Cascade Large"], show=showDiagrams, save=doSave, dpi=300, xlabel="False Positive Rate", ylabel ="True Positive Rate", annotateBest=False)
         
         # for ease of notation: reshape
         resultsDense = np.reshape(resultsDense,(6, resultsDense.shape[2], resultsDense.shape[3],resultsDense.shape[4]),order="F")
         vis.saveROCCurve(resultsDense[:,0,0,:], resultsDense[:,1,0,:], alphas, "GCSS ROC Curve for system densities", folder+"GCSS_Alpha_Density", colors=[(0.3,0,0), (0.6,0,0), (0.9,0.2,0.2), (0,0,0.3), (0,0,0.6), (0.2,0.2,0.9)],
-                        rowLabels=["VAR Small", "VAR Medium", "VAR Large", "Cascade Small", "Cascade Medium", "Cascade Large"], show=showDiagrams, save=doSave, dpi=200, xlabel="False Positive Rate", ylabel ="True Positive Rate", annotateBest=False)
+                        rowLabels=["VAR Small", "VAR Medium", "VAR Large", "Cascade Small", "Cascade Medium", "Cascade Large"], show=showDiagrams, save=doSave, dpi=300, xlabel="False Positive Rate", ylabel ="True Positive Rate", annotateBest=False)
         vis.saveROCCurve(resultsDense[:,0,1,:], resultsDense[:,1,1,:], alphas, "LKIF ROC Curve for system densities", folder+"LKIF_Alpha_Density", colors=[(0.3,0,0), (0.6,0,0), (0.9,0.2,0.2), (0,0,0.3), (0,0,0.6), (0.2,0.2,0.9)],
-                        rowLabels=["VAR Small", "VAR Medium", "VAR Large", "Cascade Small", "Cascade Medium", "Cascade Large"], show=showDiagrams, save=doSave, dpi=200, xlabel="False Positive Rate", ylabel ="True Positive Rate", annotateBest=False)
+                        rowLabels=["VAR Small", "VAR Medium", "VAR Large", "Cascade Small", "Cascade Medium", "Cascade Large"], show=showDiagrams, save=doSave, dpi=300, xlabel="False Positive Rate", ylabel ="True Positive Rate", annotateBest=False)
         vis.saveROCCurve(resultsDense[:,0,2,:], resultsDense[:,1,2,:], alphas, "PCMCI ROC Curve for system densities", folder+"PCMCI_Alpha_Density", colors=[(0.3,0,0), (0.6,0,0), (0.9,0.2,0.2), (0,0,0.3), (0,0,0.6), (0.2,0.2,0.9)],
-                        rowLabels=["VAR Small", "VAR Medium", "VAR Large", "Cascade Small", "Cascade Medium", "Cascade Large"], show=showDiagrams, save=doSave, dpi=200, xlabel="False Positive Rate", ylabel ="True Positive Rate", annotateBest=False)
+                        rowLabels=["VAR Small", "VAR Medium", "VAR Large", "Cascade Small", "Cascade Medium", "Cascade Large"], show=showDiagrams, save=doSave, dpi=300, xlabel="False Positive Rate", ylabel ="True Positive Rate", annotateBest=False)
 
     if plotTauMax:
         if calculateTauMax:
@@ -1398,15 +1432,15 @@ def mainEvaluations(analysisIndex = None):
 
         resultsAlpha = np.average(tpr_fpr_FromFull(resultsAlpha, axis= 1), axis= 3)
         # visualization for default configuration with 3 vertices, 4 edges
-        vis.saveROCCurve(resultsAlpha[:,0,0,:], resultsAlpha[:,1,0,:], alphas, "GCSS ROC Curve for alpha values", folder+"GCSS_Alpha_VAR_Cascade_bonus", rowLabels=["VAR", "x³"], show=showDiagrams, save=doSave, dpi=200, xlabel="False Positive Rate", ylabel ="True Positive Rate")
-        vis.saveROCCurve(resultsAlpha[:,0,1,:], resultsAlpha[:,1,1,:], alphas, "LKIF ROC Curve for alpha values", folder+"LKIF_Alpha_VAR_Cascade_bonus", rowLabels=["VAR", "x³"], show=showDiagrams, save=doSave, dpi=200, xlabel="False Positive Rate", ylabel ="True Positive Rate")
-        vis.saveROCCurve(resultsAlpha[:,0,2,:], resultsAlpha[:,1,2,:], alphas, "PCMCI ROC Curve for alpha values", folder+"PCMCI_Alpha_VAR_Cascade_bonus", rowLabels=["VAR", "x³"], show=showDiagrams, save=doSave, dpi=200, xlabel="False Positive Rate", ylabel ="True Positive Rate")
+        vis.saveROCCurve(resultsAlpha[:,0,0,:], resultsAlpha[:,1,0,:], alphas, "GCSS ROC Curve for alpha values", folder+"GCSS_Alpha_VAR_Cascade_bonus", rowLabels=["VAR", "x³"], show=showDiagrams, save=doSave, dpi=300, xlabel="False Positive Rate", ylabel ="True Positive Rate")
+        vis.saveROCCurve(resultsAlpha[:,0,1,:], resultsAlpha[:,1,1,:], alphas, "LKIF ROC Curve for alpha values", folder+"LKIF_Alpha_VAR_Cascade_bonus", rowLabels=["VAR", "x³"], show=showDiagrams, save=doSave, dpi=300, xlabel="False Positive Rate", ylabel ="True Positive Rate")
+        vis.saveROCCurve(resultsAlpha[:,0,2,:], resultsAlpha[:,1,2,:], alphas, "PCMCI ROC Curve for alpha values", folder+"PCMCI_Alpha_VAR_Cascade_bonus", rowLabels=["VAR", "x³"], show=showDiagrams, save=doSave, dpi=300, xlabel="False Positive Rate", ylabel ="True Positive Rate")
         
         resultsAlpha2 = np.average(tpr_fpr_FromFull(resultsAlpha2, axis= 1), axis= 3)
         # visualization for default configuration with 3 vertices, 4 edges
-        vis.saveROCCurve(resultsAlpha2[:,0,0,:], resultsAlpha2[:,1,0,:], alphas, "GCSS ROC Curve for alpha values", folder+"GCSS_Alpha_VAR_Cascade", rowLabels=["VAR", "x³"], show=showDiagrams, save=doSave, dpi=200, xlabel="False Positive Rate", ylabel ="True Positive Rate")
-        vis.saveROCCurve(resultsAlpha2[:,0,1,:], resultsAlpha2[:,1,1,:], alphas, "LKIF ROC Curve for alpha values", folder+"LKIF_Alpha_VAR_Cascade", rowLabels=["VAR", "x³"], show=showDiagrams, save=doSave, dpi=200, xlabel="False Positive Rate", ylabel ="True Positive Rate")
-        vis.saveROCCurve(resultsAlpha2[:,0,2,:], resultsAlpha2[:,1,2,:], alphas, "PCMCI ROC Curve for alpha values", folder+"PCMCI_Alpha_VAR_Cascade", rowLabels=["VAR", "x³"], show=showDiagrams, save=doSave, dpi=200, xlabel="False Positive Rate", ylabel ="True Positive Rate")
+        vis.saveROCCurve(resultsAlpha2[:,0,0,:], resultsAlpha2[:,1,0,:], alphas, "GCSS ROC Curve for alpha values", folder+"GCSS_Alpha_VAR_Cascade", rowLabels=["VAR", "x³"], show=showDiagrams, save=doSave, dpi=300, xlabel="False Positive Rate", ylabel ="True Positive Rate")
+        vis.saveROCCurve(resultsAlpha2[:,0,1,:], resultsAlpha2[:,1,1,:], alphas, "LKIF ROC Curve for alpha values", folder+"LKIF_Alpha_VAR_Cascade", rowLabels=["VAR", "x³"], show=showDiagrams, save=doSave, dpi=300, xlabel="False Positive Rate", ylabel ="True Positive Rate")
+        vis.saveROCCurve(resultsAlpha2[:,0,2,:], resultsAlpha2[:,1,2,:], alphas, "PCMCI ROC Curve for alpha values", folder+"PCMCI_Alpha_VAR_Cascade", rowLabels=["VAR", "x³"], show=showDiagrams, save=doSave, dpi=300, xlabel="False Positive Rate", ylabel ="True Positive Rate")
 
 
     endTime = time.process_time()
@@ -1440,7 +1474,6 @@ def main():
     data_dir=data_dir,
     diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("System Size/Density Evaluation finished")
-    exit()
 
     delay6dEvaluations(plotOnly = plotOnly,
     delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0],
