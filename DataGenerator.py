@@ -168,9 +168,6 @@ def gen3dAutoCorrData(couplingMatrix, autoCorr, verbose = True):
     return stacked
 
 def getCascadeDataBrainpy(couplingMatrix, samples, delay = 0, verbose = True):
-    if couplingMatrix.shape != ((3,3)) and couplingMatrix.shape != ((6,6)) and couplingMatrix.shape != ((12,12)):
-        print("Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)")
-        return
     if delay == 0:
         if couplingMatrix.shape == (3,3):
             return gen3dNoDelayData(couplingMatrix, samples, verbose)
@@ -178,12 +175,18 @@ def getCascadeDataBrainpy(couplingMatrix, samples, delay = 0, verbose = True):
             return gen6dNoDelayData(couplingMatrix, samples, verbose)
         elif couplingMatrix.shape == (12,12):
             return gen12dNoDelayData(couplingMatrix,samples, verbose)
+        elif couplingMatrix.shape[0] < 12 and couplingMatrix.shape[0] == couplingMatrix.shape[1]:
+            # if the shapes don't match, just extend the matrix with isolated variables and throw them away afterwards. 
+            # Since we found some limited accuracy degradation with vectorized operations, we would have to write a new method for every size.
+            couplingMatrixNew = np.zeros((12,12))
+            couplingMatrixNew[:couplingMatrix.shape[0], :couplingMatrix.shape[0]] = couplingMatrix
+            return gen12dNoDelayData(couplingMatrixNew, samples, verbose)[:couplingMatrix.shape[0]]
     else:
         if couplingMatrix.shape == (3,3):
             return gen3dDelayData(couplingMatrix, np.ones((3,3)) * delay, samples, verbose)
         elif couplingMatrix.shape == (6,6):
             return gen6dDelayData(couplingMatrix, np.ones((6,6)) * delay, samples, verbose)
-    print("Error, no implementation of delayed 12x12 matrix")
+    raise RuntimeError("No implementation of the given matrix shape")
     return
 
 def getCascade3dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcingNoise = 0.01, verbose = True):

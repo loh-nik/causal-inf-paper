@@ -138,7 +138,7 @@ def plotMatrix(val_matrix, columnNames, filename, show=False, save=True):
     g1.set(xlabel='To', ylabel='From')
     #plt.suptitle('GCSS', fontsize=23)
     if save:
-        plt.savefig(dpi=200,fname=filename)
+        plt.savefig(dpi=300,fname=filename)
 
 def absmaxND(a, axis=None):
     amax = a.max(axis)
@@ -225,6 +225,27 @@ def showStationarityResults(filename, figTitle ="", oneToTwo = [], twoToOne= [],
         plt.close()
 
 # working example: 
+# in the thesis:
+# python Pipeline.py -filename_in "./CollectedDetrended LinearFill.csv" -dirname_out "testResults" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Extent_NH_Detrend_Anom" 
+# -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
+
+# python Pipeline.py -filename_in "./CollectedDetrended LinearFill.csv" -dirname_out "results_globalTemp" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Extent_NH_Detrend_Anom" "Global_Temp_Anomaly" -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
+# python Pipeline.py -filename_in "./CollectedDetrended LinearFill.csv" -dirname_out "results_noConfound" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Extent_NH_Detrend_Anom" -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
+# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_asi_Aggr" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Alb_MostChange" -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
+# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_asi_globalTemp" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Conc_MostChange" "Global_Temp_Anomaly" -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
+# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_asi_arcticTemp" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Conc_MostChange" "Arctic_Temp_Anomalies" -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "y" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
+# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_asi_noAR" -vars "AMOC_Caesar" "SI_Conc_MostChange" "Arctic_Temp_Anomalies" -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
+# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_asi_noAR_global" -vars "AMOC_Caesar" "SI_Conc_MostChange" "Global_Temp_Anomaly" -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
+# python Pipeline.py -filename_in "./CollectedDetrended LinearFill.csv" -dirname_out "results_amocAR" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
+
+# here's the command for my paper with detrended and deseasonalised ice conc:
+# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_detrended" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
+
+# supplement: include the other variables
+# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_AR_ArcticT" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "CLLJ" "Prec. AR" "Sea Ice Conc." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
+# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_AR" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Conc_MostChange_DetrDes" -vars_names "AMOC" "CLLJ" "Prec. AR" "Sea Ice Conc." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
+
+
 # py Pipeline.py -filename_in "./testSheet.csv" -dirname_out "testResults" -vars "SeaIce" "AMOC" "GrIS" -mask "mask_pcmci" "mask_lkif" "mask_pcmci" -mask_lkif "mask_lkif" -maskType "x" -detrend True True True -deseason True True True -diff True True True -tauMax 10 -alpha 0.1 -forbiddenLinks [0,2] -causalStationarity True -stationarityWindow 3 -stationarityShift 12 -stationarityVars 0 2
 
 # py Pipeline.py -filename_in "./testSheet.csv" -dirname_out "testResults" -vars "SeaIce" "AMOC" "GrIS" 
@@ -246,8 +267,9 @@ if __name__ == "__main__":
     parser.add_argument("-filename_in", type=str, help= ".csv file (separated by semicolons) with all univariate variables", required=True)
     parser.add_argument("-dirname_out", type=str, help= "directory for diagram output", required=True)
     parser.add_argument("-vars", help = "variable names in csv file", nargs='+', default=[], required=True)
+    parser.add_argument("-vars_names", help = "variable names in output graphs", nargs='+', default=[], required=False)
     parser.add_argument("-mask", help = "mask column names in csv file (pcmci)", nargs='+', default=[], required=False)
-    parser.add_argument("-mask_lkif", type = str, help = "single mask column name in csv file (lkif)", required=False)
+    parser.add_argument("-mask_lkif", type = str, help = "single mask column name in csv file (lkif)", default="", required=False)
     parser.add_argument("-maskType", type = str, choices = ["x","y", "z", "xyz"], default="x", required=False)
     parser.add_argument("-detrend", help = "detrend indicators (True/False), as many as vars", nargs='+', default=[], required=False)
     parser.add_argument("-deseason", help = "deseasonalizing indicators (True/False), as many as vars", nargs='+', default=[], required=False)
@@ -283,6 +305,9 @@ if __name__ == "__main__":
 
     file_in = args.filename_in
     dataCols = args.vars
+    var_names = args.vars_names
+    if len(var_names) != len(dataCols):
+        var_names = dataCols
     maskCols = args.mask
     maskLKIF = args.mask_lkif
     if args.causalStationarity:
@@ -444,7 +469,7 @@ if __name__ == "__main__":
             graph_bool = p_matrix <= alpha
             matrixPCMCI = val_matrix * graph_bool
             
-            visualizeGraph(matrixPCMCI, results["graph"], dataCols, directory + "/default_pcmci")
+            visualizeGraph(matrixPCMCI, results["graph"], var_names, directory + "/default_pcmci")
 
             if useMask:
                 med = LinearMediation(dataframe=dataframe, mask_type = args.maskType)
@@ -453,7 +478,7 @@ if __name__ == "__main__":
             med.fit_model(all_parents=toys.dag_to_links(results["graph"]), tau_max=tau_max)
             val_matrix = med.get_val_matrix(symmetrize=True)
 
-            visualizeGraph(val_matrix, results["graph"], dataCols, directory + "/default_mediatedPCMCI")
+            visualizeGraph(val_matrix, results["graph"], var_names, directory + "/default_mediatedPCMCI")
 
             print("Linear Mediation Values:")
             pcmci.print_significant_links(
@@ -477,7 +502,7 @@ if __name__ == "__main__":
                     matrixPCMCI = maxSignificantLink(val_matrix, graph_bool, axis = 2)
                     oneToTwo[i] = matrixPCMCI[a,b]
                     twoToOne[i] = matrixPCMCI[b,a]
-                showStationarityResults(directory + "/stationarity_pcmci", "", oneToTwo, twoToOne, varNames=[dataCols[a], dataCols[b]], slideWindow= stationaryWindow)
+                showStationarityResults(directory + "/stationarity_pcmci", "", oneToTwo, twoToOne, varNames=[var_names[a], var_names[b]], slideWindow= stationaryWindow)
         
         if "LM" in methodsChosen:
             if len(args.prescribeNetLM) == 0:
@@ -501,7 +526,7 @@ if __name__ == "__main__":
                 med.fit_model(all_parents=lmLinkAssumptions, tau_max=tau_max)
                 val_matrix = med.get_val_matrix(symmetrize=True)
 
-                visualizeGraph(val_matrix, results["graph"], dataCols, directory + "/default_linearMed")
+                visualizeGraph(val_matrix, results["graph"], var_names, directory + "/default_linearMed")
 
                 if args.causalStationarity:
                     oneToTwo = np.zeros(int((data.shape[0]-slidingWindow)/stationaryShift))
@@ -517,7 +542,7 @@ if __name__ == "__main__":
                         val_matrix = absmaxND(val_matrix, axis=2)
                         oneToTwo[i] = val_matrix[a,b]
                         twoToOne[i] = val_matrix[b,a]
-                    showStationarityResults(directory + "/stationarity_linearMed", "", oneToTwo, twoToOne, varNames=[dataCols[a], dataCols[b]], slideWindow= stationaryWindow)
+                    showStationarityResults(directory + "/stationarity_linearMed", "", oneToTwo, twoToOne, varNames=[var_names[a], var_names[b]], slideWindow= stationaryWindow)
 
         if "LKIF" in methodsChosen:
             if useMask:
@@ -527,7 +552,7 @@ if __name__ == "__main__":
             else:
                 matrixLKIF = LKIF.lkif(data.T, alpha, returnAll=False, timestamps = None)
             
-            visualizeGraph(matrixLKIF, [], dataCols, directory + "/default_lkif")
+            visualizeGraph(matrixLKIF, [], var_names, directory + "/default_lkif")
 
             if args.causalStationarity:
                 oneToTwo = np.zeros(int((data.shape[0]-slidingWindow)/stationaryShift))
@@ -543,12 +568,12 @@ if __name__ == "__main__":
                         
                     oneToTwo[i] = matrixLKIF[a,b]
                     twoToOne[i] = matrixLKIF[b,a]
-                showStationarityResults(directory + "/stationarity_lkif", "", oneToTwo, twoToOne, varNames=[dataCols[a], dataCols[b]], slideWindow= stationaryWindow)
+                showStationarityResults(directory + "/stationarity_lkif", "", oneToTwo, twoToOne, varNames=[var_names[a], var_names[b]], slideWindow= stationaryWindow)
 
         if "GCSS" in methodsChosen:
             try:
                 matrixGCSS = GCSS.gcss(data.T, alpha, tau_max, returnAll=False).T
-                visualizeGraph(matrixGCSS, [], dataCols, directory + "/default_gcss")
+                visualizeGraph(matrixGCSS, [], var_names, directory + "/default_gcss")
             except:
                 matrixGCSS = np.zeros((data.shape[1],data.shape[1]))
                 print("Error on GCSS")
@@ -566,7 +591,7 @@ if __name__ == "__main__":
                         
                     oneToTwo[i] = matrixGCSS[a,b]
                     twoToOne[i] = matrixGCSS[b,a]
-                showStationarityResults(directory + "/stationarity_gcss", "", oneToTwo, twoToOne, varNames=[dataCols[a], dataCols[b]], slideWindow= stationaryWindow)
+                showStationarityResults(directory + "/stationarity_gcss", "", oneToTwo, twoToOne, varNames=[var_names[a], var_names[b]], slideWindow= stationaryWindow)
 # spatial Analysis
     else:
         data_spatialResolved = np.load(args.spatialFile)

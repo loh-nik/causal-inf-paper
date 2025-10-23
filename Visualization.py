@@ -177,10 +177,10 @@ def saveMCCCurveSubplot(subplotRows, subplotCols, scores, values, title, filenam
             elif len(quantileLower) > 0:
                 ax.fill_between(values, quantileLower, quantileHigher, alpha = 0.2)
         else:
-            showLegend = True
+            mayShowLegend = True
             if len(rowLabels) == 0:
                 rowLabelTuple = np.zeros(scoreTuple.shape[0])
-                showLegend = False
+                mayShowLegend = False
             elif len(rowLabelTuple) != scoreTuple.shape[0]:
                 print("Error: Not enough labels provided for Score data")
                 exit()
@@ -200,7 +200,7 @@ def saveMCCCurveSubplot(subplotRows, subplotCols, scores, values, title, filenam
                         ax.fill_between(values, scoreTuple[i] + errorTuple[i], scoreTuple[i] - errorTuple[i], alpha = 0.2, color= colorTuple[i])
                     elif len(quantileLower) > 0:
                         ax.fill_between(values, quantileLower[i], quantileHigher[i], alpha = 0.2, color= colorTuple[i])
-            if showLegend:
+            if mayShowLegend:
                 ax.legend(fontsize=14)
     # plt.subplots_adjust(hspace=0)
     if save:
@@ -212,7 +212,7 @@ def saveMCCCurveSubplot(subplotRows, subplotCols, scores, values, title, filenam
 
 def saveMCCScatter(scores, values, title, filename, errors = [], colors = [], rowLabels=[], show = False, save= True, 
                 xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=300, xlabel ="", ylabel ="", yAxisCut = False,
-                  yAxisLinearLim = 1, quantileLower = [], quantileHigher = [], marker = '_', legend_outside = False, ylim = None):
+                  yAxisLinearLim = 1, quantileLower = [], quantileHigher = [], marker = '_', legend_outside = False, ylim = None, legend = True):
     """Draws a plot with markers for data points, optionally with error bars.
     \nScores are the MCC score values, in a 2D array with first dimension as the number of data lines drawn, \
     and second dimension equaling values dimension. 
@@ -275,7 +275,7 @@ def saveMCCScatter(scores, values, title, filename, errors = [], colors = [], ro
                     plt.errorbar(values, scores[i], np.stack((quantileLower[i], quantileHigher[i]), axis=0), fmt=marker, alpha = 0.3, color= colors[i],label = str(rowLabels[i]))
                 else:
                     plt.scatter(values, scores[i], label = str(rowLabels[i]), marker=marker, color=colors[i])
-        if showLegend:
+        if showLegend and legend:
             if legend_outside:
                 plt.legend(fontsize=14, bbox_to_anchor=(1.04, 1), loc="upper left")
             else:

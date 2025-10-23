@@ -478,9 +478,9 @@ def scale_lightness(rgb, scale_l):
     return colorsys.hls_to_rgb(h, min(1, l * scale_l), s = s)
 
 def subtractedMatrix(matrix, desiredDim):
-    result = []
+    result = np.zeros((desiredDim, desiredDim))
     for i in range(desiredDim):
-        result.append(matrix[i][:desiredDim])
+        result[i] = matrix[i,:desiredDim]
     return result
 
 def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingStrength, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
@@ -543,11 +543,11 @@ def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingSt
                 for j, i, value in result:
                     fullOutVAR[j, i] = value
         if not comm or comm.Get_rank() == 0:
-            np.save(data_dir + "/6d_System_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
-            np.save(data_dir + "/VAR_6d_System_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
+            np.save(data_dir + "/6d_System_ext_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
+            np.save(data_dir + "/VAR_6d_System_ext_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
     elif not comm or comm.Get_rank() == 0:
-        fullOut = np.load(data_dir + "/6d_System_"+str(randomRuns)+"_runs_metrics.npy")
-        fullOutVAR = np.load(data_dir + "/VAR_6d_System_"+str(randomRuns)+"_runs_metrics.npy")
+        fullOut = np.load(data_dir + "/6d_System_ext_"+str(randomRuns)+"_runs_metrics.npy")
+        fullOutVAR = np.load(data_dir + "/VAR_6d_System_ext_"+str(randomRuns)+"_runs_metrics.npy")
     if not comm or comm.Get_rank() == 0:
         scores = MCCFromFull(fullOut, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis = 1)
@@ -595,8 +595,8 @@ def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingSt
 
         scores = MCCFromFull(fullOutVAR, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis = 1)
-        lowDense = mean[:3]
-        highDense = mean[3:]
+        lowDense = mean[:sizeLen]
+        highDense = mean[sizeLen:]
         final = np.append(lowDense, highDense, axis=1)
         # get central 90% of data
         #median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
@@ -738,9 +738,9 @@ def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns, 
         vis.saveMCCCurve(fullInfoMean.T, ceilings, "", diag_dir + "/forcing6d", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
         vis.saveMCCCurve(noInfoMean.T, ceilings, "", diag_dir + "/forcing6d_reducedInformation", noInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
         
-        vis.saveMCCScatter(gcssInfo.T, ceilings, "", diag_dir + "/forcing6d_gcss", gcssStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
-        vis.saveMCCScatter(lkifInfo.T, ceilings, "", diag_dir + "/forcing6d_lkif", lkifStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
-        vis.saveMCCScatter(pcmInfo.T, ceilings, "", diag_dir + "/forcing6d_pcmci", pcmStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300)
+        vis.saveMCCScatter(gcssInfo.T, ceilings, "", diag_dir + "/forcing6d_gcss", gcssStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300, legend=False)
+        vis.saveMCCScatter(lkifInfo.T, ceilings, "", diag_dir + "/forcing6d_lkif", lkifStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300, legend=False)
+        vis.saveMCCScatter(pcmInfo.T, ceilings, "", diag_dir + "/forcing6d_pcmci", pcmStd.T, rowLabels=["Known Confounder", "Hidden Confounder"],figsize=(8,2), dpi=300, legend=False)
         
         fullInfoMCC = tpr_fpr_FromFull(np.array(metricsNormal), axis=2)
         fullInfoMean, fullInfoStd = getMeanStdDev(fullInfoMCC, axis = 1)
@@ -762,11 +762,13 @@ def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns, 
         defaultCols = mpl.color_sequences["tab10"]
         flippedCols = [defaultCols[0], defaultCols[2], defaultCols[1], defaultCols[3]]
         vis.saveMCCScatter(gcssInfo.T, ceilings, "", diag_dir + "/forcing6d_gcss_TPR", gcssStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR", "Hidden Confounder TPR", "Hidden Confounder FPR"],
-                           colors = flippedCols, figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
+                           colors = flippedCols, figsize=(10,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05), legend=False)
         vis.saveMCCScatter(lkifInfo.T, ceilings, "", diag_dir + "/forcing6d_lkif_TPR", lkifStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],
-                           colors = flippedCols, figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
+                           colors = flippedCols, figsize=(10,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05), legend=False)
         vis.saveMCCScatter(pcmInfo.T, ceilings, "", diag_dir + "/forcing6d_pcmci_TPR", pcmStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],
-                           colors = flippedCols, figsize=(12,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05))
+                           colors = flippedCols, figsize=(10,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05), legend=False)
+        vis.saveMCCScatter(pcmInfo.T, ceilings, "", diag_dir + "/forcing6d_pcmci_TPR_withLegend", pcmStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],
+                           colors = flippedCols, figsize=(10,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05), legend=True)
 
 
 def autoCorrEvaluations():
@@ -1463,6 +1465,19 @@ def main():
     couplingStrength = 1
     tauMax = [1,1,1]
 
+    nonStationaryStable(plotOnly = plotOnly,
+    ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    alpha = alpha,
+    samples = samples,
+    tauMax = tauMax,
+    randomRuns = randomRuns, 
+    verbose=False,
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
+    if comm.Get_rank() == 0: print("Non-Stationarity Evaluation finished")
+    exit()
+
     system6dEvaluations(plotOnly = plotOnly,
     alpha = alpha,
     samples = samples,
@@ -1512,17 +1527,6 @@ def main():
     if comm.Get_rank() == 0: print("Coupling Strength Evaluation finished")
 
 
-    nonStationaryStable(plotOnly = plotOnly,
-    ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-    alpha = alpha,
-    samples = samples,
-    tauMax = tauMax,
-    randomRuns = randomRuns, 
-    verbose=False,
-    comm=comm,
-    data_dir=data_dir,
-    diag_dir=diag_dir)
-    if comm.Get_rank() == 0: print("Non-Stationarity Evaluation finished")
 
     GCSS.close_octave()
 

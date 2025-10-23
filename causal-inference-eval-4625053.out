@@ -1,0 +1,409 @@
+Python being used: /home/niklaslo/.conda/envs/causal-inf-env/bin/python
+MPI being used: /home/niklaslo/.conda/envs/causal-inf-env/bin/mpirun
+Testing numpy...
+1.24.1
+Testing mpi4py...
+3.1.5
+-------------------------------------------------------------
+Full Evaluation run
+Rank 0 importing PCMCI first...
+[?2004l
+[?2004l
+[?2004l
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+[?2004l
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
+Error, coupling matrix not of shape (3,3) or (6,6) or (12,12)
