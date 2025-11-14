@@ -1,29 +1,34 @@
-import argparse
-import os
-import sys
-import copy
-import LKIF
-import GCSS
-from PCMCI import PCMCIPlus
-from scipy.signal import detrend
-import pandas as pd
+testing = False
+if not testing:
+    import argparse
+    import os
+    import sys
+    import copy
+    import LKIF
+    import GCSS
+    from PCMCI import PCMCIPlus
+    from scipy.signal import detrend
+    import pandas as pd
+    
+    import seaborn as sns
+    import ast
+    from tigramite import data_processing as pp
+    from tigramite.independence_tests.parcorr import ParCorr
+    from tigramite.independence_tests.robust_parcorr import RobustParCorr
+    from tigramite.independence_tests.gpdc import GPDC
+    from tigramite.toymodels import structural_causal_processes as toys
+    from tigramite.causal_effects import CausalEffects
+    from tigramite.pcmci import PCMCI
+    from tigramite.independence_tests.parcorr_wls import ParCorrWLS
+
+    from tigramite.models import LinearMediation
+    from mpl_toolkits.basemap import Basemap
+    from matplotlib.colors import LogNorm
+    import matplotlib.ticker as ticker
+
+from tigramite import plotting as tp
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
-import ast
-from tigramite import data_processing as pp
-from tigramite.independence_tests.parcorr import ParCorr
-from tigramite.independence_tests.robust_parcorr import RobustParCorr
-from tigramite.independence_tests.gpdc import GPDC
-from tigramite.toymodels import structural_causal_processes as toys
-from tigramite.causal_effects import CausalEffects
-from tigramite.pcmci import PCMCI
-from tigramite.independence_tests.parcorr_wls import ParCorrWLS
-from tigramite import plotting as tp
-from tigramite.models import LinearMediation
-from mpl_toolkits.basemap import Basemap
-from matplotlib.colors import LogNorm
-import matplotlib.ticker as ticker
 
 # data of shape (variable, time steps)
 def preprocessData(data, detrending = True, deseason = True, diff = True, deseasonLength = 12):
@@ -50,6 +55,133 @@ def preprocessData(data, detrending = True, deseason = True, diff = True, deseas
         currentData = temp
     currentData[censor] = np.nan
     return currentData
+
+def visualizeGraphOnMap(val_matrix, var_names, filename):
+    import cartopy.crs as ccrs
+    import cartopy.feature as cfeature
+    from shapely.geometry import Polygon
+    # fixed this for my plot
+    def load_region(file_path):
+        """Reads a two-column lat/lon text file."""
+        data = np.loadtxt(file_path)
+        lats, lons = data[:, 0], data[:, 1]
+        return lats, lons
+
+    # Replace with your actual file paths
+    regions = {
+        "AMOC": "subpolarGyreCaesar.txt",
+        "ASSI": "ASSI_def.txt"
+        # "Temp": "ArcticTemp_def.txt"
+    }
+
+    colors = {
+        "AMOC": "red",
+        "ASSI": "blue",
+        "Temp": "green"
+    }
+
+    proj = ccrs.Orthographic(central_latitude=60, central_longitude=-30)
+    dataProj = ccrs.PlateCarree()
+
+    # === Step 2: Create the map ===
+    fig, ax = plt.subplots(subplot_kw={'projection': proj}, figsize=(8, 8))
+
+    # plot arctic temp by hand
+    totalLats = np.arange(45, 91, 1)
+    totalLons = np.arange(-180, 181, 1)
+    lon2d, lat2d = np.meshgrid(totalLons, totalLats)
+    mask = np.zeros(lon2d.shape)
+    for i, lat in enumerate(totalLats):
+        if lat >= 58:
+            mask[i] = 1
+    ax.contourf(lon2d, lat2d, mask, levels=[0.5, 1.5], colors=colors["Temp"], alpha=0.5, transform=dataProj)
+
+    # Plot ASI and AMOC
+    for region_name, file_path in regions.items():
+        lats, lons = load_region(file_path)
+        totalLats = np.arange(41, 90, 1)
+        totalLons = np.arange(-180, 179, 1)
+        lon2d, lat2d = np.meshgrid(totalLons, totalLats)
+        mask = np.zeros(lon2d.shape)
+        for i in range(len(lats)):
+            mask[np.where(totalLats == int(lats[i])),np.where(totalLons == int(lons[i]))] = 1
+        # ASSI as a scatter plot, to avoid weird artifacts around the smaller regions
+        if region_name == "ASSI":
+            ax.scatter(lons, lats, color=colors[region_name], s=2, transform=dataProj, alpha = 0.2)
+        # AMOC as a singular contour shape
+        else:
+            ax.contourf(lon2d, lat2d, mask, levels=[0.5, 1.5], colors=colors[region_name], alpha=0.5, transform=dataProj)
+            ax.contour(lon2d, lat2d, mask, levels=[0.5, 1.5], colors=colors[region_name], alpha=0.8, transform=dataProj)
+
+
+
+    # Add features for context
+    ax.add_feature(cfeature.LAND, facecolor="grey", zorder=4)
+    ax.add_feature(cfeature.COASTLINE, linewidth=0.5, zorder=4)
+    ax.gridlines(draw_labels=False, linewidth=0.3)
+
+    ax_overlay = fig.add_axes(ax.get_position(), projection=None, frameon=False)  # same position as map
+    ax_overlay.set_axis_off()
+    # Step 4: Add causal nodes on new layer
+    nodePosX = np.array([-40, -60, -40])
+    nodePosY = np.array([50, 70, 89])
+    xy = proj.transform_points(ccrs.PlateCarree(), nodePosX, nodePosY)
+    x_proj, y_proj = xy[:, 0], xy[:, 1]
+    screen_coords = ax.transData.transform(np.column_stack((x_proj, y_proj)))
+    x_screen, y_screen = screen_coords[:, 0], screen_coords[:, 1]
+    print(x_screen)
+    print(y_screen)
+    # Get the axis limits (this helps us know the "center" of the map)
+    # x_min, x_max = ax_overlay.get_xlim()
+    # print(x_min)
+    # print(x_max)
+    # y_min, y_max = ax_overlay.get_ylim()
+
+    # # Calculate the center of the map in screen coordinates
+    # x_center, y_center = (200, 200)
+
+    # # Adjust the screen coordinates to center them correctly
+    # x_screen = x_screen - x_center
+    # y_screen = y_screen - y_center
+    # print(x_screen)
+    # print(y_screen)
+    nodePosX = np.array([0.97, 0.85, 1])
+    nodePosY = np.array([0.45, 0.75, 1])
+    tp.plot_graph(
+            val_matrix=val_matrix,
+            graph=val_matrix,
+            var_names=var_names,
+            link_colorbar_label='cross-MCI',
+            node_colorbar_label='auto-MCI',
+            show_autodependency_lags=False,
+            node_pos={'x': nodePosX, 'y':nodePosY},
+            node_size = 0.12,
+            node_aspect = 0.8,
+            node_label_size=12,
+            link_label_fontsize=12,
+            fig_ax=(fig,ax_overlay)
+            )
+
+    current_pos = ax_overlay.get_position()
+
+    # Calculate the shift (e.g., moving by -0.5 in both x and y direction)
+    shift_x, shift_y = -0.32, -0.17
+
+    # Create a new position for the axes by shifting the current position
+    new_pos = [current_pos.x0 + shift_x, current_pos.y0 + shift_y, current_pos.width, current_pos.height]
+
+    # Set the new position for the axes
+    ax_overlay.set_position(new_pos)
+
+    # === Step 4: Add title and legend ===
+    # ax.legend(loc="lower left")
+    # ax.set_title("Geographical Regions by Grid Points", fontsize=14)
+    # from matplotlib.transforms import Bbox
+    # fig_width, fig_height = fig.get_size_inches()
+    # left, bottom, width, height = 0.25, 0.0, 0.50, 1
+    # bbox = Bbox.from_bounds(left * fig_width, bottom*fig_height, width* fig_width, height*fig_height)
+    # plt.savefig(filename, dpi=300, bbox_inches=bbox)
+    plt.savefig(filename, dpi=300)
 
 def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = False, save = True):
     plotMatrix(val_matrix, columnNames, filename + "matrix")
@@ -239,11 +371,32 @@ def showStationarityResults(filename, figTitle ="", oneToTwo = [], twoToOne= [],
 # python Pipeline.py -filename_in "./CollectedDetrended LinearFill.csv" -dirname_out "results_amocAR" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
 
 # here's the command for my paper with detrended and deseasonalised ice conc:
-# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_detrended" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
+# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_detrended" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
+
+# with PCMCI plus:
+# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_detrended_pcmciplus" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
+
+# with PCMCI GPDC:
+# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_gpdc" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
+
+# with a detrended, deseasonalised confounder:
+# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_confounderDetrend" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -detrend False False True -deseason False False True
+
+# with a lower alpha level of 0.01 and the deseasonalised confounder:
+# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_confounderDetrend_alpha001" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.01 -detrend False False True -deseason False False True
+
+# CURRENT PAPER VERSION with a march september mask in a new file
+# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates2.csv" -dirname_out "results_paper_confounderDetrend_marchSeptMask" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "MarchSept" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False True -deseason False False True
+
+# alternative, very similar but with albedo
+# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_albedo" -vars "AMOC_Caesar" "SI_Alb_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Alb." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
 
 # supplement: include the other variables
 # python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_AR_ArcticT" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "CLLJ" "Prec. AR" "Sea Ice Conc." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
 # python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_AR" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Conc_MostChange_DetrDes" -vars_names "AMOC" "CLLJ" "Prec. AR" "Sea Ice Conc." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
+
+# CURRENT PAPER VERSION with Annika's variables
+# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates2.csv" -dirname_out "results_paper_AR_Full" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "CLLJ" "Prec. AR" "Sea Ice Conc." "Arctic Temp." -mask "MarchSept" "Southern AR dry season" "Southern AR dry season" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False False False True -deseason False False False False True
 
 
 # py Pipeline.py -filename_in "./testSheet.csv" -dirname_out "testResults" -vars "SeaIce" "AMOC" "GrIS" -mask "mask_pcmci" "mask_lkif" "mask_pcmci" -mask_lkif "mask_lkif" -maskType "x" -detrend True True True -deseason True True True -diff True True True -tauMax 10 -alpha 0.1 -forbiddenLinks [0,2] -causalStationarity True -stationarityWindow 3 -stationarityShift 12 -stationarityVars 0 2
@@ -263,6 +416,13 @@ def showStationarityResults(filename, figTitle ="", oneToTwo = [], twoToOne= [],
 # -spatialFile testSeaIceAlbedo_Detrended.npy -spatialLon polarLongitudeAggregated.npy -spatialLat polarLatitudeAggregated.npy -spatialOtherVar 0
 
 if __name__ == "__main__":
+    # val_matrix = np.zeros((3,3,6))
+    # val_matrix[1,0,1] = 0.1
+    # val_matrix[1,2,2] = -0.1
+    # var_names = ["AMOC", "ASI", "Temp"]
+    # visualizeGraphOnMap(val_matrix, var_names, "test/testMap.png")
+    # exit()
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-filename_in", type=str, help= ".csv file (separated by semicolons) with all univariate variables", required=True)
     parser.add_argument("-dirname_out", type=str, help= "directory for diagram output", required=True)
@@ -288,6 +448,8 @@ if __name__ == "__main__":
     parser.add_argument("-stationarityWindow", type= int, help = "causal stationarity time window in number of shifts (e.g., number of years)", required=False)
     parser.add_argument("-stationarityVars", help = "indices of two variables for causal stationarity analysis", nargs = '+', default = [], required=False)
     parser.add_argument("-prescribeNetLM", help="user-prescribed network for linear mediation analysis", nargs='+', default = [], required = False)
+    parser.add_argument("-worldMap", help = "plot on Arctic map, True/False", type=bool, default=False, required=False)
+    parser.add_argument("-map_var_names", help = "variable names in output world map", nargs='+', default=[], required=False)
     args = parser.parse_args()
     
     directory = args.dirname_out
@@ -317,6 +479,8 @@ if __name__ == "__main__":
         a = ast.literal_eval(a)
         b = ast.literal_eval(b)
         slidingWindow = stationaryWindow * stationaryShift
+
+    plotOnMap = args.worldMap
 
     # default mask for lkif analysis (which can only take one mask)
     defaultMask = []
@@ -418,7 +582,7 @@ if __name__ == "__main__":
         data[existingData,i] = (2 * ((data[existingData,i] - np.min(data[existingData,i])) / (np.max(data[existingData,i]) - np.min(data[existingData,i])))) - 1
         data[:,i] = np.reshape(preprocessData(np.reshape(data[:,i],(1,-1), order="F"), detrendingIndicator[i], deseasonIndicator[i], diffIndicator[i], deseasonLength=deseasonLength),(-1), order="F")
     
-    tau_min = 1
+    tau_min = 0
     tau_max = args.tauMax
     alpha = args.alpha
 
@@ -470,6 +634,8 @@ if __name__ == "__main__":
             matrixPCMCI = val_matrix * graph_bool
             
             visualizeGraph(matrixPCMCI, results["graph"], var_names, directory + "/default_pcmci")
+            if plotOnMap:
+                visualizeGraphOnMap(matrixPCMCI, args.map_var_names, directory + "/mapped_pcmci")
 
             if useMask:
                 med = LinearMediation(dataframe=dataframe, mask_type = args.maskType)

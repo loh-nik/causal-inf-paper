@@ -348,6 +348,56 @@ def saveCouplingMatrixGraph(matrix, title, filename, show = False, save= True, f
     else: 
         plt.close()
 
+def customCouplingMatrixGraph(matrix, title, filename, show = False, save= True, figsize=(4.5,4.5), dpi=300):
+    import networkx as nx
+    edge_colors = {1: 'tab:blue', -1: 'tab:red'}
+
+    G = nx.DiGraph()
+
+    n = matrix.shape[0]
+    G.add_nodes_from(range(n))
+
+    for i in range(n):
+        for j in range(n):
+            if matrix[i, j] != 0:
+                G.add_edge(i, j, weight=matrix[i, j])
+
+    pos = nx.circular_layout(G, scale=0.8)
+    print(pos)
+    edge_color_list = [edge_colors[G[u][v]['weight']] for u, v in G.edges()]
+        
+    fig, ax = plt.subplots(1,1, figsize=figsize, layout="constrained")
+    # plt.title(title, fontsize=17)
+    nx.draw_networkx_edges(G, pos, ax=ax, edge_color = edge_color_list, connectionstyle=f'arc3, rad={0.2}', arrows=True, width=5, arrowsize=30, node_size=1600)
+
+    nx.draw_networkx_nodes(G, pos, ax=ax, node_color='orange', node_size=1600)
+
+    nx.draw_networkx_labels(G, pos, ax=ax, font_size=14, font_color='black')  
+
+    # # --- Force equal, symmetric limits ---
+    # xvals, yvals = np.array(list(pos.values())).T
+    # pad = 0.1
+    # xmax, ymax = xvals.max() + pad, yvals.max() + pad
+    # xmin, ymin = xvals.min() - pad, yvals.min() - pad
+    # ax.set_xlim(xmin, xmax)
+    # ax.set_ylim(ymin, ymax)
+    # ax.set_aspect('equal')
+
+    # # Remove frame/padding
+    # plt.tight_layout()
+    ax.margins(0.1)
+    ax.axis('off')
+    
+
+    # --- Save cleanly ---
+   
+    if save:
+        plt.savefig(filename, dpi=dpi, pad_inches=0)
+    if show:
+        plt.show()
+    else: 
+        plt.close()
+
 def saveHeatmap(textValues, colorValues, title, filename, show=False, save=True, figsize = (4.5,4), dpi=300, xlabel= "", ylabel ="", xtickLabels = [], ytickLabels=[]):
     fig = plt.figure(figsize=figsize, layout="constrained")
     #plt.suptitle(title, fontsize=15)
@@ -387,3 +437,99 @@ def saveGrid(matrix, title, filename, show=False, save = True, figsize=(4.2,3.8)
         plt.show()
     else: 
         plt.close()
+
+mediumCouplingMatrixCascade_LowDense = np.array([
+                                        [0,0,0,0,0,0],
+                                        [1,0,0,0,0,0],
+                                        [0,-1,0,0,0,0],
+                                        [0,0,0,0,0,0],
+                                        [0,0,1,0,0,1],
+                                        [0,0,0,0,-1,0]])
+mediumCouplingMatrixVAR_LowDense = np.array([
+                                    [0.5,0,0,0,0,0],
+                                    [1,0.5,0,0,0,0],
+                                    [0,-1,0.5,0,0,0],
+                                    [0,0,0,0.5,0,0],
+                                    [0,0,1,0,0.5,1],
+                                    [0,0,0,0,-1,0.5]])
+
+mediumCouplingMatrixVAR_HighDense = np.array([
+                                    [0.5,0,-1,-1,0,0],
+                                    [1,0.5,0,0,0,0],
+                                    [1,1,0.5,0,0,0],
+                                    [0,0,0,0.5,-1,-1],
+                                    [0,1,-1,0,0.5,1],
+                                    [0,0,0,1,-1,0.5]])
+mediumCouplingMatrixCascade_HighDense = np.array([
+                                    [0,0,-1,-1,0,0],
+                                    [1,0,0,0,0,0],
+                                    [1,1,0,0,0,0],
+                                    [0,0,0,0,-1,-1],
+                                    [0,1,-1,0,0,1],
+                                    [0,0,0,1,-1,0]])
+
+defaultCouplingMatrixVAR_LowDense= np.array([[0.5,0,0],[-1,0.5,0],[0,-1,0.5]])
+defaultCouplingMatrixCascade_LowDense = np.array([[0,0,0],[-1,0,0],[0,-1,0]])
+
+defaultCouplingMatrixVAR_HighDense= np.array([[0.5,1,0],[-1,0.5,1],[1,-1,0.5]])
+defaultCouplingMatrixCascade_HighDense = np.array([[0,1,0],[-1,0,1],[1,-1,0]])
+
+largeCouplingMatrixVAR_LowDense = np.array([[0.5,0,0,0,0,0,0,0,0,0,0,0],
+                                    [1,0.5,0,0,0,0,0,0,0,0,0,0],
+                                    [0,1,0.5,0,0,0,0,0,0,0,0,0],
+                                    [0,1,0,0.5,0,0,0,0,0,0,0,0],
+                                    [0,0,0,0,0.5,-1,0,0,0,0,0,0],
+                                    [0,0,0,-1,0,0.5,0,0,0,0,0,0],
+                                    [0,0,-1,0,0,0,0.5,0,0,0,0,0],
+                                    [0,0,0,0,0,0,0,0.5,1,0,0,0],
+                                    [0,0,0,0,0,0,0,-1,0.5,0,0,0],
+                                    [0,0,0,0,1,0,0,0,0,0.5,0,-1],
+                                    [0,0,0,0,0,0,0,-1,0,0,0.5,0],
+                                    [0,0,0,0,0,0,0,0,0,0,0,0.5]])
+largeCouplingMatrixCascade_LowDense = np.array([[0,0,0,0,0,0,0,0,0,0,0,0],
+                                    [1,0,0,0,0,0,0,0,0,0,0,0],
+                                    [0,1,0,0,0,0,0,0,0,0,0,0],
+                                    [0,1,0,0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,0,0,-1,0,0,0,0,0,0],
+                                    [0,0,0,-1,0,0,0,0,0,0,0,0],
+                                    [0,0,-1,0,0,0,0,0,0,0,0,0],
+                                    [0,0,0,0,0,0,0,0,1,0,0,0],
+                                    [0,0,0,0,0,0,0,-1,0,0,0,0],
+                                    [0,0,0,0,1,0,0,0,0,0,0,-1],
+                                    [0,0,0,0,0,0,0,-1,0,0,0,0],
+                                    [0,0,0,0,0,0,0,0,0,0,0,0]])
+largeCouplingMatrixVAR_HighDense = np.array([[0.5,0,-1,0,0,1,0,0,0,0,0,0],
+                                    [1,0.5,-1,0,0,0,0,0,0,0,0,0],
+                                    [0,1,0.5,0,0,0,0,1,0,0,0,0],
+                                    [0,1,0,0.5,0,0,0,-1,0,0,0,0],
+                                    [0,0,0,0,0.5,-1,0,0,-1,-1,0,0],
+                                    [0,0,0,-1,0,0.5,0,0,0,0,0,0],
+                                    [0,0,-1,0,0,1,0.5,0,0,0,0,0],
+                                    [0,0,0,0,0,0,-1,0.5,1,0,0,0],
+                                    [0,0,0,0,0,0,0,-1,0.5,1,0,0],
+                                    [0,0,0,0,1,0,0,0,0,0.5,1,-1],
+                                    [0,0,0,0,0,0,0,-1,0,0,0.5,1],
+                                    [0,0,0,1,0,0,0,0,0,0,0,0.5]])
+largeCouplingMatrixCascade_HighDense = np.array([[0,0,-1,0,0,1,0,0,0,0,0,0],
+                                    [1,0,-1,0,0,0,0,0,0,0,0,0],
+                                    [0,1,0,0,0,0,0,1,0,0,0,0],
+                                    [0,1,0,0,0,0,0,-1,0,0,0,0],
+                                    [0,0,0,0,0,-1,0,0,-1,-1,0,0],
+                                    [0,0,0,-1,0,0,0,0,0,0,0,0],
+                                    [0,0,-1,0,0,1,0,0,0,0,0,0],
+                                    [0,0,0,0,0,0,-1,0,1,0,0,0],
+                                    [0,0,0,0,0,0,0,-1,0,1,0,0],
+                                    [0,0,0,0,1,0,0,0,0,0,1,-1],
+                                    [0,0,0,0,0,0,0,-1,0,0,0,1],
+                                    [0,0,0,1,0,0,0,0,0,0,0,0]])
+
+def plotCouplingGraphs():
+    matrices = [defaultCouplingMatrixCascade_LowDense, defaultCouplingMatrixCascade_HighDense,
+                mediumCouplingMatrixCascade_LowDense, mediumCouplingMatrixCascade_HighDense,
+                largeCouplingMatrixCascade_LowDense, largeCouplingMatrixCascade_HighDense]
+    filenames = ["SmallLowDense", "SmallHighDense", "MedLowDense", "MedHighDense", "LargeLowDense", "LargeHighDense"]
+    for matr, name in zip(matrices, filenames):
+        customCouplingMatrixGraph(matr, "", "diagrams/MatrixGraphs/" +name + ".png")
+
+if __name__ == "__main__":
+    plotCouplingGraphs()

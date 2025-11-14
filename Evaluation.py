@@ -260,6 +260,24 @@ def getMetricOfRealization(couplingMatrix, algorithms, model, samples, alpha, co
         matrixPCMCI = maxSignificantLink(matrixPCMCI, graph_bool, axis = 2)
         np.fill_diagonal(matrixPCMCI,0)
         matrices.append(matrixPCMCI.T)
+    if "PCMCI_GPDC" in algorithms:
+        tauPCMCI = tauMax
+        if tauList: 
+            tauPCMCI = tauMax[algorithms.index("PCMCI")]
+        matrixPCMCI, p_values = PCMCI.PCMCIPlus(fullData, [], range(fullData.shape[1]), None, tauPCMCI, alpha if alpha<=1 else 1, contempLinks=True, independenceTest="GPDC")
+        graph_bool = p_values <= alpha
+        matrixPCMCI = maxSignificantLink(matrixPCMCI, graph_bool, axis = 2)
+        np.fill_diagonal(matrixPCMCI,0)
+        matrices.append(matrixPCMCI.T)
+    if "PCMCI_robustpc" in algorithms:
+        tauPCMCI = tauMax
+        if tauList: 
+            tauPCMCI = tauMax[algorithms.index("PCMCI")]
+        matrixPCMCI, p_values = PCMCI.PCMCIPlus(fullData, [], range(fullData.shape[1]), None, tauPCMCI, alpha if alpha<=1 else 1, contempLinks=True, independenceTest="robustparcorr")
+        graph_bool = p_values <= alpha
+        matrixPCMCI = maxSignificantLink(matrixPCMCI, graph_bool, axis = 2)
+        np.fill_diagonal(matrixPCMCI,0)
+        matrices.append(matrixPCMCI.T)
     np.fill_diagonal(couplingMatrix, 0)
     if returnMatrices:
         return np.array(matrices)
@@ -404,6 +422,54 @@ def sample6dEvaluations(plotOnly, sampleCounts, alpha, randomRuns, tauMax, coupl
         print(mean.shape)
 
         vis.saveMCCCurve(mean.T, sampleCounts, "", diag_dir + "/samples6dCascades_TPR", stdDev.T, show=False, save = True, rowLabels=["GCSS-TPR", "LKIF-TPR", "PCMCI-TPR", "GCSS-FPR", "LKIF-FPR", "PCMCI-FPR"], xlabel = "Delay (no unit)", ylabel ="Rate", xscale ="log")
+
+def sample6dEvaluationsAppendix(plotOnly, sampleCounts, alpha, randomRuns, tauMax, couplingStrength, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
+    if not comm:
+        comm = MPI.COMM_WORLD
+    if not plotOnly:
+        # this data should have: 3 variables, 100 runs, 2000 samples per run
+        truthMatrix = mediumCouplingMatrixCascade_LowDense
+        fullOut = np.zeros((len(sampleCounts), randomRuns, 4, 3))
+        seed = comm.Get_rank()
+        param_combs = list(product(np.arange(len(sampleCounts)), np.arange(randomRuns)))
+        param_combs = param_combs[comm.Get_rank()::comm.Get_size()]
+        localFull = []
+        print("Node " + str(comm.Get_rank()) + " executing " + str(len(param_combs)) + " combinations for appendix sample test")
+        for j,i in param_combs:
+            metrics = getMetricOfRealization(couplingMatrix = truthMatrix, algorithms = ["PCMCI", "PCMCI_robustpc", "PCMCI_GPDC"], model= "Cascade", 
+                                                samples = sampleCounts[j], alpha= alpha, couplingStrength= couplingStrength, noiseScale= 0.01, tauMax= tauMax,
+                                                seed= 0, deltaTCascadeOutput= 0, evalType= "Full", verbose=verbose)
+            localFull.append((j, i, metrics))
+
+            seed += comm.Get_size()
+        print("Node " + str(comm.Get_rank()) + " finished appendix sample test")
+        gathered = comm.gather(localFull, root=0)
+        if comm.Get_rank() == 0:
+            for result in gathered:
+                for j, i, value in result:
+                    fullOut[j, i] = value
+        if comm.Get_rank() == 0:
+            np.save(data_dir + "/6d_AppendixSamples_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
+    elif comm.Get_rank() == 0:
+        fullOut = np.load(data_dir + "/6d_AppendixSamples_"+str(randomRuns)+"_runs_metrics.npy")
+    if comm.Get_rank() == 0:
+        scores = MCCFromFull(fullOut, axis=2)
+        mean, stdDev = getMeanStdDev(scores, axis = 1)
+        # get central 80% of data
+        median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
+        vis.saveMCCCurve(mean.T, sampleCounts, "", diag_dir + "/Appendix_samples6dCascades", stdDev.T, show=False, save = True, rowLabels=["ParCorr", "Robust-ParCorr", "GPDC"], xlabel = "Number of Samples", ylabel ="Matthews Correlation Coefficient", xscale ="log")
+        vis.saveMCCCurve(median.T, sampleCounts, "", diag_dir + "/Appendix_samples6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=False, save = True, rowLabels=["ParCorr", "Robust-ParCorr", "GPDC"], xlabel = "Number of Samples", ylabel ="Matthews Correlation Coefficient",xscale ="log")
+        
+        scores = tpr_fpr_FromFull(fullOut, axis=2)
+        mean, stdDev = getMeanStdDev(scores, axis=1)
+        print(mean.shape)
+
+        mean = np.append(mean[:,0,:], mean[:,1,:], axis=1)
+        stdDev = np.append(stdDev[:,0,:], stdDev[:,1,:], axis=1)
+        print(mean.shape)
+
+        vis.saveMCCCurve(mean.T, sampleCounts, "", diag_dir + "/Appendix_samples6dCascades_TPR", stdDev.T, show=False, save = True, rowLabels=["PCMCI-TPR", "PCMCI_robustpc-TPR", "PCMCI_GPDC-TPR", "PCMCI-FPR", "PCMCI_robustpc-FPR", "PCMCI_GPDC-FPR"], xlabel = "Number of Samples", ylabel ="Rate", xscale ="log")
+
 
 def couplStrength6dEvaluations(plotOnly, couplStrengths, samples, alpha, randomRuns, tauMax, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
     if not comm:
@@ -828,6 +894,46 @@ def autoCorrEvaluations():
     mean, stdDev = getMeanStdDev(scores, axis = 1)
     
     vis.saveMCCCurve(mean.T, autoCorrelations, "", "./diagrams/autoCorrVAR", stdDev.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Autocorrelation per time step", ylabel ="Matthews Correlation Coefficient")
+
+def runtimeEvaluations(plotOnly, matrix, alpha, samples, tauMax, randomRuns, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
+    if not comm:
+        comm = MPI.COMM_WORLD
+    if comm.Get_rank() != 0:
+        return
+    if not plotOnly:
+        runtimes = np.zeros((randomRuns, 3))
+        data = []
+        for i in range(randomRuns):
+            data.append(np.array(DataGenerator.getCascadeDataBrainpy(matrix, samples, 0, verbose)).T)
+        
+        for i in range(randomRuns):
+            time_gcss = time.process_time()
+            matrixGCSS = GCSS.gcss(data[i].T, alpha, tauMax[0], returnAll=False)
+            end_gcss = time.process_time()
+            runtimes[i,0] = end_gcss - time_gcss
+        
+        for i in range(randomRuns):
+            time_lkif = time.process_time()
+            matrixLKIF = LKIF.lkif(data[i].T, alpha, tau_max=tauMax[1])
+            end_lkif = time.process_time()
+            runtimes[i,1] = end_lkif - time_lkif
+        
+        for i in range(randomRuns):
+            time_pcmci = time.process_time()
+            matrixPCMCI, p_values = PCMCI.PCMCIPlus(data[i], [], range(data[i].shape[1]), None, tauMax[2], alpha if alpha<=1 else 1, contempLinks=True)
+            end_pcmci = time.process_time()
+            runtimes[i,2] = end_pcmci - time_pcmci
+        
+        np.save(data_dir + "/runtimes.npy", runtimes)
+    else:
+        runtimes = np.load(data_dir + "/runtimes.npy")
+    from matplotlib import pyplot as plt
+    plt.figure(figsize=(8,6))
+    plt.boxplot(runtimes, labels=["GCSS", "LKIF", "PCMCI"], patch_artist=True, showfliers=False)
+    plt.ylabel("Runtime (s)")
+    plt.yscale("log")
+    plt.grid(axis='y', linestyle='--', alpha=0.6)
+    plt.savefig(diag_dir + "/runtimes.png", dpi=300)
 
 def mainEvaluations(analysisIndex = None):
 
@@ -1449,9 +1555,9 @@ def mainEvaluations(analysisIndex = None):
     print("Total execution time in seconds: ")
     print(endTime - startTime)
     print(str(int((endTime - startTime)/60))+ " minutes")
-    
-def main():
 
+
+def main():
     comm = MPI.COMM_WORLD
 
     # my main experiment for the paper is in "./data/tauMax_1"
@@ -1464,6 +1570,32 @@ def main():
     samples = 1000
     couplingStrength = 1
     tauMax = [1,1,1]
+
+    runtimeEvaluations(plotOnly = plotOnly,
+    samples=samples,
+    matrix=mediumCouplingMatrixCascade_LowDense,
+    alpha = alpha,
+    randomRuns = randomRuns,
+    tauMax = tauMax,
+    verbose=False,
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
+    exit()
+
+    sample6dEvaluationsAppendix(plotOnly = plotOnly,
+                                # the 2000 sample one takes about 10 minutes, I'd rather not try 5000
+    sampleCounts = [50, 100, 200, 500, 1000, 2000],
+    alpha = alpha,
+    randomRuns = randomRuns,
+    tauMax = tauMax,
+    couplingStrength=couplingStrength, 
+    verbose=False,
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
+    if comm.Get_rank() == 0: print("Sample Evaluation finished")
+    exit()
 
     nonStationaryStable(plotOnly = plotOnly,
     ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
