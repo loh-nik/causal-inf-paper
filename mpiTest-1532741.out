@@ -1,7 +1,0 @@
-Python being used: /p/system/packages/tools/miniforge/25.3.0-3/bin/python
-MPI being used: /p/system/packages/tools/intel/oneAPI/2025.0.0/mpi/2021.14/bin/mpirun
-Testing numpy...
-2.3.0
-Testing mpi4py...
--------------------------------------------------------------
-Testing a very short evaluation run

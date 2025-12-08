@@ -1,30 +1,24 @@
-testing = False
-if not testing:
-    import argparse
-    import os
-    import sys
-    import copy
-    import LKIF
-    import GCSS
-    from PCMCI import PCMCIPlus
-    from scipy.signal import detrend
-    import pandas as pd
-    
-    import seaborn as sns
-    import ast
-    from tigramite import data_processing as pp
-    from tigramite.independence_tests.parcorr import ParCorr
-    from tigramite.independence_tests.robust_parcorr import RobustParCorr
-    from tigramite.independence_tests.gpdc import GPDC
-    from tigramite.toymodels import structural_causal_processes as toys
-    from tigramite.causal_effects import CausalEffects
-    from tigramite.pcmci import PCMCI
-    from tigramite.independence_tests.parcorr_wls import ParCorrWLS
+import argparse
+import os
+import copy
+import LKIF
+import GCSS
+from scipy.signal import detrend
+import pandas as pd
 
-    from tigramite.models import LinearMediation
-    from mpl_toolkits.basemap import Basemap
-    from matplotlib.colors import LogNorm
-    import matplotlib.ticker as ticker
+import seaborn as sns
+import ast
+from tigramite import data_processing as pp
+from tigramite.independence_tests.parcorr import ParCorr
+from tigramite.independence_tests.robust_parcorr import RobustParCorr
+from tigramite.independence_tests.gpdc import GPDC
+from tigramite.toymodels import structural_causal_processes as toys
+from tigramite.pcmci import PCMCI
+from tigramite.independence_tests.parcorr_wls import ParCorrWLS
+
+from tigramite.models import LinearMediation
+from mpl_toolkits.basemap import Basemap
+import matplotlib.ticker as ticker
 
 from tigramite import plotting as tp
 import numpy as np
@@ -362,73 +356,13 @@ def showStationarityResults(filename, figTitle ="", oneToTwo = [], twoToOne= [],
     else:
         plt.close()
 
-# working example: 
-# in the thesis:
-# python Pipeline.py -filename_in "./CollectedDetrended LinearFill.csv" -dirname_out "testResults" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Extent_NH_Detrend_Anom" 
-# -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
-
-# python Pipeline.py -filename_in "./CollectedDetrended LinearFill.csv" -dirname_out "results_globalTemp" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Extent_NH_Detrend_Anom" "Global_Temp_Anomaly" -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
-# python Pipeline.py -filename_in "./CollectedDetrended LinearFill.csv" -dirname_out "results_noConfound" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Extent_NH_Detrend_Anom" -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
-# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_asi_Aggr" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Alb_MostChange" -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
-# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_asi_globalTemp" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Conc_MostChange" "Global_Temp_Anomaly" -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
-# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_asi_arcticTemp" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Conc_MostChange" "Arctic_Temp_Anomalies" -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "y" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
-# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_asi_noAR" -vars "AMOC_Caesar" "SI_Conc_MostChange" "Arctic_Temp_Anomalies" -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
-# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_asi_noAR_global" -vars "AMOC_Caesar" "SI_Conc_MostChange" "Global_Temp_Anomaly" -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
-# python Pipeline.py -filename_in "./CollectedDetrended LinearFill.csv" -dirname_out "results_amocAR" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
-
-# here's the command for my paper with detrended and deseasonalised ice conc:
-# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_detrended" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
-
-# with PCMCI plus:
-# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_detrended_pcmciplus" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
-
-# with PCMCI GPDC:
-# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_gpdc" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
-
-# with a detrended, deseasonalised confounder:
-# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_confounderDetrend" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -detrend False False True -deseason False False True
-
-# with a lower alpha level of 0.01 and the deseasonalised confounder:
-# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_confounderDetrend_alpha001" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.01 -detrend False False True -deseason False False True
-
 # CURRENT PAPER VERSION with a march september mask in a new file
 # python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_confounderDetrend_marchSeptMask" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "MarchSept" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False True -deseason False False True
 
-# alternative, very similar but with albedo
-# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_albedo" -vars "AMOC_Caesar" "SI_Alb_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Alb." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
-
-# paper supplement: include the other variables
-# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_AR_ArcticT" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "CLLJ" "Prec. AR" "Sea Ice Conc." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
-# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_AR" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Conc_MostChange_DetrDes" -vars_names "AMOC" "CLLJ" "Prec. AR" "Sea Ice Conc." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
-
-# CURRENT PAPER VERSION with Annika's variables
-# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_AR_Full" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "CLLJ" "Prec. AR" "Sea Ice Conc." "Arctic Temp." -mask "MarchSept" "Southern AR dry season" "Southern AR dry season" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False False False True -deseason False False False False True
-
-
-# py Pipeline.py -filename_in "./testSheet.csv" -dirname_out "testResults" -vars "SeaIce" "AMOC" "GrIS" -mask "mask_pcmci" "mask_lkif" "mask_pcmci" -mask_lkif "mask_lkif" -maskType "x" -detrend True True True -deseason True True True -diff True True True -tauMax 10 -alpha 0.1 -forbiddenLinks [0,2] -causalStationarity True -stationarityWindow 3 -stationarityShift 12 -stationarityVars 0 2
-
-# py Pipeline.py -filename_in "./testSheet.csv" -dirname_out "testResults" -vars "SeaIce" "AMOC" "GrIS" 
-# -mask "mask_pcmci" "mask_lkif" "mask_pcmci" -mask_lkif "mask_lkif" -maskType "x" 
-# -detrend True True True -deseason True True True -diff True True True 
-# -tauMax 10 -alpha 0.1 -forbiddenLinks [0,2] 
-# -causalStationarity True -stationarityWindow 3 -stationarityShift 12 -stationarityVars 0 2
-
-# working example for spatial analysis: 
-# py Pipeline.py -filename_in "./testSheet.csv" -dirname_out "testResults" -vars "SeaIce" "AMOC" "GrIS" -mask "mask_pcmci" "mask_lkif" "mask_pcmci" -mask_lkif "mask_lkif" -maskType "x" -detrend True True True -deseason True True True -spatialAnalysis True -spatialFile testSeaIceAlbedo_Detrended.npy -spatialLon polarLongitudeAggregated.npy -spatialLat polarLatitudeAggregated.npy -spatialOtherVar 0
-
-# py Pipeline.py -filename_in "./testSheet.csv" -dirname_out "testResults" -vars "SeaIce" "AMOC" "GrIS" 
-# -mask "mask_pcmci" "mask_lkif" "mask_pcmci" -mask_lkif "mask_lkif" -maskType "x" 
-# -detrend True True True -deseason True True True -spatialAnalysis True 
-# -spatialFile testSeaIceAlbedo_Detrended.npy -spatialLon polarLongitudeAggregated.npy -spatialLat polarLatitudeAggregated.npy -spatialOtherVar 0
+# robustness tests for other AMOC indices, bash script iterates over names for $var
+# python Pipeline.py -worldMap True -methods "PCMCI" "LKIF" -indep_test "parcorr" -map_var_names "$var" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_${var}" -vars "$var" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "$var" "ASSI" "Temp" -mask "MarchSept" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False True -deseason False False True
 
 if __name__ == "__main__":
-    # val_matrix = np.zeros((3,3,6))
-    # val_matrix[1,0,1] = 0.1
-    # val_matrix[1,2,2] = -0.1
-    # var_names = ["AMOC", "ASI", "Temp"]
-    # visualizeGraphOnMap(val_matrix, var_names, "test/testMap.png")
-    # exit()
-
     parser = argparse.ArgumentParser()
     parser.add_argument("-filename_in", type=str, help= ".csv file (separated by semicolons) with all univariate variables", required=True)
     parser.add_argument("-dirname_out", type=str, help= "directory for diagram output", required=True)
