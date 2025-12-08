@@ -26,6 +26,7 @@ else:
     import GCSS
     import LKIF
 
+
 # these matrices are used often so we just define them globally
 mediumCouplingMatrixCascade_LowDense = np.array([
                                         [0,0,0,0,0,0],
@@ -335,6 +336,7 @@ def delay6dEvaluations(plotOnly, delaySizes, samples, alpha, randomRuns, couplSt
         mean, stdDev = getMeanStdDev(scores, axis = 1)
         # get central 80% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
+        vis.saveMCCCurve(mean.T, delaySizes, "", diag_dir + "/delays6dCascades_Paper", stdDev.T, show=False, save = True, rowLabels = [], xlabel = "Delay (no unit)", ylabel ="",yTickLabels=False,yLims=[-0.23, 1.03], fontsizeFactor=1.2)
         vis.saveMCCCurve(mean.T, delaySizes, "", diag_dir + "/delays6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="Matthews Correlation Coefficient")
         vis.saveMCCCurve(median.T, delaySizes, "", diag_dir + "/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="Matthews Correlation Coefficient")
 
@@ -404,6 +406,7 @@ def sample6dEvaluations(plotOnly, sampleCounts, alpha, randomRuns, tauMax, coupl
         # get central 80% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
         vis.saveMCCCurve(mean.T, sampleCounts, "", diag_dir + "/samples6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="Matthews Correlation Coefficient", xscale ="log")
+        vis.saveMCCCurve(mean.T, sampleCounts, "", diag_dir + "/samples6dCascades_Paper", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="Matthews Correlation Coefficient", xscale ="log", yLims=[-0.23, 1.03], fontsizeFactor=1.2, moveYLabel=-15, figsize=(5.5,4))
         vis.saveMCCCurve(median.T, sampleCounts, "", diag_dir + "/samples6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Amount of Samples", ylabel ="Matthews Correlation Coefficient",xscale ="log")
         
         scores = MCCFromFull(fullOutVAR, axis=2)
@@ -516,6 +519,7 @@ def couplStrength6dEvaluations(plotOnly, couplStrengths, samples, alpha, randomR
         # get central 90% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
         vis.saveMCCCurve(mean.T, couplStrengths*10, "", diag_dir + "/coupl6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="Matthews Correlation Coefficient")
+        vis.saveMCCCurve(mean.T, couplStrengths*10, "", diag_dir + "/coupl6dCascades_Paper", stdDev.T, show=False, save = True, rowLabels=[], xlabel = "Coupling Strength", ylabel ="", yTickLabels=False, yLims=[-0.23, 1.03], fontsizeFactor=1.2)
         vis.saveMCCCurve(median.T, couplStrengths*10, "", diag_dir + "/coupl6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="Matthews Correlation Coefficient")
 
         scores = MCCFromFull(fullOutVAR, axis=2)
@@ -787,7 +791,7 @@ def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns, 
         metricsReducedInfo = np.load(data_dir + "/Casc_forcing_reducedInfo_6d.npy")
         tipped = np.load(data_dir + "/Casc_forcing6d_tippedFraction.npy")
     if comm.Get_rank() == 0:
-        vis.saveMCCCurve(tipped, ceilings, "", diag_dir + "/forcing6d_tippedFraction", xlabel="Forcing Strength", ylabel="", figsize = (8,1.5),dpi=300)
+        vis.saveMCCCurve(tipped, ceilings, "", diag_dir + "/forcing6d_tippedFraction", xlabel="Forcing Strength", ylabel="", figsize = (10,2),dpi=300, fontsizeFactor=1.4)
 
         fullInfoMCC = MCCFromFull(np.array(metricsNormal), axis=2)
         fullInfoMean, fullInfoStd = getMeanStdDev(fullInfoMCC, axis = 1)
@@ -824,17 +828,18 @@ def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns, 
         
         # vis.saveMCCCurve(fullInfoMean.T, ceilings, "", diag_dir + "/forcing6d_TPR", fullInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
         # vis.saveMCCCurve(noInfoMean.T, ceilings, "", diag_dir + "/forcing6d_reducedInformation_TPR", noInfoStd.T, rowLabels=["GCSS", "LKIF", "PCMCI"])
+        print(lkifInfo)
         import matplotlib as mpl
         defaultCols = mpl.color_sequences["tab10"]
-        flippedCols = [defaultCols[0], defaultCols[2], defaultCols[1], defaultCols[3]]
+        flippedCols = [defaultCols[0], defaultCols[0], defaultCols[1], defaultCols[1]]
         vis.saveMCCScatter(gcssInfo.T, ceilings, "", diag_dir + "/forcing6d_gcss_TPR", gcssStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR", "Hidden Confounder TPR", "Hidden Confounder FPR"],
-                           colors = flippedCols, figsize=(10,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05), legend=False)
+                           colors = flippedCols, linestyles=["solid", "dotted", "solid", "dotted"], figsize=(10,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05), legend=False, xTickLabels=False, fontsizeFactor=1.4)
         vis.saveMCCScatter(lkifInfo.T, ceilings, "", diag_dir + "/forcing6d_lkif_TPR", lkifStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],
-                           colors = flippedCols, figsize=(10,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05), legend=False)
+                           colors = flippedCols, linestyles=["solid", "dotted", "solid", "dotted"], figsize=(10,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05), legend=False, xTickLabels=False, fontsizeFactor=1.4)
         vis.saveMCCScatter(pcmInfo.T, ceilings, "", diag_dir + "/forcing6d_pcmci_TPR", pcmStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],
-                           colors = flippedCols, figsize=(10,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05), legend=False)
+                           colors = flippedCols, linestyles=["solid", "dotted", "solid", "dotted"], figsize=(10,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05), legend=False, xTickLabels=False, fontsizeFactor=1.4)
         vis.saveMCCScatter(pcmInfo.T, ceilings, "", diag_dir + "/forcing6d_pcmci_TPR_withLegend", pcmStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],
-                           colors = flippedCols, figsize=(10,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05), legend=True)
+                           colors = flippedCols, linestyles=["solid", "dotted", "solid", "dotted"], figsize=(15,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05), legend=True, xTickLabels=False, fontsizeFactor=1.4, legendColumns=2)
 
 
 def autoCorrEvaluations():
@@ -928,12 +933,12 @@ def runtimeEvaluations(plotOnly, matrix, alpha, samples, tauMax, randomRuns, ver
     else:
         runtimes = np.load(data_dir + "/runtimes.npy")
     from matplotlib import pyplot as plt
-    plt.figure(figsize=(8,6))
-    plt.boxplot(runtimes, labels=["GCSS", "LKIF", "PCMCI"], patch_artist=True, showfliers=False)
-    plt.ylabel("Runtime (s)")
+    plt.figure(figsize=(5,4), layout="constrained")
+    plt.boxplot(runtimes, labels=["GCSS", "LKIF", "PCMCI"], patch_artist=True)
+    plt.ylabel("Runtime (s)", fontsize=14)
     plt.yscale("log")
     plt.grid(axis='y', linestyle='--', alpha=0.6)
-    plt.savefig(diag_dir + "/runtimes.png", dpi=300)
+    plt.savefig(diag_dir + "/runtimes_withOutliers.png", dpi=300)
 
 def mainEvaluations(analysisIndex = None):
 
@@ -1571,21 +1576,21 @@ def main():
     couplingStrength = 1
     tauMax = [1,1,1]
 
-    runtimeEvaluations(plotOnly = plotOnly,
-    samples=samples,
-    matrix=mediumCouplingMatrixCascade_LowDense,
-    alpha = alpha,
-    randomRuns = randomRuns,
-    tauMax = tauMax,
-    verbose=False,
-    comm=comm,
-    data_dir=data_dir,
-    diag_dir=diag_dir)
-    exit()
+    # runtimeEvaluations(plotOnly = plotOnly,
+    # samples=samples,
+    # matrix=mediumCouplingMatrixCascade_LowDense,
+    # alpha = alpha,
+    # randomRuns = randomRuns,
+    # tauMax = tauMax,
+    # verbose=False,
+    # comm=comm,
+    # data_dir=data_dir,
+    # diag_dir=diag_dir)
+    # exit()
 
-    sample6dEvaluationsAppendix(plotOnly = plotOnly,
-                                # the 2000 sample one takes about 10 minutes, I'd rather not try 5000
-    sampleCounts = [50, 100, 200, 500, 1000, 2000],
+    
+    sample6dEvaluations(plotOnly = plotOnly,
+    sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
     alpha = alpha,
     randomRuns = randomRuns,
     tauMax = tauMax,
@@ -1610,18 +1615,6 @@ def main():
     if comm.Get_rank() == 0: print("Non-Stationarity Evaluation finished")
     exit()
 
-    system6dEvaluations(plotOnly = plotOnly,
-    alpha = alpha,
-    samples = samples,
-    randomRuns = randomRuns,
-    tauMax = tauMax,
-    couplingStrength=couplingStrength, 
-    verbose=False,
-    comm=comm,
-    data_dir=data_dir,
-    diag_dir=diag_dir)
-    if comm.Get_rank() == 0: print("System Size/Density Evaluation finished")
-
     delay6dEvaluations(plotOnly = plotOnly,
     delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0],
     samples = samples,
@@ -1633,19 +1626,7 @@ def main():
     data_dir=data_dir,
     diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("Delay Evaluation finished")
-
-    sample6dEvaluations(plotOnly = plotOnly,
-    sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    alpha = alpha,
-    randomRuns = randomRuns,
-    tauMax = tauMax,
-    couplingStrength=couplingStrength, 
-    verbose=False,
-    comm=comm,
-    data_dir=data_dir,
-    diag_dir=diag_dir)
-    if comm.Get_rank() == 0: print("Sample Evaluation finished")
-
+    
     couplStrength6dEvaluations(plotOnly = plotOnly,
     couplStrengths = np.array([0.01, 0.02, 0.05, 0.07,0.1,0.15,0.2,0.25,0.3]),
     samples = samples,
@@ -1658,6 +1639,42 @@ def main():
     diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("Coupling Strength Evaluation finished")
 
+    
+
+    sample6dEvaluationsAppendix(plotOnly = plotOnly,
+                                # the 2000 sample one takes about 10 minutes, I'd rather not try 5000
+    sampleCounts = [50, 100, 200, 500, 1000, 2000],
+    alpha = alpha,
+    randomRuns = randomRuns,
+    tauMax = tauMax,
+    couplingStrength=couplingStrength, 
+    verbose=False,
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
+    if comm.Get_rank() == 0: print("Sample Evaluation finished")
+    exit()
+
+    
+
+    
+
+    system6dEvaluations(plotOnly = plotOnly,
+    alpha = alpha,
+    samples = samples,
+    randomRuns = randomRuns,
+    tauMax = tauMax,
+    couplingStrength=couplingStrength, 
+    verbose=False,
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
+    if comm.Get_rank() == 0: print("System Size/Density Evaluation finished")
+
+    
+
+
+    
 
 
     GCSS.close_octave()

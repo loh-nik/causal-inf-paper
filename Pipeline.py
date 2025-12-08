@@ -183,8 +183,10 @@ def visualizeGraphOnMap(val_matrix, var_names, filename):
     # plt.savefig(filename, dpi=300, bbox_inches=bbox)
     plt.savefig(filename, dpi=300)
 
-def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = False, save = True):
+def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = False, save = True, labelType = "PCMCI"):
     plotMatrix(val_matrix, columnNames, filename + "matrix")
+    auto_colorbar_label = "auto-MCI" if labelType == "PCMCI" else ""
+    link_colorbar_label = "cross-MCI" if labelType == "PCMCI" else ("Information Transfer (%)" if labelType == "LKIF" else ("Granger Causality" if labelType == "GCSS" else 0))
     fig = plt.subplots(1,1,layout="constrained")
     plt.suptitle(title, fontsize=14)
     if val_matrix.shape[0] == 2:
@@ -195,14 +197,15 @@ def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = Fa
             val_matrix=val_matrix,
             graph=graph,
             var_names=columnNames,
-            link_colorbar_label='cross-MCI',
-            node_colorbar_label='auto-MCI',
+            link_colorbar_label=link_colorbar_label,
+            node_colorbar_label=auto_colorbar_label,
             show_autodependency_lags=False,
             node_size = 0.4,
             node_aspect = 2,
             node_label_size=12,
             link_label_fontsize=12,
-            fig_ax=fig
+            fig_ax=fig,
+            show_auto_colorbar=(auto_colorbar_label != "")
             )
         else:
             matrixFull = np.zeros((val_matrix.shape[0], val_matrix.shape[1],2))
@@ -211,14 +214,15 @@ def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = Fa
             val_matrix=matrixFull,
             graph=matrixFull,
             var_names=columnNames,
-            link_colorbar_label='cross-MCI',
-            node_colorbar_label='auto-MCI',
+            link_colorbar_label=link_colorbar_label,
+            node_colorbar_label=auto_colorbar_label,
             show_autodependency_lags=False,
             node_size = 0.4,
             node_aspect = 2,
             node_label_size=12,
             link_label_fontsize=12,
-            fig_ax=fig
+            fig_ax=fig,
+            show_auto_colorbar=(auto_colorbar_label != "")
             )
     else:
         figur, ax = fig
@@ -228,14 +232,15 @@ def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = Fa
             val_matrix=val_matrix,
             graph=graph,
             var_names=columnNames,
-            link_colorbar_label='cross-MCI',
-            node_colorbar_label='auto-MCI',
+            link_colorbar_label=link_colorbar_label,
+            node_colorbar_label=auto_colorbar_label,
             show_autodependency_lags=False,
             node_size = 0.4,
             node_aspect = 1,
             node_label_size=12,
             link_label_fontsize=12,
-            fig_ax=fig
+            fig_ax=fig,
+            show_auto_colorbar=(auto_colorbar_label != "")
             )
         else:
             matrixFull = np.zeros((val_matrix.shape[0], val_matrix.shape[1],2))
@@ -244,14 +249,15 @@ def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = Fa
             val_matrix=matrixFull,
             graph=matrixFull,
             var_names=columnNames,
-            link_colorbar_label='cross-MCI',
-            node_colorbar_label='auto-MCI',
+            link_colorbar_label=link_colorbar_label,
+            node_colorbar_label=auto_colorbar_label,
             show_autodependency_lags=False,
             node_size = 0.4,
             node_aspect = 1,
             node_label_size=12,
             link_label_fontsize=12,
-            fig_ax=fig
+            fig_ax=fig,
+            show_auto_colorbar=(auto_colorbar_label != "")
             )
     if save:
         plt.savefig(filename,dpi=300)
@@ -386,17 +392,17 @@ def showStationarityResults(filename, figTitle ="", oneToTwo = [], twoToOne= [],
 # python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_confounderDetrend_alpha001" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.01 -detrend False False True -deseason False False True
 
 # CURRENT PAPER VERSION with a march september mask in a new file
-# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates2.csv" -dirname_out "results_paper_confounderDetrend_marchSeptMask" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "MarchSept" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False True -deseason False False True
+# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_confounderDetrend_marchSeptMask" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "MarchSept" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False True -deseason False False True
 
 # alternative, very similar but with albedo
 # python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_albedo" -vars "AMOC_Caesar" "SI_Alb_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Alb." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05
 
-# supplement: include the other variables
+# paper supplement: include the other variables
 # python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_AR_ArcticT" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "CLLJ" "Prec. AR" "Sea Ice Conc." "Arctic Temp." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
 # python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_AR" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Conc_MostChange_DetrDes" -vars_names "AMOC" "CLLJ" "Prec. AR" "Sea Ice Conc." -mask "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" "Southern AR dry season" -maskType "x" -mask_lkif "Southern AR dry season" -tauMax 5 -alpha 0.05 -forbiddenLinks [2,3] [3,2] [1,3] [3,1]
 
 # CURRENT PAPER VERSION with Annika's variables
-# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates2.csv" -dirname_out "results_paper_AR_Full" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "CLLJ" "Prec. AR" "Sea Ice Conc." "Arctic Temp." -mask "MarchSept" "Southern AR dry season" "Southern AR dry season" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False False False True -deseason False False False False True
+# python Pipeline.py -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_AR_Full" -vars "AMOC_Caesar" "CLLJ" "SAR_prec_Anomaly" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "CLLJ" "Prec. AR" "Sea Ice Conc." "Arctic Temp." -mask "MarchSept" "Southern AR dry season" "Southern AR dry season" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False False False True -deseason False False False False True
 
 
 # py Pipeline.py -filename_in "./testSheet.csv" -dirname_out "testResults" -vars "SeaIce" "AMOC" "GrIS" -mask "mask_pcmci" "mask_lkif" "mask_pcmci" -mask_lkif "mask_lkif" -maskType "x" -detrend True True True -deseason True True True -diff True True True -tauMax 10 -alpha 0.1 -forbiddenLinks [0,2] -causalStationarity True -stationarityWindow 3 -stationarityShift 12 -stationarityVars 0 2
@@ -428,6 +434,8 @@ if __name__ == "__main__":
     parser.add_argument("-dirname_out", type=str, help= "directory for diagram output", required=True)
     parser.add_argument("-vars", help = "variable names in csv file", nargs='+', default=[], required=True)
     parser.add_argument("-vars_names", help = "variable names in output graphs", nargs='+', default=[], required=False)
+    parser.add_argument("-methods", help = "method names to be used", nargs='+', default=[], required=False)
+    parser.add_argument("-indep_test", help = "independence test name for PCMCI", default="", required=False)
     parser.add_argument("-mask", help = "mask column names in csv file (pcmci)", nargs='+', default=[], required=False)
     parser.add_argument("-mask_lkif", type = str, help = "single mask column name in csv file (lkif)", default="", required=False)
     parser.add_argument("-maskType", type = str, choices = ["x","y", "z", "xyz"], default="x", required=False)
@@ -530,17 +538,17 @@ if __name__ == "__main__":
     else: 
         print("LKIF and PCMCI recommended")
         
-
-    inputStr = ""
-    methodsChosen = []
-    print("Methods available: LKIF, PCMCI, GCSS, LM")
-    while inputStr != "end":
-        inputStr = input("Enter desired method, enter \"end\" after last method: ")
-        if inputStr == "end":
-            continue
-        methodsChosen.append(inputStr)
-        print("Methods: ")
-        print(methodsChosen)
+    methodsChosen = args.methods
+    if len(methodsChosen) == 0:
+        inputStr = ""
+        print("Methods available: LKIF, PCMCI, GCSS, LM")
+        while inputStr != "end":
+            inputStr = input("Enter desired method, enter \"end\" after last method: ")
+            if inputStr == "end":
+                continue
+            methodsChosen.append(inputStr)
+    print("Methods: ")
+    print(methodsChosen)
 
     print(data)
     print(data.shape)
@@ -587,7 +595,10 @@ if __name__ == "__main__":
     alpha = args.alpha
 
     if "PCMCI" in methodsChosen:
-        independenceTest = input("Select a correlation test for PCMCI\n from \"parcorr\", \"robustparcorr\", \"GPDC\", \"parcorrWLS\": ")
+        if args.indep_test not in ["parcorr", "robustparcorr", "GPDC", "parcorrWLS"]:
+            independenceTest = input("Select a correlation test for PCMCI\n from \"parcorr\", \"robustparcorr\", \"GPDC\", \"parcorrWLS\": ")
+        else:
+            independenceTest = args.indep_test
         if independenceTest == "parcorr":
             ci_test = ParCorr(significance='analytic', mask_type=None if (not useMask) else args.maskType)
         elif independenceTest == "robustparcorr":
@@ -718,7 +729,7 @@ if __name__ == "__main__":
             else:
                 matrixLKIF = LKIF.lkif(data.T, alpha, returnAll=False, timestamps = None)
             
-            visualizeGraph(matrixLKIF, [], var_names, directory + "/default_lkif")
+            visualizeGraph(matrixLKIF, [], var_names, directory + "/default_lkif", labelType="LKIF")
 
             if args.causalStationarity:
                 oneToTwo = np.zeros(int((data.shape[0]-slidingWindow)/stationaryShift))
@@ -739,7 +750,7 @@ if __name__ == "__main__":
         if "GCSS" in methodsChosen:
             try:
                 matrixGCSS = GCSS.gcss(data.T, alpha, tau_max, returnAll=False).T
-                visualizeGraph(matrixGCSS, [], var_names, directory + "/default_gcss")
+                visualizeGraph(matrixGCSS, [], var_names, directory + "/default_gcss", labelType="GCSS")
             except:
                 matrixGCSS = np.zeros((data.shape[1],data.shape[1]))
                 print("Error on GCSS")

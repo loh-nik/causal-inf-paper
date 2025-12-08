@@ -1,6 +1,18 @@
 from matplotlib import pyplot as plt
 import numpy as np
 
+
+# change some default parameters for easier diagrams
+plt.rcParams.update({
+    "font.size": 12,
+    "axes.labelsize": 14,
+    "axes.titlesize": 14,
+    "xtick.labelsize": 12,
+    "ytick.labelsize": 12,
+    "legend.fontsize": 14,
+    "figure.dpi": 300,
+})
+
 #import networkx as nx
 import seaborn as sns
 
@@ -65,7 +77,8 @@ def saveROCCurve(TPR, FPR, values, title, filename, colors = [], rowLabels = [],
 
 def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowLabels=[], show = False, save= True, 
                 xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=300, xlabel ="", ylabel ="", yAxisCut = False,
-                  yAxisLinearLim = 1, quantileLower = [], quantileHigher = []):
+                  yAxisLinearLim = 1, quantileLower = [], quantileHigher = [], xTickLabels = True, yTickLabels = True, fontsizeFactor = 1,
+                  xLims = None, yLims = None, moveYLabel = 0):
     """Draws a plot with lines for data rows, optionally with error bars.
     \nScores are the MCC score values, in a 2D array with first dimension as the number of data lines drawn, \
     and second dimension equaling values dimension. 
@@ -87,10 +100,27 @@ def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowL
         ax.axhline(y=yAxisLinearLim, color='gray', linewidth=1, linestyle='-')
     else:
         plt.yscale(yscale)
-    plt.xlabel(xlabel, fontsize=14)
-    plt.ylabel(ylabel, fontsize=14)
-    plt.xticks(fontsize=14)
-    plt.yticks(fontsize=14)
+    
+    plt.xlabel(xlabel, fontsize=14*fontsizeFactor)
+    plt.ylabel(ylabel, fontsize=14*fontsizeFactor)
+    
+    plt.xticks(fontsize=14*fontsizeFactor)
+    plt.yticks(fontsize=14*fontsizeFactor)
+    ax = plt.gca()
+    if not xTickLabels:
+        ax.set(xticklabels=[])
+    if not yTickLabels:
+        ax.set(yticklabels=[])
+    if xLims:
+        ax.set_xlim(xLims[0], xLims[1])
+    if yLims:
+        ax.set_ylim(yLims[0], yLims[1])
+    if moveYLabel != 0:
+        import matplotlib.transforms as mtransforms
+        # x0, y0 = ax.yaxis.get_label().get_position()
+        offset = mtransforms.ScaledTranslation(0, moveYLabel/72, ax.figure.dpi_scale_trans)
+        # ax.yaxis.set_label_coords(x0, y0 + moveYLabel)
+        ax.yaxis.get_label().set_transform(ax.yaxis.get_label().get_transform() + offset)
     if len(scores.shape) == 1:
         plt.plot(values, scores)
         if len(errors) > 0:
@@ -122,7 +152,7 @@ def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowL
                 elif len(quantileLower) > 0:
                     plt.fill_between(values, quantileLower[i], quantileHigher[i], alpha = 0.2, color= colors[i])
         if showLegend:
-            plt.legend(fontsize=14)
+            plt.legend(fontsize=14*fontsizeFactor)
     if save:
         plt.savefig(filename, dpi=dpi)
     if show:
@@ -212,7 +242,9 @@ def saveMCCCurveSubplot(subplotRows, subplotCols, scores, values, title, filenam
 
 def saveMCCScatter(scores, values, title, filename, errors = [], colors = [], rowLabels=[], show = False, save= True, 
                 xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=300, xlabel ="", ylabel ="", yAxisCut = False,
-                  yAxisLinearLim = 1, quantileLower = [], quantileHigher = [], marker = '_', legend_outside = False, ylim = None, legend = True):
+                  yAxisLinearLim = 1, quantileLower = [], quantileHigher = [], marker = 'o',
+                   linestyles = [], legend_outside = False, ylim = None, legend = True, xTickLabels = True, yTickLabels=True, fontsizeFactor = 1,
+                   legendColumns = 1):
     """Draws a plot with markers for data points, optionally with error bars.
     \nScores are the MCC score values, in a 2D array with first dimension as the number of data lines drawn, \
     and second dimension equaling values dimension. 
@@ -236,15 +268,20 @@ def saveMCCScatter(scores, values, title, filename, errors = [], colors = [], ro
         plt.yscale(yscale)
     if ylim:
         plt.ylim(ylim)
-    plt.xlabel(xlabel, fontsize=14)
-    plt.ylabel(ylabel, fontsize=14)
-    plt.xticks(fontsize=14)
-    plt.yticks(fontsize=14)
+    plt.xlabel(xlabel, fontsize=14*fontsizeFactor)
+    plt.ylabel(ylabel, fontsize=14*fontsizeFactor)
+    plt.xticks(fontsize=14*fontsizeFactor)
+    plt.yticks(fontsize=14*fontsizeFactor)
+    ax = plt.gca()
+    if not xTickLabels:
+        ax.set(xticklabels=[])
+    if not yTickLabels:
+        ax.set(yticklabels=[])
     if len(scores.shape) == 1:
         if len(errors) > 0:
-            plt.errorbar(values, scores, errors, fmt=marker, markersize=10, alpha = 0.3)
+            plt.errorbar(values, scores, errors, fmt=marker, markersize=10, alpha = 1, elinewidth=3, capsize=6)
         elif len(quantileLower) > 0:
-            plt.errorbar(values, scores, np.stack((quantileLower, quantileHigher), axis=0), fmt=marker, alpha = 0.3)
+            plt.errorbar(values, scores, np.stack((quantileLower, quantileHigher), axis=0), fmt=marker, alpha = 1, elinewidth=3, capsize=6)
         else:
             plt.scatter(values, scores, marker=marker)
     else:
@@ -261,25 +298,28 @@ def saveMCCScatter(scores, values, title, filename, errors = [], colors = [], ro
         for i in range(scores.shape[0]):
             if len(colors) == 0:
                 if len(errors) > 0:
-                    plt.errorbar(values, scores[i], errors[i], fmt=marker, markersize=15, alpha = 0.3,label = str(rowLabels[i]))
+                    plt.errorbar(values, scores[i], errors[i], fmt=marker, markersize=15, alpha = 1,label = str(rowLabels[i]), elinewidth=3, capsize=6)
                 elif len(quantileLower) > 0:
-                    plt.errorbar(values, scores[i], np.stack((quantileLower[i], quantileHigher[i]), axis=0), fmt=marker, alpha = 0.3,label = str(rowLabels[i]))
+                    plt.errorbar(values, scores[i], np.stack((quantileLower[i], quantileHigher[i]), axis=0), fmt=marker, alpha = 1,label = str(rowLabels[i]), elinewidth=3, capsize=6)
                 else:
                     plt.scatter(values, scores[i],  marker=marker,label = str(rowLabels[i]))
             else:
                 if len(errors) > 0:
-                    plt.errorbar(values, scores[i],errors[i], fmt="none", markersize=15, alpha = 0.3, color= colors[i])
-                    plt.errorbar(values, scores[i], fmt=marker, markersize=15, alpha = 1.0, color= colors[i],label = str(rowLabels[i]))
-                    plt.plot(values, scores[i], color = colors[i], alpha=0.2)
+                    plt.errorbar(values, scores[i],errors[i], fmt="none", markersize=15, alpha = 1, color= colors[i], elinewidth=3, capsize=6)
+                    plt.errorbar(values, scores[i], fmt=marker, markersize=10, alpha = 1.0, color= colors[i], elinewidth=3, capsize=6)
+                    if len(linestyles) > 0:
+                        plt.plot(values, scores[i], color = colors[i],label = str(rowLabels[i]), linestyle=linestyles[i])
+                    else:
+                        plt.plot(values, scores[i], color = colors[i],label = str(rowLabels[i]))
                 elif len(quantileLower) > 0:
-                    plt.errorbar(values, scores[i], np.stack((quantileLower[i], quantileHigher[i]), axis=0), fmt=marker, alpha = 0.3, color= colors[i],label = str(rowLabels[i]))
+                    plt.errorbar(values, scores[i], np.stack((quantileLower[i], quantileHigher[i]), axis=0), fmt=marker, alpha = 1, color= colors[i],label = str(rowLabels[i]), elinewidth=3, capsize=6)
                 else:
                     plt.scatter(values, scores[i], label = str(rowLabels[i]), marker=marker, color=colors[i])
         if showLegend and legend:
             if legend_outside:
-                plt.legend(fontsize=14, bbox_to_anchor=(1.04, 1), loc="upper left")
+                plt.legend(ncol=legendColumns,fontsize=14*fontsizeFactor, bbox_to_anchor=(1.04, 1), loc="upper left")
             else:
-                plt.legend(fontsize=14)
+                plt.legend(ncol=legendColumns,fontsize=14*fontsizeFactor)
     if save:
         plt.savefig(filename, dpi=dpi)
     if show:
