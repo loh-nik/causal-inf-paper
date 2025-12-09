@@ -318,10 +318,10 @@ def showStationarityResults(filename, figTitle ="", oneToTwo = [], twoToOne= [],
         plt.close()
 
 # CURRENT PAPER VERSION with a march september mask in a new file
-# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_confounderDetrend_marchSeptMask" -vars "AMOC_Caesar" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "MarchSept" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False True -deseason False False True
+# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_confounderDetrend_marchSeptMask" -vars "AMOC_Caesar" "SI_Conc" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "MarchSept" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False True -deseason False False True
 
 # robustness tests for other AMOC indices, bash script iterates over names for $var
-# python Pipeline.py -worldMap True -methods "PCMCI" "LKIF" -indep_test "parcorr" -map_var_names "$var" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_${var}" -vars "$var" "SI_Conc_MostChange_DetrDes" "Arctic_Temp_Anomalies" -vars_names "$var" "ASSI" "Temp" -mask "MarchSept" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False True -deseason False False True
+# python Pipeline.py -worldMap True -methods "PCMCI" "LKIF" -indep_test "parcorr" -map_var_names "$var" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_${var}" -vars "$var" "SI_Conc" "Arctic_Temp_Anomalies" -vars_names "$var" "ASSI" "Temp" -mask "MarchSept" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False True -deseason False False True
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
