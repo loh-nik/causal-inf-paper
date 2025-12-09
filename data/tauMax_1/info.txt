@@ -1,2 +1,0 @@
-This sequence of runs was conducted with tau_max = 1 for all three methods. 
-(while the main data repo was run with taumax (5,1,5), i.e. GCSS and PCMCI had 5 steps for analysis -> this increased GCSS sensitivity in difficult settings, but also prevented it from perfect detection in good settings).

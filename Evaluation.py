@@ -13,6 +13,7 @@ if rank == 0:
     from itertools import product
     import GCSS
     import LKIF
+    import os
     comm.barrier()  # let others wait
 
 else:
@@ -839,11 +840,22 @@ def runtimeEvaluations(plotOnly, matrix, alpha, samples, tauMax, randomRuns, ver
 def main():
     comm = MPI.COMM_WORLD
 
-    # my main experiment for the paper is in "./data/tauMax_1"
+    # my main experiment for the paper is in "./data/tauMax_1", as other tauMax settings disadvantaged the delay-sensitive LKIF method drastically.
     data_dir = "./data/tauMax_1"
     diag_dir = "./diagrams/tauMax_1"
+
+    if comm.Get_rank() == 0:
+        for directory in [data_dir, diag_dir]:
+            try:
+                os.mkdir(directory)
+            except FileExistsError:
+                pass
+            except PermissionError:
+                print(f"Permission denied: Unable to create directory '{directory}'.")
+            except Exception as e:
+                print(f"An error occurred trying to create '{directory}': {e}")
     
-    plotOnly = True
+    plotOnly = False
     randomRuns = 100
     alpha = 0.05
     samples = 1000
