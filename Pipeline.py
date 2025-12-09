@@ -53,15 +53,13 @@ def preprocessData(data, detrending = True, deseason = True, diff = True, deseas
 def visualizeGraphOnMap(val_matrix, var_names, filename):
     import cartopy.crs as ccrs
     import cartopy.feature as cfeature
-    from shapely.geometry import Polygon
-    # fixed this for my plot
+
     def load_region(file_path):
         """Reads a two-column lat/lon text file."""
         data = np.loadtxt(file_path)
         lats, lons = data[:, 0], data[:, 1]
         return lats, lons
 
-    # Replace with your actual file paths
     regions = {
         "AMOC": "subpolarGyreCaesar.txt",
         "ASSI": "ASSI_def.txt"
@@ -77,7 +75,6 @@ def visualizeGraphOnMap(val_matrix, var_names, filename):
     proj = ccrs.Orthographic(central_latitude=60, central_longitude=-30)
     dataProj = ccrs.PlateCarree()
 
-    # === Step 2: Create the map ===
     fig, ax = plt.subplots(subplot_kw={'projection': proj}, figsize=(8, 8))
 
     # plot arctic temp by hand
@@ -107,38 +104,13 @@ def visualizeGraphOnMap(val_matrix, var_names, filename):
             ax.contourf(lon2d, lat2d, mask, levels=[0.5, 1.5], colors=colors[region_name], alpha=0.5, transform=dataProj)
             ax.contour(lon2d, lat2d, mask, levels=[0.5, 1.5], colors=colors[region_name], alpha=0.8, transform=dataProj)
 
-
-
-    # Add features for context
     ax.add_feature(cfeature.LAND, facecolor="grey", zorder=4)
     ax.add_feature(cfeature.COASTLINE, linewidth=0.5, zorder=4)
     ax.gridlines(draw_labels=False, linewidth=0.3)
 
-    ax_overlay = fig.add_axes(ax.get_position(), projection=None, frameon=False)  # same position as map
+    ax_overlay = fig.add_axes(ax.get_position(), projection=None, frameon=False)
     ax_overlay.set_axis_off()
-    # Step 4: Add causal nodes on new layer
-    nodePosX = np.array([-40, -60, -40])
-    nodePosY = np.array([50, 70, 89])
-    xy = proj.transform_points(ccrs.PlateCarree(), nodePosX, nodePosY)
-    x_proj, y_proj = xy[:, 0], xy[:, 1]
-    screen_coords = ax.transData.transform(np.column_stack((x_proj, y_proj)))
-    x_screen, y_screen = screen_coords[:, 0], screen_coords[:, 1]
-    print(x_screen)
-    print(y_screen)
-    # Get the axis limits (this helps us know the "center" of the map)
-    # x_min, x_max = ax_overlay.get_xlim()
-    # print(x_min)
-    # print(x_max)
-    # y_min, y_max = ax_overlay.get_ylim()
 
-    # # Calculate the center of the map in screen coordinates
-    # x_center, y_center = (200, 200)
-
-    # # Adjust the screen coordinates to center them correctly
-    # x_screen = x_screen - x_center
-    # y_screen = y_screen - y_center
-    # print(x_screen)
-    # print(y_screen)
     nodePosX = np.array([0.97, 0.85, 1])
     nodePosY = np.array([0.45, 0.75, 1])
     tp.plot_graph(
@@ -158,23 +130,12 @@ def visualizeGraphOnMap(val_matrix, var_names, filename):
 
     current_pos = ax_overlay.get_position()
 
-    # Calculate the shift (e.g., moving by -0.5 in both x and y direction)
     shift_x, shift_y = -0.32, -0.17
 
-    # Create a new position for the axes by shifting the current position
     new_pos = [current_pos.x0 + shift_x, current_pos.y0 + shift_y, current_pos.width, current_pos.height]
 
-    # Set the new position for the axes
     ax_overlay.set_position(new_pos)
 
-    # === Step 4: Add title and legend ===
-    # ax.legend(loc="lower left")
-    # ax.set_title("Geographical Regions by Grid Points", fontsize=14)
-    # from matplotlib.transforms import Bbox
-    # fig_width, fig_height = fig.get_size_inches()
-    # left, bottom, width, height = 0.25, 0.0, 0.50, 1
-    # bbox = Bbox.from_bounds(left * fig_width, bottom*fig_height, width* fig_width, height*fig_height)
-    # plt.savefig(filename, dpi=300, bbox_inches=bbox)
     plt.savefig(filename, dpi=300)
 
 def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = False, save = True, labelType = "PCMCI"):
