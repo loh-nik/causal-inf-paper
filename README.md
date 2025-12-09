@@ -1,5 +1,7 @@
 # Code for: Quantitative Comparison of Causal Inference Methods for Climate Tipping Points
 
+Cite as: Lohmann, N., Strahl, D., Högner, A., Huiskamp, W., Boehm, M., and Wunderling. N.: Quantitative Comparison of Causal Inference Methods for Climate Tipping Points (in preparation)
+
 This project contains the implementation for evaluations of three causal inference methods, the PCMCI method by Runge et al. [1], the Liang-Kleeman Information Flow (LKIF) by Liang [2] and the Granger Causality for State Space Models (GCSS) [3]. For applied experiments, we provide a pipeline script for causal inference of multivariate time series. The user can configure data sources, preprocessing options and the causal methods used for causal analysis.
 Options also include analysis of spatially resolved data (in .npy format), and causal stationarity (a sliding time window approach). Results are visualized in different types of plots, including graphs and maps.
 
