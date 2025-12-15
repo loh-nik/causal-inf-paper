@@ -303,6 +303,7 @@ def getMetricOfRealization(couplingMatrix, algorithms, model, samples, alpha, co
 
 # EXPERIMENTS
 
+# experiment on delay length
 def delay6dEvaluations(plotOnly, delaySizes, samples, alpha, randomRuns, couplStrength, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
     if not comm:
         comm = MPI.COMM_WORLD
@@ -371,7 +372,8 @@ def delay6dEvaluations(plotOnly, delaySizes, samples, alpha, randomRuns, couplSt
 
         vis.saveMCCCurve(mean.T, delaySizes, "", diag_dir + "/delays6dCascades_TPR", stdDev.T, show=False, save = True, rowLabels=["GCSS-TPR", "LKIF-TPR", "PCMCI-TPR", "GCSS-FPR", "LKIF-FPR", "PCMCI-FPR"], xlabel = "Delay (no unit)", ylabel ="Rate")
 
-def sample6dEvaluations(plotOnly, sampleCounts, alpha, randomRuns, tauMax, couplingStrength, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
+# main sample size experiment
+def sampleEvaluations(plotOnly, sampleCounts, alpha, randomRuns, tauMax, couplingStrength, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
     if not comm:
         comm = MPI.COMM_WORLD
     if not plotOnly:
@@ -439,7 +441,8 @@ def sample6dEvaluations(plotOnly, sampleCounts, alpha, randomRuns, tauMax, coupl
 
         vis.saveMCCCurve(mean.T, sampleCounts, "", diag_dir + "/samples6dCascades_TPR", stdDev.T, show=False, save = True, rowLabels=["GCSS-TPR", "LKIF-TPR", "PCMCI-TPR", "GCSS-FPR", "LKIF-FPR", "PCMCI-FPR"], xlabel = "Delay (no unit)", ylabel ="Rate", xscale ="log")
 
-def sample6dEvaluationsAppendix(plotOnly, sampleCounts, alpha, randomRuns, tauMax, couplingStrength, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
+# appendix experiment for different conditional independence tests of PCMCI
+def sampleEvaluationsAppendix(plotOnly, sampleCounts, alpha, randomRuns, tauMax, couplingStrength, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
     if not comm:
         comm = MPI.COMM_WORLD
     if not plotOnly:
@@ -486,6 +489,7 @@ def sample6dEvaluationsAppendix(plotOnly, sampleCounts, alpha, randomRuns, tauMa
 
         vis.saveMCCCurve(mean.T, sampleCounts, "", diag_dir + "/Appendix_samples6dCascades_TPR", stdDev.T, show=False, save = True, rowLabels=["PCMCI-TPR", "PCMCI_robustpc-TPR", "PCMCI_GPDC-TPR", "PCMCI-FPR", "PCMCI_robustpc-FPR", "PCMCI_GPDC-FPR"], xlabel = "Number of Samples", ylabel ="Rate", xscale ="log")
 
+# experiment on coupling strength
 def couplStrength6dEvaluations(plotOnly, couplStrengths, samples, alpha, randomRuns, tauMax, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
     if not comm:
         comm = MPI.COMM_WORLD
@@ -564,6 +568,7 @@ def subtractedMatrix(matrix, desiredDim):
         result[i] = matrix[i,:desiredDim]
     return result
 
+# conduct the experiment with different system sizes and densities
 def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingStrength, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
     import matplotlib as mpl
     if not comm:
@@ -693,7 +698,8 @@ def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingSt
                         xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
         #vis.saveMCCCurve(median.T, delaySizes, "", diag_dir + "/delays6dVARQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay in time steps", ylabel ="Matthews Correlation Coefficient")
 
-def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
+# conduct the forcing / nonstationarity experiment
+def nonStationaryExp(plotOnly, ceilings, alpha, samples, tauMax, randomRuns, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
     """We increase forcing linearly over the course of 50 units of time (500 samples), up to some ceiling, then compare performances across ceiling heights.
     Experiment only conducted for nonlinear system, as there's no tipping in the VAR system"""
     if not comm:
@@ -795,6 +801,7 @@ def nonStationaryStable(plotOnly, ceilings, alpha, samples, tauMax, randomRuns, 
         vis.saveMCCScatter(pcmInfo.T, ceilings, "", diag_dir + "/forcing6d_pcmci_TPR_withLegend", pcmStd.T, rowLabels=["Known Confounder TPR", "Known Confounder FPR","Hidden Confounder TPR",  "Hidden Confounder FPR"],
                            colors = flippedCols, linestyles=["solid", "dotted", "solid", "dotted"], figsize=(15,2), dpi=300, legend_outside=True, ylim = (-0.05,1.05), legend=True, xTickLabels=False, fontsizeFactor=1.4, legendColumns=2)
 
+# conduct the runtime experiment with all three methods
 def runtimeEvaluations(plotOnly, matrix, alpha, samples, tauMax, randomRuns, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
     if not comm:
         comm = MPI.COMM_WORLD
@@ -855,6 +862,7 @@ def main():
             except Exception as e:
                 print(f"An error occurred trying to create '{directory}': {e}")
     
+    # set this parameter to True if you only want to plot results from the .npy data files.
     plotOnly = False
     randomRuns = 100
     alpha = 0.05
@@ -862,7 +870,7 @@ def main():
     couplingStrength = 1
     tauMax = [1,1,1]
 
-    sample6dEvaluations(plotOnly = plotOnly,
+    sampleEvaluations(plotOnly = plotOnly,
     sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
     alpha = alpha,
     randomRuns = randomRuns,
@@ -910,7 +918,7 @@ def main():
     diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("System Size/Density Evaluation finished")
 
-    nonStationaryStable(plotOnly = plotOnly,
+    nonStationaryExp(plotOnly = plotOnly,
     ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
     alpha = alpha,
     samples = samples,
@@ -934,7 +942,7 @@ def main():
     diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("Runtime Evaluation finished")
     
-    sample6dEvaluationsAppendix(plotOnly = plotOnly,
+    sampleEvaluationsAppendix(plotOnly = plotOnly,
     sampleCounts = [50, 100, 200, 500, 1000, 2000],
     alpha = alpha,
     randomRuns = randomRuns,
