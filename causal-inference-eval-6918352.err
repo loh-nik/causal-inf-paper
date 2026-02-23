@@ -1,0 +1,13 @@
+#######################################################################################
+### conda added to PATH. Use 'source activate' rather than 'conda activate'.        ###
+### Do not run 'conda init' if prompted.                                            ###
+### 'conda init' will modify your shell outside of the `module` environment         ###
+#######################################################################################
+Traceback (most recent call last):
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/Evaluation.py", line 14, in <module>
+    import GCSS
+  File "/home/niklaslo/causal_inf/Causal-Inference-Pipeline/GCSS.py", line 3, in <module>
+    from oct2py import octave
+ImportError: cannot import name 'octave' from 'oct2py' (/home/niklaslo/.conda/envs/causal-inf-env/lib/python3.10/site-packages/oct2py/__init__.py)
+slurmstepd-csm14c181: error: *** STEP 6918352.0 ON csm14c181 CANCELLED AT 2026-02-18T17:40:40 ***
+slurmstepd-csm14c181: error: *** JOB 6918352 ON csm14c181 CANCELLED AT 2026-02-18T17:40:40 ***

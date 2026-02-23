@@ -848,8 +848,8 @@ def main():
     comm = MPI.COMM_WORLD
 
     # my main experiment for the paper is in "./data/tauMax_1", as other tauMax settings disadvantaged the delay-sensitive LKIF method drastically.
-    data_dir = "./data/tauMax_1"
-    diag_dir = "./diagrams/tauMax_1"
+    data_dir = "./data/lkif_test"
+    diag_dir = "./diagrams/lkif_test"
 
     if comm.Get_rank() == 0:
         for directory in [data_dir, diag_dir]:
@@ -870,29 +870,29 @@ def main():
     couplingStrength = 1
     tauMax = [1,1,1]
 
-    sampleEvaluations(plotOnly = plotOnly,
-    sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    alpha = alpha,
-    randomRuns = randomRuns,
-    tauMax = tauMax,
-    couplingStrength=couplingStrength, 
-    verbose=False,
-    comm=comm,
-    data_dir=data_dir,
-    diag_dir=diag_dir)
-    if comm.Get_rank() == 0: print("Sample Evaluation finished")
+    # sampleEvaluations(plotOnly = plotOnly,
+    # sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
+    # alpha = alpha,
+    # randomRuns = randomRuns,
+    # tauMax = tauMax,
+    # couplingStrength=couplingStrength, 
+    # verbose=False,
+    # comm=comm,
+    # data_dir=data_dir,
+    # diag_dir=diag_dir)
+    # if comm.Get_rank() == 0: print("Sample Evaluation finished")
     
-    couplStrength6dEvaluations(plotOnly = plotOnly,
-    couplStrengths = np.array([0.01, 0.02, 0.05, 0.07,0.1,0.15,0.2,0.25,0.3]),
-    samples = samples,
-    alpha = alpha,
-    randomRuns = randomRuns,
-    tauMax = tauMax, 
-    verbose=False,
-    comm=comm,
-    data_dir=data_dir,
-    diag_dir=diag_dir)
-    if comm.Get_rank() == 0: print("Coupling Strength Evaluation finished")
+    # couplStrength6dEvaluations(plotOnly = plotOnly,
+    # couplStrengths = np.array([0.01, 0.02, 0.05, 0.07,0.1,0.15,0.2,0.25,0.3]),
+    # samples = samples,
+    # alpha = alpha,
+    # randomRuns = randomRuns,
+    # tauMax = tauMax, 
+    # verbose=False,
+    # comm=comm,
+    # data_dir=data_dir,
+    # diag_dir=diag_dir)
+    # if comm.Get_rank() == 0: print("Coupling Strength Evaluation finished")
 
     delay6dEvaluations(plotOnly = plotOnly,
     delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0],
@@ -905,6 +905,8 @@ def main():
     data_dir=data_dir,
     diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("Delay Evaluation finished")
+
+    exit()
 
     system6dEvaluations(plotOnly = plotOnly,
     alpha = alpha,
