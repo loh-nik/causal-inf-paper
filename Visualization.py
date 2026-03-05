@@ -78,7 +78,7 @@ def saveROCCurve(TPR, FPR, values, title, filename, colors = [], rowLabels = [],
 def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowLabels=[], show = False, save= True, 
                 xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=300, xlabel ="", ylabel ="", yAxisCut = False,
                   yAxisLinearLim = 1, quantileLower = [], quantileHigher = [], xTickLabels = True, yTickLabels = True, fontsizeFactor = 1,
-                  xLims = None, yLims = None, moveYLabel = 0):
+                  xLims = None, yLims = None, moveYLabel = 0, greyAxisAt = None):
     """Draws a plot with lines for data rows, optionally with error bars.
     \nScores are the MCC score values, in a 2D array with first dimension as the number of data lines drawn, \
     and second dimension equaling values dimension. 
@@ -121,6 +121,8 @@ def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowL
         offset = mtransforms.ScaledTranslation(0, moveYLabel/72, ax.figure.dpi_scale_trans)
         # ax.yaxis.set_label_coords(x0, y0 + moveYLabel)
         ax.yaxis.get_label().set_transform(ax.yaxis.get_label().get_transform() + offset)
+    if greyAxisAt is not None:
+        plt.axvline(greyAxisAt, color ="grey")
     if len(scores.shape) == 1:
         plt.plot(values, scores)
         if len(errors) > 0:
@@ -388,6 +390,24 @@ def saveCouplingMatrixGraph(matrix, title, filename, show = False, save= True, f
     else: 
         plt.close()
 
+def pyGraphVizCouplingMatrix(matrix, filename, dpi = 300):
+    import pygraphviz as pgv
+    import networkx as nx
+
+    n = matrix.shape[0]
+    G = nx.from_numpy_array(matrix)
+    A = pgv.AGraph(directed=True, strict=False)
+    for i in range(n):
+        A.add_node(i, shape='circle', style='filled', fillcolor='orange', width=0.5)
+    for u, v, d in G.edges(data=True):
+        color = 'tab:blue' if d['weight'] == 1 else 'tab:red'
+        A.add_edge(u, v, color=color, penwidth=3, arrowsize=1.2)
+
+    A.layout(prog='neato')   # neato gives circular-ish organic layouts
+    A.graph_attr['size'] = '4.5,4.5'   # inches, equivalent to figsize=(4.5, 4.5)
+    A.graph_attr['dpi'] = str(dpi)
+    A.draw(filename)
+
 def customCouplingMatrixGraph(matrix, title, filename, show = False, save= True, figsize=(4.5,4.5), dpi=300):
     import networkx as nx
     edge_colors = {1: 'tab:blue', -1: 'tab:red'}
@@ -569,7 +589,8 @@ def plotCouplingGraphs():
                 largeCouplingMatrixCascade_LowDense, largeCouplingMatrixCascade_HighDense]
     filenames = ["SmallLowDense", "SmallHighDense", "MedLowDense", "MedHighDense", "LargeLowDense", "LargeHighDense"]
     for matr, name in zip(matrices, filenames):
-        customCouplingMatrixGraph(matr, "", "diagrams/MatrixGraphs/" +name + ".png")
+        pyGraphVizCouplingMatrix(matr, "diagrams/MatrixGraphs/" +name + ".png")
+        # customCouplingMatrixGraph(matr, "", "diagrams/MatrixGraphs/" +name + ".png")
 
 if __name__ == "__main__":
     plotCouplingGraphs()

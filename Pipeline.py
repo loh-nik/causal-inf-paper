@@ -50,19 +50,20 @@ def preprocessData(data, detrending = True, deseason = True, diff = True, deseas
     currentData[censor] = np.nan
     return currentData
 
-def visualizeGraphOnMap(val_matrix, var_names, filename):
+def visualizeGraphOnMap(val_matrix, var_names, filename, assi_file = "ASSI_def.txt"):
     import cartopy.crs as ccrs
     import cartopy.feature as cfeature
 
     def load_region(file_path):
         """Reads a two-column lat/lon text file."""
-        data = np.loadtxt(file_path)
+        data = np.loadtxt(fname=file_path)
         lats, lons = data[:, 0], data[:, 1]
         return lats, lons
 
+    print(assi_file)
     regions = {
         "AMOC": "subpolarGyreCaesar.txt",
-        "ASSI": "ASSI_def.txt"
+        "ASSI": assi_file
         # "Temp": "ArcticTemp_def.txt"
     }
 
@@ -113,10 +114,14 @@ def visualizeGraphOnMap(val_matrix, var_names, filename):
 
     nodePosX = np.array([0.97, 0.85, 1])
     nodePosY = np.array([0.45, 0.75, 1])
-    tp.plot_graph(
+    from plot_graph_multilags import plot_graph_multilags
+
+    plot_graph_multilags(
             val_matrix=val_matrix,
             graph=val_matrix,
             var_names=var_names,
+            curved_radius_base=0.2,
+            curved_radius_step=0.2,
             link_colorbar_label='cross-MCI',
             node_colorbar_label='auto-MCI',
             show_autodependency_lags=False,
@@ -127,6 +132,20 @@ def visualizeGraphOnMap(val_matrix, var_names, filename):
             link_label_fontsize=12,
             fig_ax=(fig,ax_overlay)
             )
+    # tp.plot_graph(
+    #         val_matrix=val_matrix,
+    #         graph=val_matrix,
+    #         var_names=var_names,
+    #         link_colorbar_label='cross-MCI',
+    #         node_colorbar_label='auto-MCI',
+    #         show_autodependency_lags=False,
+    #         node_pos={'x': nodePosX, 'y':nodePosY},
+    #         node_size = 0.12,
+    #         node_aspect = 0.8,
+    #         node_label_size=12,
+    #         link_label_fontsize=12,
+    #         fig_ax=(fig,ax_overlay)
+    #         )
 
     current_pos = ax_overlay.get_position()
 
@@ -353,6 +372,7 @@ if __name__ == "__main__":
     parser.add_argument("-prescribeNetLM", help="user-prescribed network for linear mediation analysis", nargs='+', default = [], required = False)
     parser.add_argument("-worldMap", help = "plot on Arctic map, True/False", type=bool, default=False, required=False)
     parser.add_argument("-map_var_names", help = "variable names in output world map", nargs='+', default=[], required=False)
+    parser.add_argument("-assi_file", help = "Arctic sea ice plot file name", default="ASSI_def.txt", required=False)
     args = parser.parse_args()
     
     directory = args.dirname_out
@@ -384,6 +404,7 @@ if __name__ == "__main__":
         slidingWindow = stationaryWindow * stationaryShift
 
     plotOnMap = args.worldMap
+    assi_file = args.assi_file
 
     # default mask for lkif analysis (which can only take one mask)
     defaultMask = []
@@ -541,7 +562,7 @@ if __name__ == "__main__":
             
             visualizeGraph(matrixPCMCI, results["graph"], var_names, directory + "/default_pcmci")
             if plotOnMap:
-                visualizeGraphOnMap(matrixPCMCI, args.map_var_names, directory + "/mapped_pcmci")
+                visualizeGraphOnMap(matrixPCMCI, args.map_var_names, directory + "/mapped_pcmci", assi_file=assi_file)
 
             if useMask:
                 med = LinearMediation(dataframe=dataframe, mask_type = args.maskType)

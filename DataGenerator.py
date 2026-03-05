@@ -10,7 +10,7 @@ import jax.numpy as jnp
 def dynSysX3(t,y,A,B,C,D,deltaT,noiseArr):
     return A*(np.power(y,3)) + B*y + C + D@(y-1) + noiseArr[int(t/deltaT)%len(noiseArr)]
 
-def gen3dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000, savename = "threeInteractions", verbose = True):
+def gen3dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000, noiseScale = 0.01, savename = "threeInteractions", verbose = True):
     
     
     if couplingMatrix.shape != (3,3) or delayMatrix.shape != (3,3):
@@ -26,7 +26,7 @@ def gen3dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000, savename = "th
                           - pow(y, 3) + y + couplingMatrix[1,0] * (xdelay(t-delayMatrix[1,0])-1) + couplingMatrix[1,2] * (zdelay(t-delayMatrix[1,2])-1), \
                             - pow(z, 3) + z + couplingMatrix[2,0] * (xdelay(t-delayMatrix[2,0])-1) + couplingMatrix[2,1] * (ydelay(t-delayMatrix[2,1])-1))
     
-    g = lambda x,y,z,t: (0.01, 0.01, 0.01)
+    g = lambda x,y,z,t: (noiseScale,) * 3
 
     integral = bp.sdeint(f, g, state_delays={'x':xdelay, 'y': ydelay, 'z':zdelay})
 
@@ -40,13 +40,14 @@ def gen3dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000, savename = "th
     stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100])).reshape((3,-1))
     return stacked
 
-def gen3dNoDelayData(couplingMatrix, timeSteps = 1000, verbose = True):
+def gen3dNoDelayData(couplingMatrix, timeSteps = 1000, noiseScale = 0.01, verbose = True, deltaT = 0.1):
     
     dt = 0.001
+    sampleSkip = int(deltaT/dt)
     f = lambda x,y,z,t: (- pow(x, 3) + x + couplingMatrix[0,1] * (y-1) + couplingMatrix[0,2] * (z-1),\
                           - pow(y, 3) + y + couplingMatrix[1,0] * (x-1) + couplingMatrix[1,2] * (z-1), \
                            - pow(z, 3) + z + couplingMatrix[2,0] * (x-1) + couplingMatrix[2,1] * (y-1))
-    g = lambda x,y,z,t: (0.01, 0.01, 0.01)
+    g = lambda x,y,z,t: (noiseScale,) * 3
 
     integral = bp.sdeint(f, g)
 
@@ -55,12 +56,12 @@ def gen3dNoDelayData(couplingMatrix, timeSteps = 1000, verbose = True):
                                 inits = [1.,1.,1.],
                                 dt=dt,
                                 progress_bar=verbose)
-    runner.run(timeSteps / 10)
-    stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100])).reshape((3,-1))
+    runner.run(timeSteps / (1/deltaT))
+    stacked = np.stack((runner.mon.x[::sampleSkip], runner.mon.y[::sampleSkip],runner.mon.z[::sampleSkip])).reshape((3,-1))
     return stacked
 
 # 6 dimensional cubic diff. eq. with delays
-def gen6dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000, verbose = True):
+def gen6dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000, noiseScale = 0.01, verbose = True):
     
     if couplingMatrix.shape != (6,6) or delayMatrix.shape != (6,6):
         print("Error, coupling or delay matrix not of shape (6,6)")
@@ -82,7 +83,7 @@ def gen6dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000, verbose = True
                             - pow(c, 3) + c + couplingMatrix[5,0] * (xdelay(t-delayMatrix[5,0])-1)+ couplingMatrix[5,1] * (ydelay(t-delayMatrix[5,1])-1) + couplingMatrix[5,2] * (zdelay(t-delayMatrix[5,2])-1) + couplingMatrix[5,3] * (adelay(t-delayMatrix[5,3])-1)+ couplingMatrix[5,4] * (bdelay(t-delayMatrix[5,4])-1)\
                             )
     
-    g = lambda x,y,z,a,b,c,t: (0.01, 0.01, 0.01, 0.01, 0.01, 0.01)
+    g = lambda x,y,z,a,b,c,t: (noiseScale,) * 6
 
     integral = bp.sdeint(f, g, state_delays={'x':xdelay, 'y': ydelay, 'z':zdelay, 'a':adelay, 'b':bdelay, 'c':cdelay})
 
@@ -95,13 +96,13 @@ def gen6dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000, verbose = True
     stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100],runner.mon.a[::100], runner.mon.b[::100],runner.mon.c[::100])).reshape((6,-1))
     return stacked
 
-def gen6dNoDelayData(couplingMatrix, timeSteps = 1000, verbose = True):
+def gen6dNoDelayData(couplingMatrix, timeSteps = 1000, noiseScale = 0.01, verbose = True, deltaT = 0.1):
 
     if couplingMatrix.shape != (6,6):
         print("Error, coupling or delay matrix not of shape (6,6)")
         return
     dt = 0.001
-
+    sampleSkip = int(deltaT/dt)
     f = lambda x,y,z,a,b,c,t: (- pow(x, 3) + x + couplingMatrix[0,1] * (y-1) + couplingMatrix[0,2] * (z-1) + couplingMatrix[0,3] * (a-1)+ couplingMatrix[0,4] * (b-1)+ couplingMatrix[0,5] * (c-1),\
                             - pow(y, 3) + y + couplingMatrix[1,0] * (x -1)+ couplingMatrix[1,2] * (z -1) + couplingMatrix[1,3] * (a -1)+ couplingMatrix[1,4] * (b -1)+ couplingMatrix[1,5] * (c -1),\
                             - pow(z, 3) + z + couplingMatrix[2,0] * (x -1)+ couplingMatrix[2,1] * (y -1) + couplingMatrix[2,3] * (a -1)+ couplingMatrix[2,4] * (b -1)+ couplingMatrix[2,5] * (c -1),\
@@ -110,7 +111,7 @@ def gen6dNoDelayData(couplingMatrix, timeSteps = 1000, verbose = True):
                             - pow(c, 3) + c + couplingMatrix[5,0] * (x -1)+ couplingMatrix[5,1] * (y -1) + couplingMatrix[5,2] * (z -1) + couplingMatrix[5,3] * (a -1)+ couplingMatrix[5,4] * (b -1)\
                             )
     
-    g = lambda x,y,z,a,b,c,t: (0.01, 0.01, 0.01, 0.01, 0.01, 0.01)
+    g = lambda x,y,z,a,b,c,t: (noiseScale,) * 6
 
     integral = bp.sdeint(f, g)
 
@@ -119,23 +120,23 @@ def gen6dNoDelayData(couplingMatrix, timeSteps = 1000, verbose = True):
                                 inits = [1.,1.,1.,1.,1.,1.],
                                 dt=dt,
                                 progress_bar=verbose)
-    runner.run(timeSteps / 10)
-    stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100],runner.mon.a[::100], runner.mon.b[::100],runner.mon.c[::100])).reshape((6,-1))
+    runner.run(timeSteps / (1/deltaT))
+    stacked = np.stack((runner.mon.x[::sampleSkip], runner.mon.y[::sampleSkip],runner.mon.z[::sampleSkip],runner.mon.a[::sampleSkip], runner.mon.b[::sampleSkip],runner.mon.c[::sampleSkip])).reshape((6,-1))
     return stacked
 
-def gen12dNoDelayData(couplingMatrix, timeSteps = 1000, verbose = True):
+def gen12dNoDelayData(couplingMatrix, timeSteps = 1000, noiseScale = 0.01, verbose = True, deltaT = 0.1):
     
     if couplingMatrix.shape != (12,12):
         print("Error, coupling or delay matrix not of shape (12,12)")
         return
     dt = 0.001
-
+    sampleSkip = int(deltaT/dt)
     def function12d(x,y,z,a,b,c,d,e,f,g,h,j,t):
         values = jnp.stack([x,y,z,a,b,c,d,e,f,g,h,j])
         minus1 = values-1
         result = -jnp.power(values, 3) + values + couplingMatrix @ minus1 
         return result[0], result[1], result[2], result[3], result[4], result[5],result[6], result[7], result[8], result[9], result[10], result[11]
-    g = lambda x,y,z,a,b,c,d,e,f,g,h,j,t: (0.01, 0.01, 0.01, 0.01, 0.01, 0.01,0.01, 0.01, 0.01, 0.01, 0.01, 0.01)
+    g = lambda x,y,z,a,b,c,d,e,f,g,h,j,t: (noiseScale,) * 12
 
     integral = bp.sdeint(function12d, g)
 
@@ -144,8 +145,8 @@ def gen12dNoDelayData(couplingMatrix, timeSteps = 1000, verbose = True):
                                 inits = [1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.],
                                 dt=dt,
                                 progress_bar=verbose)
-    runner.run(timeSteps / 10)
-    stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100],runner.mon.a[::100], runner.mon.b[::100],runner.mon.c[::100],runner.mon.d[::100], runner.mon.e[::100],runner.mon.f[::100],runner.mon.g[::100], runner.mon.h[::100],runner.mon.j[::100])).reshape((12,-1))
+    runner.run(timeSteps / (1/deltaT))
+    stacked = np.stack((runner.mon.x[::sampleSkip], runner.mon.y[::sampleSkip],runner.mon.z[::sampleSkip],runner.mon.a[::sampleSkip], runner.mon.b[::sampleSkip],runner.mon.c[::sampleSkip],runner.mon.d[::sampleSkip], runner.mon.e[::sampleSkip],runner.mon.f[::sampleSkip],runner.mon.g[::sampleSkip], runner.mon.h[::sampleSkip],runner.mon.j[::sampleSkip])).reshape((12,-1))
     return stacked
 
 def gen3dAutoCorrData(couplingMatrix, autoCorr, verbose = True):
@@ -167,25 +168,25 @@ def gen3dAutoCorrData(couplingMatrix, autoCorr, verbose = True):
     stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100])).reshape((3,-1))
     return stacked
 
-def getCascadeDataBrainpy(couplingMatrix, samples, delay = 0, verbose = True):
+def getCascadeDataBrainpy(couplingMatrix, samples, noiseScale, delay = 0, verbose = True, deltaT = 0.1):
     if delay == 0:
         if couplingMatrix.shape == (3,3):
-            return gen3dNoDelayData(couplingMatrix, samples, verbose)
+            return gen3dNoDelayData(couplingMatrix, samples, noiseScale, verbose, deltaT)
         elif couplingMatrix.shape == (6,6):
-            return gen6dNoDelayData(couplingMatrix, samples, verbose)
+            return gen6dNoDelayData(couplingMatrix, samples, noiseScale, verbose, deltaT)
         elif couplingMatrix.shape == (12,12):
-            return gen12dNoDelayData(couplingMatrix,samples, verbose)
+            return gen12dNoDelayData(couplingMatrix,samples, noiseScale, verbose, deltaT)
         elif couplingMatrix.shape[0] < 12 and couplingMatrix.shape[0] == couplingMatrix.shape[1]:
             # if the shapes don't match, just extend the matrix with isolated variables and throw them away afterwards. 
             # Since we found some limited accuracy degradation with vectorized operations, we would have to write a new method for every size.
             couplingMatrixNew = np.zeros((12,12))
             couplingMatrixNew[:couplingMatrix.shape[0], :couplingMatrix.shape[0]] = couplingMatrix
-            return gen12dNoDelayData(couplingMatrixNew, samples, verbose)[:couplingMatrix.shape[0]]
+            return gen12dNoDelayData(couplingMatrixNew, samples, verbose, deltaT)[:couplingMatrix.shape[0]]
     else:
         if couplingMatrix.shape == (3,3):
-            return gen3dDelayData(couplingMatrix, np.ones((3,3)) * delay, samples, verbose)
+            return gen3dDelayData(couplingMatrix, np.ones((3,3)) * delay, samples, noiseScale, verbose)
         elif couplingMatrix.shape == (6,6):
-            return gen6dDelayData(couplingMatrix, np.ones((6,6)) * delay, samples, verbose)
+            return gen6dDelayData(couplingMatrix, np.ones((6,6)) * delay, samples, noiseScale, verbose)
     raise RuntimeError("No implementation of the given matrix shape")
     return
 
@@ -506,19 +507,20 @@ if __name__ == "__main__":
     # plt.plot(data2)
     # plt.plot(data[:,1] - data2[:,1])
     # plt.show()
-    truthMatrix = np.array([[0,0,0,0,0,0],
+    truthMatrix = np.array([
+                            [0,0,0,0,0,0],
                             [1,0,0,0,0,0],
                             [0,-1,0,0,0,0],
                             [0,0,0,0,0,0],
                             [0,0,1,0,0,1],
                             [0,0,0,0,-1,0]])
-    data = getCascadeDataBrainpy(truthMatrix, 100)
+    data = getCascadeDataBrainpy(truthMatrix, 1000, 0.3)
     print(data.shape)
     fig, axs = plt.subplots(6,1, figsize=(3,6), sharex=True)
     for ax in axs:
         ax.set_xticklabels([])
-        ax.set_yticklabels([])
-        ax.set_yticks([])
+        # ax.set_yticklabels([])
+        # ax.set_yticks([])
 
     for i in range(data.shape[0]):
         axs[i].plot(data[i], color="black")
