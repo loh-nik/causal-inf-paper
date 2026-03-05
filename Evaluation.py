@@ -569,7 +569,7 @@ def couplStrength6dEvaluations(plotOnly, couplStrengths, samples, alpha, randomR
         # get central 90% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
         vis.saveMCCCurve(mean.T, couplStrengths*10, "", diag_dir + "/coupl6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="Matthews Correlation Coefficient")
-        vis.saveMCCCurve(mean.T, couplStrengths*10, "", diag_dir + "/coupl6dCascades_Paper", stdDev.T, greyAxisAt=1000, show=False, save = True, rowLabels=[], xlabel = "Coupling Strength", ylabel ="", yTickLabels=False, yLims=[-0.23, 1.03], fontsizeFactor=1.2)
+        vis.saveMCCCurve(mean.T, couplStrengths*10, "", diag_dir + "/coupl6dCascades_Paper", stdDev.T, greyAxisAt=1, show=False, save = True, rowLabels=[], xlabel = "Coupling Strength", ylabel ="", yTickLabels=False, yLims=[-0.23, 1.03], fontsizeFactor=1.2)
         vis.saveMCCCurve(median.T, couplStrengths*10, "", diag_dir + "/coupl6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Coupling Strength", ylabel ="Matthews Correlation Coefficient")
 
         scores = MCCFromFull(fullOutVAR, axis=2)
@@ -663,11 +663,11 @@ def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingSt
                 for j, i, value in result:
                     fullOutVAR[j, i] = value
         if not comm or comm.Get_rank() == 0:
-            np.save(data_dir + "/6d_System_ext_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
-            np.save(data_dir + "/VAR_6d_System_ext_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
+            np.save(data_dir + "/6d_System_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
+            np.save(data_dir + "/VAR_6d_System_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
     elif not comm or comm.Get_rank() == 0:
-        fullOut = np.load(data_dir + "/6d_System_ext_"+str(randomRuns)+"_runs_metrics.npy")
-        fullOutVAR = np.load(data_dir + "/VAR_6d_System_ext_"+str(randomRuns)+"_runs_metrics.npy")
+        fullOut = np.load(data_dir + "/6d_System_"+str(randomRuns)+"_runs_metrics.npy")
+        fullOutVAR = np.load(data_dir + "/VAR_6d_System_"+str(randomRuns)+"_runs_metrics.npy")
     if not comm or comm.Get_rank() == 0:
         scores = MCCFromFull(fullOut, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis = 1)
@@ -870,7 +870,7 @@ def runtimeEvaluations(plotOnly, matrix, alpha, samples, tauMax, randomRuns, ver
         runtimes = np.load(data_dir + "/runtimes.npy")
     from matplotlib import pyplot as plt
     plt.figure(figsize=(5,4), layout="constrained")
-    plt.boxplot(runtimes, labels=["GCSS", "LKIF", "PCMCI"], patch_artist=True)
+    plt.boxplot(runtimes[:,::-1], labels=["PCMCI","LKIF", "GCSS"], patch_artist=True)
     plt.ylabel("Runtime (s)", fontsize=14)
     plt.yscale("log")
     plt.grid(axis='y', linestyle='--', alpha=0.6)
@@ -976,7 +976,7 @@ def delta_t_Evaluations(plotOnly, timeSteps, samples, alpha, randomRuns, tauMax,
         # get central 80% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
         vis.saveMCCCurve(mean.T, timeSteps, "", diag_dir + "/Timestep6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Timestep Δt", ylabel ="Matthews Correlation Coefficient", xscale ="log")
-        vis.saveMCCCurve(mean.T, timeSteps, "", diag_dir + "/Timestep6dCascades_Paper", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Timestep Δt", ylabel ="Matthews Correlation Coefficient", xscale ="log", yLims=[-0.23, 1.03], fontsizeFactor=1.2, moveYLabel=-15, figsize=(5.5,4))
+        vis.saveMCCCurve(mean.T, timeSteps, "", diag_dir + "/Timestep6dCascades_Paper", stdDev.T, greyAxisAt=0.1, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Timestep Δt", ylabel ="Matthews Correlation Coefficient", xscale ="log", yLims=[-0.23, 1.03], fontsizeFactor=1.2, moveYLabel=-15, figsize=(5.5,4))
         vis.saveMCCCurve(median.T, timeSteps, "", diag_dir + "/Timestep6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Timestep Δt", ylabel ="Matthews Correlation Coefficient",xscale ="log")
 
 def random_graph_Evaluations(plotOnly, couplingGraphs, sampleCounts, alpha, randomRuns, tauMax, couplingStrength, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
@@ -1036,36 +1036,36 @@ def main():
                 print(f"An error occurred trying to create '{directory}': {e}")
     
     # set this parameter to True if you only want to plot results from the .npy data files.
-    plotOnly = False
+    plotOnly = True
     randomRuns = 100
     alpha = 0.05
     samples = 1000
     couplingStrength = 1
     tauMax = [1,1,1]
 
-    # sampleEvaluations(plotOnly = plotOnly,
-    # sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    # alpha = alpha,
-    # randomRuns = randomRuns,
-    # tauMax = tauMax,
-    # couplingStrength=couplingStrength, 
-    # verbose=False,
-    # comm=comm,
-    # data_dir=data_dir,
-    # diag_dir=diag_dir)
-    # if comm.Get_rank() == 0: print("Sample Evaluation finished")
+    sampleEvaluations(plotOnly = plotOnly,
+    sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
+    alpha = alpha,
+    randomRuns = randomRuns,
+    tauMax = tauMax,
+    couplingStrength=couplingStrength, 
+    verbose=False,
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
+    if comm.Get_rank() == 0: print("Sample Evaluation finished")
     
-    # couplStrength6dEvaluations(plotOnly = plotOnly,
-    # couplStrengths = np.array([0.01, 0.02, 0.05, 0.07,0.1,0.15,0.2,0.25,0.3]),
-    # samples = samples,
-    # alpha = alpha,
-    # randomRuns = randomRuns,
-    # tauMax = tauMax, 
-    # verbose=False,
-    # comm=comm,
-    # data_dir=data_dir,
-    # diag_dir=diag_dir)
-    # if comm.Get_rank() == 0: print("Coupling Strength Evaluation finished")
+    couplStrength6dEvaluations(plotOnly = plotOnly,
+    couplStrengths = np.array([0.01, 0.02, 0.05, 0.07,0.1,0.15,0.2,0.25,0.3]),
+    samples = samples,
+    alpha = alpha,
+    randomRuns = randomRuns,
+    tauMax = tauMax, 
+    verbose=False,
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
+    if comm.Get_rank() == 0: print("Coupling Strength Evaluation finished")
 
     # generate_random_graphs()
     graphs = get_random_graphs()
@@ -1122,8 +1122,6 @@ def main():
     diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("Time Step Evaluation finished")
 
-    exit()
-
     delay6dEvaluations(plotOnly = plotOnly,
     delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0],
     samples = samples,
@@ -1162,17 +1160,17 @@ def main():
     diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("Runtime Evaluation finished")
     
-    sampleEvaluationsAppendix(plotOnly = plotOnly,
-    sampleCounts = [50, 100, 200, 500, 1000, 2000],
-    alpha = alpha,
-    randomRuns = randomRuns,
-    tauMax = tauMax,
-    couplingStrength=couplingStrength, 
-    verbose=False,
-    comm=comm,
-    data_dir=data_dir,
-    diag_dir=diag_dir)
-    if comm.Get_rank() == 0: print("Sample Evaluation finished")
+    # sampleEvaluationsAppendix(plotOnly = plotOnly,
+    # sampleCounts = [50, 100, 200, 500, 1000, 2000],
+    # alpha = alpha,
+    # randomRuns = randomRuns,
+    # tauMax = tauMax,
+    # couplingStrength=couplingStrength, 
+    # verbose=False,
+    # comm=comm,
+    # data_dir=data_dir,
+    # diag_dir=diag_dir)
+    # if comm.Get_rank() == 0: print("Sample Evaluation finished")
 
     GCSS.close_octave()
 

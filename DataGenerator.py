@@ -507,25 +507,27 @@ if __name__ == "__main__":
     # plt.plot(data2)
     # plt.plot(data[:,1] - data2[:,1])
     # plt.show()
-    truthMatrix = np.array([
-                            [0,0,0,0,0,0],
-                            [1,0,0,0,0,0],
-                            [0,-1,0,0,0,0],
-                            [0,0,0,0,0,0],
-                            [0,0,1,0,0,1],
-                            [0,0,0,0,-1,0]])
-    data = getCascadeDataBrainpy(truthMatrix, 1000, 0.3)
-    print(data.shape)
-    fig, axs = plt.subplots(6,1, figsize=(3,6), sharex=True)
-    for ax in axs:
-        ax.set_xticklabels([])
-        # ax.set_yticklabels([])
-        # ax.set_yticks([])
+    graphs = np.load("data/random_graphs.npy")
+    # truthMatrix = np.array([
+    #                         [0,0,0,0,0,0],
+    #                         [1,0,0,0,0,0],
+    #                         [0,-1,0,0,0,0],
+    #                         [0,0,0,0,0,0],
+    #                         [0,0,1,0,0,1],
+    #                         [0,0,0,0,-1,0]])
+    for index, truthMatrix in enumerate(graphs):
+        data = getCascadeDataBrainpy(truthMatrix, 1000, 0.1)
+        print(data.shape)
+        fig, axs = plt.subplots(6,1, figsize=(3,6), sharex=True)
+        for ax in axs:
+            ax.set_xticklabels([])
+            # ax.set_yticklabels([])
+            # ax.set_yticks([])
 
-    for i in range(data.shape[0]):
-        axs[i].plot(data[i], color="black")
-        #if i < 5:
-            #ax.spines['bottom'].set_linewidth(2)
-            #ax.spines['bottom'].set_color('black')
-    plt.subplots_adjust(hspace=0)
-    plt.savefig("diagrams/plainData.png", dpi=300)
+        for i in range(data.shape[0]):
+            axs[i].plot(data[i], color="black")
+            #if i < 5:
+                #ax.spines['bottom'].set_linewidth(2)
+                #ax.spines['bottom'].set_color('black')
+        plt.subplots_adjust(hspace=0)
+        plt.savefig("diagrams/plainData"+str(index)+".png", dpi=300)

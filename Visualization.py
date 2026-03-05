@@ -154,7 +154,9 @@ def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowL
                 elif len(quantileLower) > 0:
                     plt.fill_between(values, quantileLower[i], quantileHigher[i], alpha = 0.2, color= colors[i])
         if showLegend:
-            plt.legend(fontsize=14*fontsizeFactor)
+            order = [2, 0, 1]
+            handles, labels = ax.get_legend_handles_labels()
+            plt.legend(handles[::-1], labels[::-1], fontsize=14*fontsizeFactor)
     if save:
         plt.savefig(filename, dpi=dpi)
     if show:
@@ -395,17 +397,23 @@ def pyGraphVizCouplingMatrix(matrix, filename, dpi = 300):
     import networkx as nx
 
     n = matrix.shape[0]
-    G = nx.from_numpy_array(matrix)
+    G = nx.from_numpy_array(matrix, create_using=nx.DiGraph)
     A = pgv.AGraph(directed=True, strict=False)
     for i in range(n):
         A.add_node(i, shape='circle', style='filled', fillcolor='orange', width=0.5)
-    for u, v, d in G.edges(data=True):
-        color = 'tab:blue' if d['weight'] == 1 else 'tab:red'
+    for u,v, d in G.edges(data=True):
+        color = 'blue' if d['weight'] == 1 else 'red'
         A.add_edge(u, v, color=color, penwidth=3, arrowsize=1.2)
 
-    A.layout(prog='neato')   # neato gives circular-ish organic layouts
+    for node in A.nodes():
+        node.attr['width'] = '0.5'
+        node.attr['height'] = '0.5'
+    A.graph_attr['K'] = '0.5'
     A.graph_attr['size'] = '4.5,4.5'   # inches, equivalent to figsize=(4.5, 4.5)
     A.graph_attr['dpi'] = str(dpi)
+    A.graph_attr['splines'] = 'true'
+    A.graph_attr['overlap'] = 'false'
+    A.layout(prog='fdp')   # neato gives circular-ish organic layouts
     A.draw(filename)
 
 def customCouplingMatrixGraph(matrix, title, filename, show = False, save= True, figsize=(4.5,4.5), dpi=300):
