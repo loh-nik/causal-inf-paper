@@ -646,6 +646,10 @@ if __name__ == "__main__":
                 matrixLKIF = LKIF.lkif(data.T, alpha, returnAll=False, timestamps = None)
             
             visualizeGraph(matrixLKIF, [], var_names, directory + "/default_lkif", labelType="LKIF")
+            if plotOnMap:
+                matrixFull = np.zeros((matrixLKIF.shape[0], matrixLKIF.shape[1],2))
+                matrixFull[:,:,1] = matrixLKIF
+                visualizeGraphOnMap(matrixFull, args.map_var_names, directory + "/mapped_lkif", assi_file=assi_file)
 
             if args.causalStationarity:
                 oneToTwo = np.zeros(int((data.shape[0]-slidingWindow)/stationaryShift))

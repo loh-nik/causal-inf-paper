@@ -78,12 +78,14 @@ def saveROCCurve(TPR, FPR, values, title, filename, colors = [], rowLabels = [],
 def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowLabels=[], show = False, save= True, 
                 xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=300, xlabel ="", ylabel ="", yAxisCut = False,
                   yAxisLinearLim = 1, quantileLower = [], quantileHigher = [], xTickLabels = True, yTickLabels = True, fontsizeFactor = 1,
-                  xLims = None, yLims = None, moveYLabel = 0, greyAxisAt = None):
+                  xLims = None, yLims = None, moveYLabel = 0, greyAxisAt = None, closePlot = True, fig = None,
+                  alpha_fillBetween = 0.2):
     """Draws a plot with lines for data rows, optionally with error bars.
     \nScores are the MCC score values, in a 2D array with first dimension as the number of data lines drawn, \
     and second dimension equaling values dimension. 
     \nValues are drawn on the x-axis, e.g. number of samples"""
-    fig = plt.figure(figsize=figsize, layout ='constrained')
+    if fig is None:
+        fig = plt.figure(figsize=figsize, layout ='constrained')
     if scores.shape[0] != len(values) and scores.shape[1] != len(values):
         print("Value list doesn't match any dimension of data")
         exit()
@@ -126,9 +128,9 @@ def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowL
     if len(scores.shape) == 1:
         plt.plot(values, scores)
         if len(errors) > 0:
-            plt.fill_between(values, scores + errors, scores - errors, alpha = 0.2)
+            plt.fill_between(values, scores + errors, scores - errors, alpha = alpha_fillBetween)
         elif len(quantileLower) > 0:
-            plt.fill_between(values, quantileLower, quantileHigher, alpha = 0.2)
+            plt.fill_between(values, quantileLower, quantileHigher, alpha = alpha_fillBetween)
     else:
         showLegend = True
         if len(rowLabels) == 0:
@@ -144,24 +146,27 @@ def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowL
             if len(colors) == 0:
                 plt.plot(values, scores[i], label = str(rowLabels[i]))
                 if len(errors) > 0:
-                    plt.fill_between(values, scores[i] + errors[i], scores[i] - errors[i], alpha = 0.2)
+                    plt.fill_between(values, scores[i] + errors[i], scores[i] - errors[i], alpha = alpha_fillBetween)
                 elif len(quantileLower) > 0:
-                    plt.fill_between(values, quantileLower[i], quantileHigher[i], alpha = 0.2)
+                    plt.fill_between(values, quantileLower[i], quantileHigher[i], alpha = alpha_fillBetween)
             else:
                 plt.plot(values, scores[i], label = str(rowLabels[i]), color=colors[i])
                 if len(errors) > 0:
-                    plt.fill_between(values, scores[i] + errors[i], scores[i] - errors[i], alpha = 0.2, color= colors[i])
+                    plt.fill_between(values, scores[i] + errors[i], scores[i] - errors[i], alpha = alpha_fillBetween, color= colors[i])
                 elif len(quantileLower) > 0:
-                    plt.fill_between(values, quantileLower[i], quantileHigher[i], alpha = 0.2, color= colors[i])
+                    plt.fill_between(values, quantileLower[i], quantileHigher[i], alpha = alpha_fillBetween, color= colors[i])
         if showLegend:
             order = [2, 0, 1]
             handles, labels = ax.get_legend_handles_labels()
             plt.legend(handles[::-1], labels[::-1], fontsize=14*fontsizeFactor)
     if save:
         plt.savefig(filename, dpi=dpi)
+        # quick and dirty: if the filename is specified in up to four letters, don't save a pdf, otherwise we assume it's not specified
+        if len(str(filename).split('.')[-1]) > 4:
+            plt.savefig(filename+".pdf", dpi=dpi)
     if show:
         plt.show()
-    else:
+    elif closePlot:
         plt.close()
 
 def saveMCCCurveSubplot(subplotRows, subplotCols, scores, values, title, filename, errors = [], colors = [], rowLabels=[], show = False, save= True, 

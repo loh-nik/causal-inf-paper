@@ -384,7 +384,7 @@ def delay6dEvaluations(plotOnly, delaySizes, samples, alpha, randomRuns, couplSt
         mean, stdDev = getMeanStdDev(scores, axis = 1)
         # get central 80% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
-        vis.saveMCCCurve(mean.T, delaySizes, "", diag_dir + "/delays6dCascades_Paper", stdDev.T, show=False, save = True, rowLabels = [], xlabel = "Delay (no unit)", ylabel ="",yTickLabels=False,yLims=[-0.23, 1.03], fontsizeFactor=1.2)
+        vis.saveMCCCurve(mean.T, delaySizes, "", diag_dir + "/delays6dCascades_Paper", stdDev.T, greyAxisAt=0, show=False, save = True, rowLabels = [], xlabel = "Delay (no unit)", ylabel ="",yTickLabels=False,yLims=[-0.23, 1.03], fontsizeFactor=1.2)
         vis.saveMCCCurve(mean.T, delaySizes, "", diag_dir + "/delays6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="Matthews Correlation Coefficient")
         vis.saveMCCCurve(median.T, delaySizes, "", diag_dir + "/delays6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=True, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Delay (no unit)", ylabel ="Matthews Correlation Coefficient")
 
@@ -663,11 +663,11 @@ def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingSt
                 for j, i, value in result:
                     fullOutVAR[j, i] = value
         if not comm or comm.Get_rank() == 0:
-            np.save(data_dir + "/6d_System_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
-            np.save(data_dir + "/VAR_6d_System_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
+            np.save(data_dir + "/6d_System_ext_"+str(randomRuns)+"_runs_metrics.npy", fullOut)
+            np.save(data_dir + "/VAR_6d_System_ext_"+str(randomRuns)+"_runs_metrics.npy", fullOutVAR)
     elif not comm or comm.Get_rank() == 0:
-        fullOut = np.load(data_dir + "/6d_System_"+str(randomRuns)+"_runs_metrics.npy")
-        fullOutVAR = np.load(data_dir + "/VAR_6d_System_"+str(randomRuns)+"_runs_metrics.npy")
+        fullOut = np.load(data_dir + "/6d_System_ext_"+str(randomRuns)+"_runs_metrics.npy")
+        fullOutVAR = np.load(data_dir + "/VAR_6d_System_ext_"+str(randomRuns)+"_runs_metrics.npy")
     if not comm or comm.Get_rank() == 0:
         scores = MCCFromFull(fullOut, axis=2)
         mean, stdDev = getMeanStdDev(scores, axis = 1)
@@ -688,8 +688,8 @@ def system6dEvaluations(plotOnly, alpha, samples, randomRuns, tauMax, couplingSt
         vis.saveMCCCurve(final[:,2::3].T, sizes, "", diag_dir + "/SystemCascPCMCI", [], show=False, save = True, rowLabels=["PCMCI-LD","PCMCI-HD"], 
                         xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
         
-        vis.saveMCCCurveSubplot(3, 1, np.array([final[:,::3].T, final[:,1::3].T, final[:,2::3].T]), sizes, "", diag_dir + "/SystemCascSubplots",
-                                 errors = np.array([finalErr[:,::3].T, finalErr[:,1::3].T, finalErr[:,2::3].T]), show=False, save = True, rowLabels=[], figsize=(4,10),
+        vis.saveMCCCurveSubplot(3, 1, np.array([final[:,2::3].T, final[:,1::3].T, final[:,::3].T]), sizes, "", diag_dir + "/SystemCascSubplots",
+                                 errors = np.array([finalErr[:,2::3].T, finalErr[:,1::3].T, finalErr[:,::3].T]), show=False, save = True, rowLabels=[], figsize=(4,10),
                         xlabel = "Variable Count", ylabel ="Matthews Correlation Coefficient")
         
         vis.saveMCCCurve(final.T, sizes, "", diag_dir + "/SystemCasc", [], show=False, save = True, rowLabels=["GCSS-LD", "LKIF-LD", "PCMCI-LD","GCSS-HD", "LKIF-HD", "PCMCI-HD"], 
@@ -924,7 +924,7 @@ def noiseEvaluations(plotOnly, noiseScales, samples, alpha, randomRuns, tauMax, 
         # get central 80% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
         vis.saveMCCCurve(mean.T, noiseScales, "", diag_dir + "/noise6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Noise Scale σ", ylabel ="Matthews Correlation Coefficient", xscale ="log")
-        vis.saveMCCCurve(mean.T, noiseScales, "", diag_dir + "/noise6dCascades_Paper", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Noise Scale σ", ylabel ="Matthews Correlation Coefficient", xscale ="log", yLims=[-0.23, 1.03], fontsizeFactor=1.2, moveYLabel=-15, figsize=(5.5,4))
+        vis.saveMCCCurve(mean.T, noiseScales, "", diag_dir + "/noise6dCascades_Paper", stdDev.T, greyAxisAt=0.01, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Noise Scale σ", ylabel ="Matthews Correlation Coefficient", xscale ="log", yLims=[-0.23, 1.03], fontsizeFactor=1.2, moveYLabel=-15, figsize=(5.5,4))
         vis.saveMCCCurve(median.T, noiseScales, "", diag_dir + "/noise6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Noise Scale σ", ylabel ="Matthews Correlation Coefficient",xscale ="log")
         
         scores = MCCFromFull(fullOutVAR, axis=2)
@@ -976,12 +976,17 @@ def delta_t_Evaluations(plotOnly, timeSteps, samples, alpha, randomRuns, tauMax,
         # get central 80% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
         vis.saveMCCCurve(mean.T, timeSteps, "", diag_dir + "/Timestep6dCascades", stdDev.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Timestep Δt", ylabel ="Matthews Correlation Coefficient", xscale ="log")
-        vis.saveMCCCurve(mean.T, timeSteps, "", diag_dir + "/Timestep6dCascades_Paper", stdDev.T, greyAxisAt=0.1, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Timestep Δt", ylabel ="Matthews Correlation Coefficient", xscale ="log", yLims=[-0.23, 1.03], fontsizeFactor=1.2, moveYLabel=-15, figsize=(5.5,4))
+        vis.saveMCCCurve(mean.T, timeSteps, "", diag_dir + "/Timestep6dCascades_Paper", stdDev.T, greyAxisAt=0.1, show=False, save = True, xlabel = "Timestep Δt", ylabel ="", yTickLabels=False, xscale ="log", yLims=[-0.23, 1.03], fontsizeFactor=1.2, moveYLabel=-15, figsize=(4.5,4))
         vis.saveMCCCurve(median.T, timeSteps, "", diag_dir + "/Timestep6dCascadesQuantiles", [], quantileLower = lowerQ.T, quantileHigher=higherQ.T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Timestep Δt", ylabel ="Matthews Correlation Coefficient",xscale ="log")
 
 def random_graph_Evaluations(plotOnly, couplingGraphs, sampleCounts, alpha, randomRuns, tauMax, couplingStrength, verbose = True, comm = None, data_dir = "./data", diag_dir = "./diagrams"):
     if not comm:
         comm = MPI.COMM_WORLD
+    import matplotlib as mpl
+    import matplotlib.colors as mcolors
+    import matplotlib.pyplot as plt
+    defaultCols = mpl.color_sequences["tab10"]
+    defaultCols_with_alpha = [(*mcolors.to_rgba(c)[:3], 0.4) for c in mpl.color_sequences["tab10"]]
     if not plotOnly:
         # this data should have: 3 variables, 100 runs, 2000 samples per run
         fullOut = np.zeros((len(sampleCounts), randomRuns, 4, 3, len(couplingGraphs)))
@@ -1009,10 +1014,16 @@ def random_graph_Evaluations(plotOnly, couplingGraphs, sampleCounts, alpha, rand
         mean, stdDev = getMeanStdDev(scores, axis = 1)
         # get central 80% of data
         median, lowerQ, higherQ = getMedianQuantile(scores, quantile=0.2, axis=1)
+        fig = plt.figure(figsize=(4.5,4), layout ='constrained')
         for k in range(mean.shape[2]):
-            vis.saveMCCCurve(mean[:,:,k].T, sampleCounts, "", diag_dir + "/6dCascades_Graph"+str(k), stdDev[:,:,k].T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Number of Samples", ylabel ="Matthews Correlation Coefficient", xscale ="log")
-            vis.saveMCCCurve(mean[:,:,k].T, sampleCounts, "", diag_dir + "/6dCascades_Paper_Graph"+str(k), stdDev[:,:,k].T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Number of Samples", ylabel ="Matthews Correlation Coefficient", xscale ="log", yLims=[-0.23, 1.03], fontsizeFactor=1.2, moveYLabel=-15, figsize=(5.5,4))
-            vis.saveMCCCurve(median[:,:,k].T, sampleCounts, "", diag_dir + "/6dCascadesQuantiles_Graph"+str(k), [], quantileLower = lowerQ[:,:,k].T, quantileHigher=higherQ[:,:,k].T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Number of Samples", ylabel ="Matthews Correlation Coefficient",xscale ="log")
+            if k == 0:
+            # vis.saveMCCCurve(mean[:,:,k].T, sampleCounts, "", diag_dir + "/6dCascades_Graph"+str(k), stdDev[:,:,k].T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Number of Samples", ylabel ="Matthews Correlation Coefficient", xscale ="log")
+                vis.saveMCCCurve(mean[:,:,k].T, sampleCounts, "", diag_dir + "/6dCascades_Paper_Graph"+str(k), stdDev[:,:,k].T, show=False, save = False, xlabel = "Number of Samples", ylabel ="", yTickLabels=False, xscale ="log", yLims=[-0.23, 1.03], fontsizeFactor=1.2, moveYLabel=-15, fig = fig, closePlot=False, alpha_fillBetween = 0.15)
+            elif k != mean.shape[2]-1:
+                vis.saveMCCCurve(mean[:,:,k].T, sampleCounts, "", diag_dir + "/6dCascades_Paper_Graph"+str(k), show=False, save = False, colors = defaultCols_with_alpha[:3], xlabel = "Number of Samples", ylabel ="", yTickLabels=False, xscale ="log", yLims=[-0.23, 1.03], fontsizeFactor=1.2, moveYLabel=-15, fig = fig, closePlot=False, alpha_fillBetween = 0.15)
+            else:
+                vis.saveMCCCurve(mean[:,:,k].T, sampleCounts, "", diag_dir + "/6dCascades_Paper_RandomGraphs", show=False, save = True, colors = defaultCols_with_alpha[:3], xlabel = "Number of Samples", ylabel ="", yTickLabels=False, xscale ="log", yLims=[-0.23, 1.03], fontsizeFactor=1.2, moveYLabel=-15, fig = fig, closePlot=True, alpha_fillBetween = 0.15)
+            # vis.saveMCCCurve(median[:,:,k].T, sampleCounts, "", diag_dir + "/6dCascadesQuantiles_Graph"+str(k), [], quantileLower = lowerQ[:,:,k].T, quantileHigher=higherQ[:,:,k].T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Number of Samples", ylabel ="Matthews Correlation Coefficient",xscale ="log")
 
 
 # MAIN
@@ -1043,6 +1054,18 @@ def main():
     couplingStrength = 1
     tauMax = [1,1,1]
 
+    system6dEvaluations(plotOnly = plotOnly,
+    alpha = alpha,
+    samples = samples,
+    randomRuns = randomRuns,
+    tauMax = tauMax,
+    couplingStrength=couplingStrength, 
+    verbose=False,
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
+    if comm.Get_rank() == 0: print("System Size/Density Evaluation finished")
+
     sampleEvaluations(plotOnly = plotOnly,
     sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
     alpha = alpha,
@@ -1067,6 +1090,19 @@ def main():
     diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("Coupling Strength Evaluation finished")
 
+    delta_t_Evaluations(plotOnly = plotOnly,
+    timeSteps=[0.01, 0.03, 0.1, 0.3, 1],
+    samples = samples,
+    alpha = alpha,
+    tauMax = tauMax,
+    randomRuns = randomRuns,
+    couplingStrength=couplingStrength, 
+    verbose=False,
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
+    if comm.Get_rank() == 0: print("Time Step Evaluation finished")
+
     # generate_random_graphs()
     graphs = get_random_graphs()
 
@@ -1083,18 +1119,17 @@ def main():
     diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("Random-Graph Evaluation finished")
 
-    # nonStationaryExp(plotOnly = plotOnly,
-    # ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-    # alpha = alpha,
-    # samples = samples,
-    # tauMax = tauMax,
-    # randomRuns = randomRuns, 
-    # verbose=False,
-    # comm=comm,
-    # data_dir=data_dir,
-    # diag_dir=diag_dir)
-    # if comm.Get_rank() == 0: print("Non-Stationarity Evaluation finished")
-    # exit()
+    nonStationaryExp(plotOnly = plotOnly,
+    ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    alpha = alpha,
+    samples = samples,
+    tauMax = tauMax,
+    randomRuns = randomRuns, 
+    verbose=False,
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
+    if comm.Get_rank() == 0: print("Non-Stationarity Evaluation finished")
 
     noiseEvaluations(plotOnly = plotOnly,
     noiseScales= [0.005, 0.01, 0.02, 0.05, 0.1, 0.2,0.5],
@@ -1109,19 +1144,6 @@ def main():
     diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("Noise Evaluation finished")
 
-    delta_t_Evaluations(plotOnly = plotOnly,
-    timeSteps=[0.01, 0.03, 0.1, 0.3, 1],
-    samples = samples,
-    alpha = alpha,
-    tauMax = tauMax,
-    randomRuns = randomRuns,
-    couplingStrength=couplingStrength, 
-    verbose=False,
-    comm=comm,
-    data_dir=data_dir,
-    diag_dir=diag_dir)
-    if comm.Get_rank() == 0: print("Time Step Evaluation finished")
-
     delay6dEvaluations(plotOnly = plotOnly,
     delaySizes = [0,0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9,1.0, 1.5,2.0,3.0],
     samples = samples,
@@ -1133,20 +1155,6 @@ def main():
     data_dir=data_dir,
     diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("Delay Evaluation finished")
-
-    system6dEvaluations(plotOnly = plotOnly,
-    alpha = alpha,
-    samples = samples,
-    randomRuns = randomRuns,
-    tauMax = tauMax,
-    couplingStrength=couplingStrength, 
-    verbose=False,
-    comm=comm,
-    data_dir=data_dir,
-    diag_dir=diag_dir)
-    if comm.Get_rank() == 0: print("System Size/Density Evaluation finished")
-
-    
 
     runtimeEvaluations(plotOnly = plotOnly,
     samples=samples,
@@ -1160,17 +1168,17 @@ def main():
     diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("Runtime Evaluation finished")
     
-    # sampleEvaluationsAppendix(plotOnly = plotOnly,
-    # sampleCounts = [50, 100, 200, 500, 1000, 2000],
-    # alpha = alpha,
-    # randomRuns = randomRuns,
-    # tauMax = tauMax,
-    # couplingStrength=couplingStrength, 
-    # verbose=False,
-    # comm=comm,
-    # data_dir=data_dir,
-    # diag_dir=diag_dir)
-    # if comm.Get_rank() == 0: print("Sample Evaluation finished")
+    sampleEvaluationsAppendix(plotOnly = plotOnly,
+    sampleCounts = [50, 100, 200, 500, 1000, 2000],
+    alpha = alpha,
+    randomRuns = randomRuns,
+    tauMax = tauMax,
+    couplingStrength=couplingStrength, 
+    verbose=False,
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
+    if comm.Get_rank() == 0: print("Sample Evaluation finished")
 
     GCSS.close_octave()
 
