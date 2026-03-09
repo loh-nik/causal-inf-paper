@@ -1022,7 +1022,7 @@ def random_graph_Evaluations(plotOnly, couplingGraphs, sampleCounts, alpha, rand
             elif k != mean.shape[2]-1:
                 vis.saveMCCCurve(mean[:,:,k].T, sampleCounts, "", diag_dir + "/6dCascades_Paper_Graph"+str(k), show=False, save = False, colors = defaultCols_with_alpha[:3], xlabel = "Number of Samples", ylabel ="", yTickLabels=False, xscale ="log", yLims=[-0.23, 1.03], fontsizeFactor=1.2, moveYLabel=-15, fig = fig, closePlot=False, alpha_fillBetween = 0.15)
             else:
-                vis.saveMCCCurve(mean[:,:,k].T, sampleCounts, "", diag_dir + "/6dCascades_Paper_RandomGraphs", show=False, save = True, colors = defaultCols_with_alpha[:3], xlabel = "Number of Samples", ylabel ="", yTickLabels=False, xscale ="log", yLims=[-0.23, 1.03], fontsizeFactor=1.2, moveYLabel=-15, fig = fig, closePlot=True, alpha_fillBetween = 0.15)
+                vis.saveMCCCurve(mean[:,:,k].T, sampleCounts, "", diag_dir + "/6dCascades_Paper_RandomGraphs", greyAxisAt=1000, show=False, save = True, colors = defaultCols_with_alpha[:3], xlabel = "Number of Samples", ylabel ="", yTickLabels=False, xscale ="log", yLims=[-0.23, 1.03], fontsizeFactor=1.2, moveYLabel=-15, fig = fig, closePlot=True, alpha_fillBetween = 0.15)
             # vis.saveMCCCurve(median[:,:,k].T, sampleCounts, "", diag_dir + "/6dCascadesQuantiles_Graph"+str(k), [], quantileLower = lowerQ[:,:,k].T, quantileHigher=higherQ[:,:,k].T, show=False, save = True, rowLabels=["GCSS", "LKIF", "PCMCI"], xlabel = "Number of Samples", ylabel ="Matthews Correlation Coefficient",xscale ="log")
 
 
