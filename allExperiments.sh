@@ -1,7 +1,7 @@
 #!/bin/bash
-python Pipeline.py -worldMap True -methods "PCMCI" "LKIF" -indep_test "parcorr" -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_main" -vars "AMOC_Caesar" "SI_Conc" "Arctic_Temp_Anomalies" -vars_names "AMOC" "ASSI" "Temp" -mask "MarchSept" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False True -deseason False False True
+# python Pipeline.py -worldMap True -methods "PCMCI" "LKIF" -indep_test "parcorr" -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_main" -vars "AMOC_Caesar" "SI_Conc" "Arctic_Temp_Anomalies" -vars_names "AMOC" "ASSI" "Temp" -mask "MarchSept" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False True -deseason False False True
 
-# python Pipeline.py -methods "PCMCI" "LKIF" -indep_test "parcorr" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_noConfound" -vars "AMOC_Caesar" "SI_Conc" -vars_names "AMOC" "ASSI" -mask "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False -deseason False False
+python Pipeline.py -methods "PCMCI" "LKIF" -indep_test "parcorr" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_noConfound" -vars "AMOC_Caesar" "SI_Conc" -vars_names "AMOC" "ASSI" -mask "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False -deseason False False
 
 # for var in \
 #     AMOC_hadcrut5 \

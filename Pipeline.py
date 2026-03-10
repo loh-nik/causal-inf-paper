@@ -158,6 +158,7 @@ def visualizeGraphOnMap(val_matrix, var_names, filename, assi_file = "ASSI_def.t
     plt.savefig(filename, dpi=300)
 
 def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = False, save = True, labelType = "PCMCI"):
+    from plot_graph_multilags import plot_graph_multilags
     plotMatrix(val_matrix, columnNames, filename + "matrix")
     auto_colorbar_label = "auto-MCI" if labelType == "PCMCI" else ""
     link_colorbar_label = "cross-MCI" if labelType == "PCMCI" else ("Information Transfer (%)" if labelType == "LKIF" else ("Granger Causality" if labelType == "GCSS" else 0))
@@ -167,10 +168,11 @@ def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = Fa
         figur, ax = fig
         figur.set_size_inches(4,2)
         if len(graph) > 0:
-            tp.plot_graph(
+            plot_graph_multilags(
             val_matrix=val_matrix,
-            graph=graph,
+            graph=val_matrix,
             var_names=columnNames,
+            curved_radius_step=0.1,
             link_colorbar_label=link_colorbar_label,
             node_colorbar_label=auto_colorbar_label,
             show_autodependency_lags=False,
@@ -182,12 +184,13 @@ def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = Fa
             show_auto_colorbar=(auto_colorbar_label != "")
             )
         else:
-            matrixFull = np.zeros((val_matrix.shape[0], val_matrix.shape[1],2))
-            matrixFull[:,:,1] = val_matrix
-            tp.plot_graph(
-            val_matrix=matrixFull,
-            graph=matrixFull,
+            # matrixFull = np.zeros((val_matrix.shape[0], val_matrix.shape[1],2))
+            # matrixFull[:,:,1] = val_matrix
+            plot_graph_multilags(
+            val_matrix=val_matrix,
+            graph=val_matrix,
             var_names=columnNames,
+            curved_radius_step=0.1,
             link_colorbar_label=link_colorbar_label,
             node_colorbar_label=auto_colorbar_label,
             show_autodependency_lags=False,
@@ -202,10 +205,11 @@ def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = Fa
         figur, ax = fig
         figur.set_size_inches(4,4)
         if len(graph) > 0:
-            tp.plot_graph(
+            plot_graph_multilags(
             val_matrix=val_matrix,
-            graph=graph,
+            graph=val_matrix,
             var_names=columnNames,
+            curved_radius_step=0.1,
             link_colorbar_label=link_colorbar_label,
             node_colorbar_label=auto_colorbar_label,
             show_autodependency_lags=False,
@@ -217,12 +221,13 @@ def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = Fa
             show_auto_colorbar=(auto_colorbar_label != "")
             )
         else:
-            matrixFull = np.zeros((val_matrix.shape[0], val_matrix.shape[1],2))
-            matrixFull[:,:,1] = val_matrix
-            tp.plot_graph(
-            val_matrix=matrixFull,
-            graph=matrixFull,
+            # matrixFull = np.zeros((val_matrix.shape[0], val_matrix.shape[1],2))
+            # matrixFull[:,:,1] = val_matrix
+            plot_graph_multilags(
+            val_matrix=val_matrix,
+            graph=val_matrix,
             var_names=columnNames,
+            curved_radius_step=0.1,
             link_colorbar_label=link_colorbar_label,
             node_colorbar_label=auto_colorbar_label,
             show_autodependency_lags=False,
@@ -645,10 +650,10 @@ if __name__ == "__main__":
             else:
                 matrixLKIF = LKIF.lkif(data.T, alpha, returnAll=False, timestamps = None)
             
-            visualizeGraph(matrixLKIF, [], var_names, directory + "/default_lkif", labelType="LKIF")
+            matrixFull = np.zeros((matrixLKIF.shape[0], matrixLKIF.shape[1],2))
+            matrixFull[:,:,1] = matrixLKIF
+            visualizeGraph(matrixFull, [], var_names, directory + "/default_lkif", labelType="LKIF")
             if plotOnMap:
-                matrixFull = np.zeros((matrixLKIF.shape[0], matrixLKIF.shape[1],2))
-                matrixFull[:,:,1] = matrixLKIF
                 visualizeGraphOnMap(matrixFull, args.map_var_names, directory + "/mapped_lkif", assi_file=assi_file)
 
             if args.causalStationarity:
