@@ -1,4 +1,6 @@
 """
+Written with help by Claude-AI, with several corrections towards interoperability with existing code.
+
 plot_graph_multilags.py
 =======================
 Drop-in extension for tigramite's plotting.py that draws each active time lag

@@ -161,7 +161,7 @@ def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowL
             plt.legend(handles[::-1], labels[::-1], fontsize=14*fontsizeFactor)
     if save:
         plt.savefig(filename, dpi=dpi)
-        # quick and dirty: if the filename is specified in up to four letters, don't save a pdf, otherwise we assume it's not specified
+        # quick and dirty: if filename is not specified (up to 4 letters), then save a pdf additionally to the png above.
         if len(str(filename).split('.')[-1]) > 4:
             plt.savefig(filename+".pdf", dpi=dpi)
     if show:
