@@ -217,7 +217,8 @@ def generate_random_graphs():
     finalGraphs = [mediumCouplingMatrixCascade_HighDense]
     seed = 0
     np.random.seed(42)
-    while len(finalGraphs) < 9:
+    # generate 10 graphs beyond the first one
+    while len(finalGraphs) < 11:
         print("Graph attempt")
         G = nx.gnm_random_graph(6, originalEdges, directed=True, seed= seed)
         seed += 1
@@ -1047,12 +1048,31 @@ def main():
                 print(f"An error occurred trying to create '{directory}': {e}")
     
     # set this parameter to True if you only want to plot results from the .npy data files.
-    plotOnly = True
+    plotOnly = False
     randomRuns = 100
     alpha = 0.05
     samples = 1000
     couplingStrength = 1
     tauMax = [1,1,1]
+
+    # run the random graph generation on a separate earlier run, it's not parallelizable.
+    # generate_random_graphs()
+    graphs = get_random_graphs()
+
+    random_graph_Evaluations(plotOnly = plotOnly,
+    couplingGraphs=graphs,
+    sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
+    alpha = alpha,
+    couplingStrength= couplingStrength,
+    tauMax = tauMax,
+    randomRuns = randomRuns, 
+    verbose=False,
+    comm=comm,
+    data_dir=data_dir,
+    diag_dir=diag_dir)
+    if comm.Get_rank() == 0: print("Random-Graph Evaluation finished")
+
+    exit()
 
     system6dEvaluations(plotOnly = plotOnly,
     alpha = alpha,
@@ -1102,22 +1122,6 @@ def main():
     data_dir=data_dir,
     diag_dir=diag_dir)
     if comm.Get_rank() == 0: print("Time Step Evaluation finished")
-
-    # generate_random_graphs()
-    graphs = get_random_graphs()
-
-    random_graph_Evaluations(plotOnly = plotOnly,
-    couplingGraphs=graphs,
-    sampleCounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000],
-    alpha = alpha,
-    couplingStrength= couplingStrength,
-    tauMax = tauMax,
-    randomRuns = randomRuns, 
-    verbose=False,
-    comm=comm,
-    data_dir=data_dir,
-    diag_dir=diag_dir)
-    if comm.Get_rank() == 0: print("Random-Graph Evaluation finished")
 
     nonStationaryExp(plotOnly = plotOnly,
     ceilings = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],

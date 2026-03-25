@@ -516,7 +516,7 @@ if __name__ == "__main__":
     #                         [0,0,1,0,0,1],
     #                         [0,0,0,0,-1,0]])
     for index, truthMatrix in enumerate(graphs):
-        data = getCascadeDataBrainpy(truthMatrix, 1000, 0.1)
+        data = getCascadeDataBrainpy(truthMatrix, 10000, 0.05)
         print(data.shape)
         fig, axs = plt.subplots(6,1, figsize=(3,6), sharex=True)
         for ax in axs:

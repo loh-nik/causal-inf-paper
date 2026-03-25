@@ -405,14 +405,14 @@ def pyGraphVizCouplingMatrix(matrix, filename, dpi = 300):
     G = nx.from_numpy_array(matrix, create_using=nx.DiGraph)
     A = pgv.AGraph(directed=True, strict=False)
     for i in range(n):
-        A.add_node(i, shape='circle', style='filled', fillcolor='orange', width=0.5)
+        A.add_node(i, shape='circle', style='filled', fillcolor='orange', width=0.6)
     for u,v, d in G.edges(data=True):
         color = 'blue' if d['weight'] == 1 else 'red'
         A.add_edge(u, v, color=color, penwidth=3, arrowsize=1.2)
 
     for node in A.nodes():
-        node.attr['width'] = '0.5'
-        node.attr['height'] = '0.5'
+        node.attr['width'] = '0.6'
+        node.attr['height'] = '0.6'
     A.graph_attr['K'] = '0.5'
     A.graph_attr['size'] = '4.5,4.5'   # inches, equivalent to figsize=(4.5, 4.5)
     A.graph_attr['dpi'] = str(dpi)
@@ -605,5 +605,34 @@ def plotCouplingGraphs():
         pyGraphVizCouplingMatrix(matr, "diagrams/MatrixGraphs/" +name + ".png")
         # customCouplingMatrixGraph(matr, "", "diagrams/MatrixGraphs/" +name + ".png")
 
+def plotRandomCouplingGraphs():
+    from PIL import Image
+    matrices = np.load("data/random_graphs.npy")
+    matrices = matrices[1:]
+    for i, matr in enumerate(matrices):
+        pyGraphVizCouplingMatrix(matr, "diagrams/MatrixGraphs/" +str(i) + ".png")
+        # customCouplingMatrixGraph(matr, "", "diagrams/MatrixGraphs/" +name + ".png")
+    fig, axes = plt.subplots(2,5, figsize=(6,3))
+    for i, ax in enumerate(axes.flatten()):
+        img = Image.open("diagrams/MatrixGraphs/"+str(i)+".png")
+        ax.imshow(img)
+        ax.axis("off")
+    labels = []
+    texts = "abcdefghik"
+    for letter in texts:
+        labels.append('('+letter+')')
+
+    for ax, label in zip(axes.flatten(), labels):
+        ax.text(
+            -0.1, 0.98, label,
+            transform=ax.transAxes,
+            fontsize=7,
+            va='top',
+            ha='left'
+        )
+    fig.subplots_adjust(left=0.02, right=0.99, top=0.99, bottom=0.01)
+    # fig.tight_layout()
+    plt.savefig("diagrams/MatrixGraphs/combination.png", dpi=300)
+
 if __name__ == "__main__":
-    plotCouplingGraphs()
+    plotRandomCouplingGraphs()
