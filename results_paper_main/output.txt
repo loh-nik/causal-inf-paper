@@ -1,0 +1,34 @@
+Std Deviations (Non-normalized, non-masked):
+AMOC_Caesar: 0.4821070907076433
+SI_Conc_MostChange_DetrDes: 138.01747469932312
+Arctic_Temp_Anomalies: 1.6488663335532439
+Std Deviations (Non-normalized, masked for PCMCI):
+AMOC_Caesar: 0.49702316981608763
+SI_Conc_MostChange_DetrDes: 135.5839497516967
+Arctic_Temp_Anomalies: 1.1640724866233993
+Std Deviations (Non-normalized, masked for LKIF):
+AMOC_Caesar: 0.49702316981608763
+SI_Conc_MostChange_DetrDes: 135.5839497516967
+Arctic_Temp_Anomalies: 1.1640724866233993
+Linear Mediation Values:
+
+## Significant links at alpha = 0.05:
+
+    Variable AMOC_Caesar has 3 link(s):
+        (AMOC_Caesar -1): pval = 0.00000 | val =  0.846
+        (SI_Conc_MostChange_DetrDes -1): pval = 0.00485 | val = -0.112
+        (SI_Conc_MostChange_DetrDes -5): pval = 0.02730 | val =  0.026
+
+    Variable SI_Conc_MostChange_DetrDes has 6 link(s):
+        (SI_Conc_MostChange_DetrDes -1): pval = 0.00000 | val =  0.914
+        (SI_Conc_MostChange_DetrDes -2): pval = 0.00000 | val = -0.559
+        (SI_Conc_MostChange_DetrDes -3): pval = 0.00950 | val =  0.241
+        (SI_Conc_MostChange_DetrDes -4): pval = 0.00051 | val = -0.057
+        (AMOC_Caesar -1): pval = 0.00787 | val = -0.054
+        (SI_Conc_MostChange_DetrDes -5): pval = 0.00272 | val = -0.008
+
+    Variable Arctic_Temp_Anomalies has 4 link(s):
+        (SI_Conc_MostChange_DetrDes -3): pval = 0.01604 | val = -0.370
+        (Arctic_Temp_Anomalies -1): pval = 0.00000 | val =  0.263
+        (SI_Conc_MostChange_DetrDes -1): pval = 0.00808 | val =  0.071
+        (SI_Conc_MostChange_DetrDes -5): pval = 0.03664 | val =  0.014

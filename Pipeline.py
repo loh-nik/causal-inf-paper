@@ -1,14 +1,11 @@
 import argparse
 import os
-import sys
 import copy
 import LKIF
 import GCSS
-from PCMCI import PCMCIPlus
 from scipy.signal import detrend
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+
 import seaborn as sns
 import ast
 from tigramite import data_processing as pp
@@ -16,14 +13,16 @@ from tigramite.independence_tests.parcorr import ParCorr
 from tigramite.independence_tests.robust_parcorr import RobustParCorr
 from tigramite.independence_tests.gpdc import GPDC
 from tigramite.toymodels import structural_causal_processes as toys
-from tigramite.causal_effects import CausalEffects
 from tigramite.pcmci import PCMCI
 from tigramite.independence_tests.parcorr_wls import ParCorrWLS
-from tigramite import plotting as tp
+
 from tigramite.models import LinearMediation
 from mpl_toolkits.basemap import Basemap
-from matplotlib.colors import LogNorm
 import matplotlib.ticker as ticker
+
+from tigramite import plotting as tp
+import numpy as np
+import matplotlib.pyplot as plt
 
 # data of shape (variable, time steps)
 def preprocessData(data, detrending = True, deseason = True, diff = True, deseasonLength = 12):
@@ -51,75 +50,173 @@ def preprocessData(data, detrending = True, deseason = True, diff = True, deseas
     currentData[censor] = np.nan
     return currentData
 
-def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = False, save = True):
+def visualizeGraphOnMap(val_matrix, var_names, filename, assi_file = "ASSI_def.txt"):
+    import cartopy.crs as ccrs
+    import cartopy.feature as cfeature
+
+    def load_region(file_path):
+        """Reads a two-column lat/lon text file."""
+        data = np.loadtxt(fname=file_path)
+        lats, lons = data[:, 0], data[:, 1]
+        return lats, lons
+
+    regions = {
+        "AMOC": "subpolarGyreCaesar.txt",
+        "ASSI": assi_file
+    }
+
+    colors = {
+        "AMOC": "red",
+        "ASSI": "blue",
+        "Temp": "green"
+    }
+
+    proj = ccrs.Orthographic(central_latitude=60, central_longitude=-30)
+    dataProj = ccrs.PlateCarree()
+
+    fig, ax = plt.subplots(subplot_kw={'projection': proj}, figsize=(8, 8))
+
+    # plot arctic temp by hand
+    totalLats = np.arange(45, 91, 1)
+    totalLons = np.arange(-180, 181, 1)
+    lon2d, lat2d = np.meshgrid(totalLons, totalLats)
+    mask = np.zeros(lon2d.shape)
+    for i, lat in enumerate(totalLats):
+        if lat >= 58:
+            mask[i] = 1
+    ax.contourf(lon2d, lat2d, mask, levels=[0.5, 1.5], colors=colors["Temp"], alpha=0.5, transform=dataProj)
+
+    # Plot ASI and AMOC
+    for region_name, file_path in regions.items():
+        lats, lons = load_region(file_path)
+        totalLats = np.arange(41, 90, 1)
+        totalLons = np.arange(-180, 179, 1)
+        lon2d, lat2d = np.meshgrid(totalLons, totalLats)
+        mask = np.zeros(lon2d.shape)
+        for i in range(len(lats)):
+            mask[np.where(totalLats == int(lats[i])),np.where(totalLons == int(lons[i]))] = 1
+        # ASSI as a scatter plot, to avoid weird artifacts around the smaller regions
+        if region_name == "ASSI":
+            ax.scatter(lons, lats, color=colors[region_name], s=2, transform=dataProj, alpha = 0.2)
+        # AMOC as a singular contour shape
+        else:
+            ax.contourf(lon2d, lat2d, mask, levels=[0.5, 1.5], colors=colors[region_name], alpha=0.5, transform=dataProj)
+            ax.contour(lon2d, lat2d, mask, levels=[0.5, 1.5], colors=colors[region_name], alpha=0.8, transform=dataProj)
+
+    ax.add_feature(cfeature.LAND, facecolor="grey", zorder=4)
+    ax.add_feature(cfeature.COASTLINE, linewidth=0.5, zorder=4)
+    ax.gridlines(draw_labels=False, linewidth=0.3)
+
+    ax_overlay = fig.add_axes(ax.get_position(), projection=None, frameon=False)
+    ax_overlay.set_axis_off()
+
+    nodePosX = np.array([0.97, 0.85, 1])
+    nodePosY = np.array([0.45, 0.75, 1])
+    from plot_graph_multilags import plot_graph_multilags
+
+    plot_graph_multilags(
+            val_matrix=val_matrix,
+            graph=val_matrix,
+            var_names=var_names,
+            curved_radius_base=0.2,
+            curved_radius_step=0.2,
+            link_colorbar_label='cross-MCI',
+            node_colorbar_label='auto-MCI',
+            show_autodependency_lags=False,
+            node_pos={'x': nodePosX, 'y':nodePosY},
+            node_size = 0.12,
+            node_aspect = 0.8,
+            node_label_size=12,
+            link_label_fontsize=12,
+            fig_ax=(fig,ax_overlay)
+            )
+
+    current_pos = ax_overlay.get_position()
+
+    shift_x, shift_y = -0.32, -0.17
+
+    new_pos = [current_pos.x0 + shift_x, current_pos.y0 + shift_y, current_pos.width, current_pos.height]
+
+    ax_overlay.set_position(new_pos)
+
+    plt.savefig(filename, dpi=300)
+
+def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = False, save = True, labelType = "PCMCI"):
+    from plot_graph_multilags import plot_graph_multilags
     plotMatrix(val_matrix, columnNames, filename + "matrix")
+    auto_colorbar_label = "auto-MCI" if labelType == "PCMCI" else ""
+    link_colorbar_label = "cross-MCI" if labelType == "PCMCI" else ("Information Transfer (%)" if labelType == "LKIF" else ("Granger Causality" if labelType == "GCSS" else 0))
     fig = plt.subplots(1,1,layout="constrained")
     plt.suptitle(title, fontsize=14)
     if val_matrix.shape[0] == 2:
-        figur, ax = fig
-        figur.set_size_inches(4,2)
+        figure, ax = fig
+        figure.set_size_inches(4,2)
         if len(graph) > 0:
-            tp.plot_graph(
+            plot_graph_multilags(
             val_matrix=val_matrix,
-            graph=graph,
+            graph=val_matrix,
             var_names=columnNames,
-            link_colorbar_label='cross-MCI',
-            node_colorbar_label='auto-MCI',
+            curved_radius_step=0.1,
+            link_colorbar_label=link_colorbar_label,
+            node_colorbar_label=auto_colorbar_label,
             show_autodependency_lags=False,
             node_size = 0.4,
             node_aspect = 2,
             node_label_size=12,
             link_label_fontsize=12,
-            fig_ax=fig
+            fig_ax=fig,
+            show_auto_colorbar=(auto_colorbar_label != "")
             )
         else:
-            matrixFull = np.zeros((val_matrix.shape[0], val_matrix.shape[1],2))
-            matrixFull[:,:,1] = val_matrix
-            tp.plot_graph(
-            val_matrix=matrixFull,
-            graph=matrixFull,
+            plot_graph_multilags(
+            val_matrix=val_matrix,
+            graph=val_matrix,
             var_names=columnNames,
-            link_colorbar_label='cross-MCI',
-            node_colorbar_label='auto-MCI',
+            curved_radius_step=0.1,
+            link_colorbar_label=link_colorbar_label,
+            node_colorbar_label=auto_colorbar_label,
             show_autodependency_lags=False,
             node_size = 0.4,
             node_aspect = 2,
             node_label_size=12,
             link_label_fontsize=12,
-            fig_ax=fig
+            fig_ax=fig,
+            show_auto_colorbar=(auto_colorbar_label != "")
             )
     else:
-        figur, ax = fig
-        figur.set_size_inches(4,4)
+        figure, ax = fig
+        figure.set_size_inches(4,4)
         if len(graph) > 0:
-            tp.plot_graph(
+            plot_graph_multilags(
             val_matrix=val_matrix,
-            graph=graph,
+            graph=val_matrix,
             var_names=columnNames,
-            link_colorbar_label='cross-MCI',
-            node_colorbar_label='auto-MCI',
+            curved_radius_step=0.1,
+            link_colorbar_label=link_colorbar_label,
+            node_colorbar_label=auto_colorbar_label,
             show_autodependency_lags=False,
             node_size = 0.4,
             node_aspect = 1,
             node_label_size=12,
             link_label_fontsize=12,
-            fig_ax=fig
+            fig_ax=fig,
+            show_auto_colorbar=(auto_colorbar_label != "")
             )
         else:
-            matrixFull = np.zeros((val_matrix.shape[0], val_matrix.shape[1],2))
-            matrixFull[:,:,1] = val_matrix
-            tp.plot_graph(
-            val_matrix=matrixFull,
-            graph=matrixFull,
+            plot_graph_multilags(
+            val_matrix=val_matrix,
+            graph=val_matrix,
             var_names=columnNames,
-            link_colorbar_label='cross-MCI',
-            node_colorbar_label='auto-MCI',
+            curved_radius_step=0.1,
+            link_colorbar_label=link_colorbar_label,
+            node_colorbar_label=auto_colorbar_label,
             show_autodependency_lags=False,
             node_size = 0.4,
             node_aspect = 1,
             node_label_size=12,
             link_label_fontsize=12,
-            fig_ax=fig
+            fig_ax=fig,
+            show_auto_colorbar=(auto_colorbar_label != "")
             )
     if save:
         plt.savefig(filename,dpi=300)
@@ -136,9 +233,8 @@ def plotMatrix(val_matrix, columnNames, filename, show=False, save=True):
     f1.set_size_inches(6,5)
     g1 = sns.heatmap(val_matrix, annot=True, linewidth=0.5, xticklabels=columnNames, yticklabels=columnNames)
     g1.set(xlabel='To', ylabel='From')
-    #plt.suptitle('GCSS', fontsize=23)
     if save:
-        plt.savefig(dpi=200,fname=filename)
+        plt.savefig(dpi=300,fname=filename)
 
 def absmaxND(a, axis=None):
     amax = a.max(axis)
@@ -224,30 +320,21 @@ def showStationarityResults(filename, figTitle ="", oneToTwo = [], twoToOne= [],
     else:
         plt.close()
 
-# working example: 
-# py Pipeline.py -filename_in "./testSheet.csv" -dirname_out "testResults" -vars "SeaIce" "AMOC" "GrIS" -mask "mask_pcmci" "mask_lkif" "mask_pcmci" -mask_lkif "mask_lkif" -maskType "x" -detrend True True True -deseason True True True -diff True True True -tauMax 10 -alpha 0.1 -forbiddenLinks [0,2] -causalStationarity True -stationarityWindow 3 -stationarityShift 12 -stationarityVars 0 2
+# CURRENT PAPER VERSION with a march september mask in a new file
+# python Pipeline.py -worldMap True -methods "PCMCI" "LKIF" -indep_test "parcorr" -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_main" -vars "AMOC_Caesar" "SI_Conc" "Arctic_Temp_Anomalies" -vars_names "AMOC" "ASSI" "Temp" -mask "MarchSept" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False True -deseason False False True
 
-# py Pipeline.py -filename_in "./testSheet.csv" -dirname_out "testResults" -vars "SeaIce" "AMOC" "GrIS" 
-# -mask "mask_pcmci" "mask_lkif" "mask_pcmci" -mask_lkif "mask_lkif" -maskType "x" 
-# -detrend True True True -deseason True True True -diff True True True 
-# -tauMax 10 -alpha 0.1 -forbiddenLinks [0,2] 
-# -causalStationarity True -stationarityWindow 3 -stationarityShift 12 -stationarityVars 0 2
-
-# working example for spatial analysis: 
-# py Pipeline.py -filename_in "./testSheet.csv" -dirname_out "testResults" -vars "SeaIce" "AMOC" "GrIS" -mask "mask_pcmci" "mask_lkif" "mask_pcmci" -mask_lkif "mask_lkif" -maskType "x" -detrend True True True -deseason True True True -spatialAnalysis True -spatialFile testSeaIceAlbedo_Detrended.npy -spatialLon polarLongitudeAggregated.npy -spatialLat polarLatitudeAggregated.npy -spatialOtherVar 0
-
-# py Pipeline.py -filename_in "./testSheet.csv" -dirname_out "testResults" -vars "SeaIce" "AMOC" "GrIS" 
-# -mask "mask_pcmci" "mask_lkif" "mask_pcmci" -mask_lkif "mask_lkif" -maskType "x" 
-# -detrend True True True -deseason True True True -spatialAnalysis True 
-# -spatialFile testSeaIceAlbedo_Detrended.npy -spatialLon polarLongitudeAggregated.npy -spatialLat polarLatitudeAggregated.npy -spatialOtherVar 0
+# See the bash script allExperiments.sh for the robustness tests and other experiments.
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-filename_in", type=str, help= ".csv file (separated by semicolons) with all univariate variables", required=True)
     parser.add_argument("-dirname_out", type=str, help= "directory for diagram output", required=True)
     parser.add_argument("-vars", help = "variable names in csv file", nargs='+', default=[], required=True)
+    parser.add_argument("-vars_names", help = "variable names in output graphs", nargs='+', default=[], required=False)
+    parser.add_argument("-methods", help = "method names to be used", nargs='+', default=[], required=False)
+    parser.add_argument("-indep_test", help = "independence test name for PCMCI", default="", required=False)
     parser.add_argument("-mask", help = "mask column names in csv file (pcmci)", nargs='+', default=[], required=False)
-    parser.add_argument("-mask_lkif", type = str, help = "single mask column name in csv file (lkif)", required=False)
+    parser.add_argument("-mask_lkif", type = str, help = "single mask column name in csv file (lkif)", default="", required=False)
     parser.add_argument("-maskType", type = str, choices = ["x","y", "z", "xyz"], default="x", required=False)
     parser.add_argument("-detrend", help = "detrend indicators (True/False), as many as vars", nargs='+', default=[], required=False)
     parser.add_argument("-deseason", help = "deseasonalizing indicators (True/False), as many as vars", nargs='+', default=[], required=False)
@@ -266,6 +353,9 @@ if __name__ == "__main__":
     parser.add_argument("-stationarityWindow", type= int, help = "causal stationarity time window in number of shifts (e.g., number of years)", required=False)
     parser.add_argument("-stationarityVars", help = "indices of two variables for causal stationarity analysis", nargs = '+', default = [], required=False)
     parser.add_argument("-prescribeNetLM", help="user-prescribed network for linear mediation analysis", nargs='+', default = [], required = False)
+    parser.add_argument("-worldMap", help = "plot on Arctic map, True/False", type=bool, default=False, required=False)
+    parser.add_argument("-map_var_names", help = "variable names in output world map", nargs='+', default=[], required=False)
+    parser.add_argument("-assi_file", help = "Arctic sea ice plot file name", default="ASSI_def.txt", required=False)
     args = parser.parse_args()
     
     directory = args.dirname_out
@@ -277,12 +367,12 @@ if __name__ == "__main__":
         print(f"Permission denied: Unable to create directory '{directory}'.")
     except Exception as e:
         print(f"An error occurred trying to create '{directory}': {e}")
-    #sys.stdout = open(directory + '/output.txt', 'w')
-
-    # TODO: sanity checks on all arguments
 
     file_in = args.filename_in
     dataCols = args.vars
+    var_names = args.vars_names
+    if len(var_names) != len(dataCols):
+        var_names = dataCols
     maskCols = args.mask
     maskLKIF = args.mask_lkif
     if args.causalStationarity:
@@ -292,6 +382,9 @@ if __name__ == "__main__":
         a = ast.literal_eval(a)
         b = ast.literal_eval(b)
         slidingWindow = stationaryWindow * stationaryShift
+
+    plotOnMap = args.worldMap
+    assi_file = args.assi_file
 
     # default mask for lkif analysis (which can only take one mask)
     defaultMask = []
@@ -341,20 +434,19 @@ if __name__ == "__main__":
     else: 
         print("LKIF and PCMCI recommended")
         
+    methodsChosen = args.methods
+    if len(methodsChosen) == 0:
+        inputStr = ""
+        print("Methods available: LKIF, PCMCI, GCSS, LM")
+        while inputStr != "end":
+            inputStr = input("Enter desired method, enter \"end\" after last method: ")
+            if inputStr == "end":
+                continue
+            methodsChosen.append(inputStr)
+    print("Methods: ")
+    print(methodsChosen)
 
-    inputStr = ""
-    methodsChosen = []
-    print("Methods available: LKIF, PCMCI, GCSS, LM")
-    while inputStr != "end":
-        inputStr = input("Enter desired method, enter \"end\" after last method: ")
-        if inputStr == "end":
-            continue
-        methodsChosen.append(inputStr)
-        print("Methods: ")
-        print(methodsChosen)
-
-    print(data)
-    print(data.shape)
+    print("Samples:", data.shape[0], "  Variables:", data.shape[1])
     print("Std Deviations (Non-normalized, non-masked):")
     for i in range(data.shape[1]):
         stdDev = np.std(data[:, i])
@@ -393,12 +485,15 @@ if __name__ == "__main__":
         data[existingData,i] = (2 * ((data[existingData,i] - np.min(data[existingData,i])) / (np.max(data[existingData,i]) - np.min(data[existingData,i])))) - 1
         data[:,i] = np.reshape(preprocessData(np.reshape(data[:,i],(1,-1), order="F"), detrendingIndicator[i], deseasonIndicator[i], diffIndicator[i], deseasonLength=deseasonLength),(-1), order="F")
     
-    tau_min = 1
+    tau_min = 0
     tau_max = args.tauMax
     alpha = args.alpha
 
     if "PCMCI" in methodsChosen:
-        independenceTest = input("Select a correlation test for PCMCI\n from \"parcorr\", \"robustparcorr\", \"GPDC\", \"parcorrWLS\": ")
+        if args.indep_test not in ["parcorr", "robustparcorr", "GPDC", "parcorrWLS"]:
+            independenceTest = input("Select a correlation test for PCMCI\n from \"parcorr\", \"robustparcorr\", \"GPDC\", \"parcorrWLS\": ")
+        else:
+            independenceTest = args.indep_test
         if independenceTest == "parcorr":
             ci_test = ParCorr(significance='analytic', mask_type=None if (not useMask) else args.maskType)
         elif independenceTest == "robustparcorr":
@@ -444,7 +539,9 @@ if __name__ == "__main__":
             graph_bool = p_matrix <= alpha
             matrixPCMCI = val_matrix * graph_bool
             
-            visualizeGraph(matrixPCMCI, results["graph"], dataCols, directory + "/default_pcmci")
+            visualizeGraph(matrixPCMCI, results["graph"], var_names, directory + "/default_pcmci")
+            if plotOnMap:
+                visualizeGraphOnMap(matrixPCMCI, args.map_var_names, directory + "/mapped_pcmci", assi_file=assi_file)
 
             if useMask:
                 med = LinearMediation(dataframe=dataframe, mask_type = args.maskType)
@@ -453,7 +550,7 @@ if __name__ == "__main__":
             med.fit_model(all_parents=toys.dag_to_links(results["graph"]), tau_max=tau_max)
             val_matrix = med.get_val_matrix(symmetrize=True)
 
-            visualizeGraph(val_matrix, results["graph"], dataCols, directory + "/default_mediatedPCMCI")
+            visualizeGraph(val_matrix, results["graph"], var_names, directory + "/default_mediatedPCMCI")
 
             print("Linear Mediation Values:")
             pcmci.print_significant_links(
@@ -477,7 +574,7 @@ if __name__ == "__main__":
                     matrixPCMCI = maxSignificantLink(val_matrix, graph_bool, axis = 2)
                     oneToTwo[i] = matrixPCMCI[a,b]
                     twoToOne[i] = matrixPCMCI[b,a]
-                showStationarityResults(directory + "/stationarity_pcmci", "", oneToTwo, twoToOne, varNames=[dataCols[a], dataCols[b]], slideWindow= stationaryWindow)
+                showStationarityResults(directory + "/stationarity_pcmci", "", oneToTwo, twoToOne, varNames=[var_names[a], var_names[b]], slideWindow= stationaryWindow)
         
         if "LM" in methodsChosen:
             if len(args.prescribeNetLM) == 0:
@@ -501,7 +598,7 @@ if __name__ == "__main__":
                 med.fit_model(all_parents=lmLinkAssumptions, tau_max=tau_max)
                 val_matrix = med.get_val_matrix(symmetrize=True)
 
-                visualizeGraph(val_matrix, results["graph"], dataCols, directory + "/default_linearMed")
+                visualizeGraph(val_matrix, results["graph"], var_names, directory + "/default_linearMed")
 
                 if args.causalStationarity:
                     oneToTwo = np.zeros(int((data.shape[0]-slidingWindow)/stationaryShift))
@@ -517,7 +614,7 @@ if __name__ == "__main__":
                         val_matrix = absmaxND(val_matrix, axis=2)
                         oneToTwo[i] = val_matrix[a,b]
                         twoToOne[i] = val_matrix[b,a]
-                    showStationarityResults(directory + "/stationarity_linearMed", "", oneToTwo, twoToOne, varNames=[dataCols[a], dataCols[b]], slideWindow= stationaryWindow)
+                    showStationarityResults(directory + "/stationarity_linearMed", "", oneToTwo, twoToOne, varNames=[var_names[a], var_names[b]], slideWindow= stationaryWindow)
 
         if "LKIF" in methodsChosen:
             if useMask:
@@ -527,7 +624,11 @@ if __name__ == "__main__":
             else:
                 matrixLKIF = LKIF.lkif(data.T, alpha, returnAll=False, timestamps = None)
             
-            visualizeGraph(matrixLKIF, [], dataCols, directory + "/default_lkif")
+            matrixFull = np.zeros((matrixLKIF.shape[0], matrixLKIF.shape[1],2))
+            matrixFull[:,:,1] = matrixLKIF
+            visualizeGraph(matrixFull, [], var_names, directory + "/default_lkif", labelType="LKIF")
+            if plotOnMap:
+                visualizeGraphOnMap(matrixFull, args.map_var_names, directory + "/mapped_lkif", assi_file=assi_file)
 
             if args.causalStationarity:
                 oneToTwo = np.zeros(int((data.shape[0]-slidingWindow)/stationaryShift))
@@ -543,12 +644,12 @@ if __name__ == "__main__":
                         
                     oneToTwo[i] = matrixLKIF[a,b]
                     twoToOne[i] = matrixLKIF[b,a]
-                showStationarityResults(directory + "/stationarity_lkif", "", oneToTwo, twoToOne, varNames=[dataCols[a], dataCols[b]], slideWindow= stationaryWindow)
+                showStationarityResults(directory + "/stationarity_lkif", "", oneToTwo, twoToOne, varNames=[var_names[a], var_names[b]], slideWindow= stationaryWindow)
 
         if "GCSS" in methodsChosen:
             try:
                 matrixGCSS = GCSS.gcss(data.T, alpha, tau_max, returnAll=False).T
-                visualizeGraph(matrixGCSS, [], dataCols, directory + "/default_gcss")
+                visualizeGraph(matrixGCSS, [], var_names, directory + "/default_gcss", labelType="GCSS")
             except:
                 matrixGCSS = np.zeros((data.shape[1],data.shape[1]))
                 print("Error on GCSS")
@@ -566,7 +667,7 @@ if __name__ == "__main__":
                         
                     oneToTwo[i] = matrixGCSS[a,b]
                     twoToOne[i] = matrixGCSS[b,a]
-                showStationarityResults(directory + "/stationarity_gcss", "", oneToTwo, twoToOne, varNames=[dataCols[a], dataCols[b]], slideWindow= stationaryWindow)
+                showStationarityResults(directory + "/stationarity_gcss", "", oneToTwo, twoToOne, varNames=[var_names[a], var_names[b]], slideWindow= stationaryWindow)
 # spatial Analysis
     else:
         data_spatialResolved = np.load(args.spatialFile)
