@@ -60,11 +60,9 @@ def visualizeGraphOnMap(val_matrix, var_names, filename, assi_file = "ASSI_def.t
         lats, lons = data[:, 0], data[:, 1]
         return lats, lons
 
-    print(assi_file)
     regions = {
         "AMOC": "subpolarGyreCaesar.txt",
         "ASSI": assi_file
-        # "Temp": "ArcticTemp_def.txt"
     }
 
     colors = {
@@ -132,20 +130,6 @@ def visualizeGraphOnMap(val_matrix, var_names, filename, assi_file = "ASSI_def.t
             link_label_fontsize=12,
             fig_ax=(fig,ax_overlay)
             )
-    # tp.plot_graph(
-    #         val_matrix=val_matrix,
-    #         graph=val_matrix,
-    #         var_names=var_names,
-    #         link_colorbar_label='cross-MCI',
-    #         node_colorbar_label='auto-MCI',
-    #         show_autodependency_lags=False,
-    #         node_pos={'x': nodePosX, 'y':nodePosY},
-    #         node_size = 0.12,
-    #         node_aspect = 0.8,
-    #         node_label_size=12,
-    #         link_label_fontsize=12,
-    #         fig_ax=(fig,ax_overlay)
-    #         )
 
     current_pos = ax_overlay.get_position()
 
@@ -165,8 +149,8 @@ def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = Fa
     fig = plt.subplots(1,1,layout="constrained")
     plt.suptitle(title, fontsize=14)
     if val_matrix.shape[0] == 2:
-        figur, ax = fig
-        figur.set_size_inches(4,2)
+        figure, ax = fig
+        figure.set_size_inches(4,2)
         if len(graph) > 0:
             plot_graph_multilags(
             val_matrix=val_matrix,
@@ -184,8 +168,6 @@ def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = Fa
             show_auto_colorbar=(auto_colorbar_label != "")
             )
         else:
-            # matrixFull = np.zeros((val_matrix.shape[0], val_matrix.shape[1],2))
-            # matrixFull[:,:,1] = val_matrix
             plot_graph_multilags(
             val_matrix=val_matrix,
             graph=val_matrix,
@@ -202,8 +184,8 @@ def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = Fa
             show_auto_colorbar=(auto_colorbar_label != "")
             )
     else:
-        figur, ax = fig
-        figur.set_size_inches(4,4)
+        figure, ax = fig
+        figure.set_size_inches(4,4)
         if len(graph) > 0:
             plot_graph_multilags(
             val_matrix=val_matrix,
@@ -221,8 +203,6 @@ def visualizeGraph(val_matrix, graph, columnNames, filename, title="", show = Fa
             show_auto_colorbar=(auto_colorbar_label != "")
             )
         else:
-            # matrixFull = np.zeros((val_matrix.shape[0], val_matrix.shape[1],2))
-            # matrixFull[:,:,1] = val_matrix
             plot_graph_multilags(
             val_matrix=val_matrix,
             graph=val_matrix,
@@ -253,7 +233,6 @@ def plotMatrix(val_matrix, columnNames, filename, show=False, save=True):
     f1.set_size_inches(6,5)
     g1 = sns.heatmap(val_matrix, annot=True, linewidth=0.5, xticklabels=columnNames, yticklabels=columnNames)
     g1.set(xlabel='To', ylabel='From')
-    #plt.suptitle('GCSS', fontsize=23)
     if save:
         plt.savefig(dpi=300,fname=filename)
 
@@ -342,10 +321,9 @@ def showStationarityResults(filename, figTitle ="", oneToTwo = [], twoToOne= [],
         plt.close()
 
 # CURRENT PAPER VERSION with a march september mask in a new file
-# python Pipeline.py -worldMap True -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_confounderDetrend_marchSeptMask" -vars "AMOC_Caesar" "SI_Conc" "Arctic_Temp_Anomalies" -vars_names "AMOC" "Sea Ice Conc." "Arctic Temp." -mask "MarchSept" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False True -deseason False False True
+# python Pipeline.py -worldMap True -methods "PCMCI" "LKIF" -indep_test "parcorr" -map_var_names "AMOC" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_main" -vars "AMOC_Caesar" "SI_Conc" "Arctic_Temp_Anomalies" -vars_names "AMOC" "ASSI" "Temp" -mask "MarchSept" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False True -deseason False False True
 
-# robustness tests for other AMOC indices, bash script iterates over names for $var
-# python Pipeline.py -worldMap True -methods "PCMCI" "LKIF" -indep_test "parcorr" -map_var_names "$var" "ASSI" "Temp" -filename_in "./DataSheet SeaIceAggregates.csv" -dirname_out "results_paper_${var}" -vars "$var" "SI_Conc" "Arctic_Temp_Anomalies" -vars_names "$var" "ASSI" "Temp" -mask "MarchSept" "MarchSept" "MarchSept" -maskType "x" -mask_lkif "MarchSept" -tauMax 5 -alpha 0.05 -detrend False False True -deseason False False True
+# See the bash script allExperiments.sh for the robustness tests and other experiments.
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -389,9 +367,6 @@ if __name__ == "__main__":
         print(f"Permission denied: Unable to create directory '{directory}'.")
     except Exception as e:
         print(f"An error occurred trying to create '{directory}': {e}")
-    #sys.stdout = open(directory + '/output.txt', 'w')
-
-    # TODO: sanity checks on all arguments
 
     file_in = args.filename_in
     dataCols = args.vars
@@ -471,8 +446,7 @@ if __name__ == "__main__":
     print("Methods: ")
     print(methodsChosen)
 
-    print(data)
-    print(data.shape)
+    print("Samples:", data.shape[0], "  Variables:", data.shape[1])
     print("Std Deviations (Non-normalized, non-masked):")
     for i in range(data.shape[1]):
         stdDev = np.std(data[:, i])

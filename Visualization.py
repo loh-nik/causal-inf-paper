@@ -16,65 +16,6 @@ plt.rcParams.update({
 #import networkx as nx
 import seaborn as sns
 
-def saveBoxPlot(distributions):
-    plt.boxplot(distributions)
-    plt.show()
-
-def saveROCCurve(TPR, FPR, values, title, filename, colors = [], rowLabels = [], show = False, save=True, annotateBest = True,
-                 xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=300, xlabel ="", ylabel =""):
-    fig = plt.figure(figsize=figsize, layout="constrained")
-    #plt.suptitle(title, fontsize=15)
-    plt.xscale(xscale)
-    plt.yscale(yscale)
-    plt.xlabel(xlabel, fontsize=14)
-    plt.ylabel(ylabel, fontsize=14)
-    plt.xticks(fontsize=14)
-    plt.yticks(fontsize=14)
-    if TPR.shape != FPR.shape:
-        print("Error: TPR and FPR shaped differently")
-        exit()
-    if TPR.shape[0] != len(values) and TPR.shape[1] != len(values):
-        print("Value list doesn't match any dimension of data")
-        exit()
-    plt.xlim(-0.05, 1.05)
-    plt.ylim(-0.05,1.05)
-    # should be int for one-dimensional data, should be array of ints for two-dim data
-    showIndices = np.argmin(np.power(1-TPR, 2) + np.power(FPR,2), axis=1 if len(TPR.shape) > 1 else 0)
-    if len(TPR.shape) == 1:
-        plt.plot(FPR, TPR)
-        if annotateBest:
-            plt.annotate(values[showIndices], (FPR[showIndices], TPR[showIndices]),fontsize=14)
-    else:
-        showLegend = True
-        if len(rowLabels) == 0:
-            rowLabels = np.zeros(TPR.shape[0])
-            showLegend = False
-        elif len(rowLabels) != TPR.shape[0]:
-            print("Error: Not enough labels provided for TPR/FPR data")
-            exit()
-        if len(colors) > 0 and len(colors) != TPR.shape[0]:
-            print("Error: Not enough colors provided for TPR/FPR data")
-            exit()
-        for i in range(TPR.shape[0]):
-            if len(colors) == 0:
-                plt.plot(FPR[i], TPR[i], label = str(rowLabels[i]))
-                if annotateBest:
-                    plt.plot(FPR[i, showIndices[i]], TPR[i, showIndices[i]], 'o', color="black")
-            else:
-                plt.plot(FPR[i], TPR[i], label = str(rowLabels[i]), color=colors[i])
-                if annotateBest:
-                    plt.plot(FPR[i, showIndices[i]], TPR[i, showIndices[i]], 'o', color=colors[i])
-            if annotateBest:
-                plt.annotate(values[showIndices[i]], (FPR[i, showIndices[i]], TPR[i, showIndices[i]]),fontsize=14)
-        if showLegend:
-            plt.legend(fontsize=14)
-    if save:
-        plt.savefig(filename,dpi = dpi)
-    if show:
-        plt.show()
-    else:
-        plt.close()
-
 def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowLabels=[], show = False, save= True, 
                 xscale = "linear", yscale = "linear", figsize=(4.5,4), dpi=300, xlabel ="", ylabel ="", yAxisCut = False,
                   yAxisLinearLim = 1, quantileLower = [], quantileHigher = [], xTickLabels = True, yTickLabels = True, fontsizeFactor = 1,
@@ -92,7 +33,8 @@ def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowL
     if len(errors) > 0 and errors.shape != scores.shape:
         print("Errors shape doesn't match scores shape")
         exit()
-    #plt.suptitle(title, fontsize=15)
+    # Enable titles if desired
+    # plt.suptitle(title, fontsize=15)
     plt.xscale(xscale)
     if yAxisCut:
         plt.yscale("symlog", linthresh = yAxisLinearLim)
@@ -119,9 +61,7 @@ def saveMCCCurve(scores, values, title, filename, errors = [], colors = [], rowL
         ax.set_ylim(yLims[0], yLims[1])
     if moveYLabel != 0:
         import matplotlib.transforms as mtransforms
-        # x0, y0 = ax.yaxis.get_label().get_position()
         offset = mtransforms.ScaledTranslation(0, moveYLabel/72, ax.figure.dpi_scale_trans)
-        # ax.yaxis.set_label_coords(x0, y0 + moveYLabel)
         ax.yaxis.get_label().set_transform(ax.yaxis.get_label().get_transform() + offset)
     if greyAxisAt is not None:
         plt.axvline(greyAxisAt, color ="grey")
@@ -183,7 +123,8 @@ def saveMCCCurveSubplot(subplotRows, subplotCols, scores, values, title, filenam
     if len(errors) > 0 and errors.shape != scores.shape:
         print("Errors shape doesn't match scores shape")
         exit()
-    #plt.suptitle(title, fontsize=15)
+    # Enable titles if desired
+    # plt.suptitle(title, fontsize=15)
     for i, scoreTuple in enumerate(scores):
         ax = axes[i]
         if len(errors) > 0:
@@ -241,7 +182,6 @@ def saveMCCCurveSubplot(subplotRows, subplotCols, scores, values, title, filenam
                         ax.fill_between(values, quantileLower[i], quantileHigher[i], alpha = 0.2, color= colorTuple[i])
             if mayShowLegend:
                 ax.legend(fontsize=14)
-    # plt.subplots_adjust(hspace=0)
     if save:
         plt.savefig(filename, dpi=dpi)
     if show:
@@ -265,7 +205,8 @@ def saveMCCScatter(scores, values, title, filename, errors = [], colors = [], ro
     if len(errors) > 0 and errors.shape != scores.shape:
         print("Errors shape doesn't match scores shape")
         exit()
-    #plt.suptitle(title, fontsize=15)
+    # Enable titles if desired
+    # plt.suptitle(title, fontsize=15)
     plt.xscale(xscale)
     if yAxisCut:
         plt.yscale("symlog", linthresh = yAxisLinearLim)
@@ -336,67 +277,6 @@ def saveMCCScatter(scores, values, title, filename, errors = [], colors = [], ro
     else:
         plt.close()
 
-def saveDecisionTree(data, labels, feature_names, class_names, filename, max_depth = 3, show = False, save = True):
-    import dtreeviz
-    from sklearn.tree import DecisionTreeClassifier
-    clf = DecisionTreeClassifier(random_state=0, max_depth=max_depth)
-    clf = clf.fit(data, labels)
-    viz_model = dtreeviz.model(clf,
-                                   X_train = data, y_train=labels,
-                                   feature_names = feature_names,
-                                   target_name = "Ranking", class_names = class_names)
-    v = viz_model.view(fancy=False)
-    if save:
-        v.save(filename)
-    if show:
-        v.show()
-
-def saveDecisionBoundaries(data, labels, filename, show = False, save = True):
-    from dtreeviz import decision_boundaries
-    from sklearn.tree import DecisionTreeClassifier
-    if data.shape[1] != 2 :
-        print("Invalid data to draw 2d decision boundaries")
-        exit()
-    if np.max(labels) == 0:
-        print("Only one class found, no decision boundary can be drawn")
-        return
-    fix, ax = plt.subplots()
-    clf = DecisionTreeClassifier(random_state=0, max_depth=3)
-    clf = clf.fit(data, labels)
-    decision_boundaries(clf, data, labels, ax = ax)
-    if save:
-        plt.savefig(filename)
-    if show:
-        plt.show()
-    else:
-        plt.close()
-
-def saveCouplingMatrixGraph(matrix, title, filename, show = False, save= True, figsize=(4,4.5), dpi=300):
-    from tigramite import plotting as tp
-    ax = plt.subplots(1,1,layout="constrained", figsize=figsize)
-    plt.title(title, fontsize=17)
-    #G = nx.from_numpy_array(matrix, create_using =nx.DiGraph)
-    matrixFull = np.zeros((matrix.shape[0], matrix.shape[1],2))
-    matrixFull[:,:,1] = matrix
-    tp.plot_graph(val_matrix=matrixFull,
-            graph=matrixFull,
-            show_colorbar=False,
-            var_names=range(matrixFull.shape[0]),
-            show_autodependency_lags=False,
-            fig_ax = ax,
-            node_aspect = 1,
-            node_label_size=14,
-            link_label_fontsize = 1
-            )
-    #G = nx.from_numpy_array(matrix, create_using =nx.DiGraph)
-    #nx.draw(G, with_labels=True, font_weight='bold')
-    if save:
-        plt.savefig(filename, dpi=dpi)
-    if show:
-        plt.show()
-    else: 
-        plt.close()
-
 def pyGraphVizCouplingMatrix(matrix, filename, dpi = 300):
     import pygraphviz as pgv
     import networkx as nx
@@ -414,11 +294,11 @@ def pyGraphVizCouplingMatrix(matrix, filename, dpi = 300):
         node.attr['width'] = '0.6'
         node.attr['height'] = '0.6'
     A.graph_attr['K'] = '0.5'
-    A.graph_attr['size'] = '4.5,4.5'   # inches, equivalent to figsize=(4.5, 4.5)
+    A.graph_attr['size'] = '4.5,4.5'
     A.graph_attr['dpi'] = str(dpi)
     A.graph_attr['splines'] = 'true'
     A.graph_attr['overlap'] = 'false'
-    A.layout(prog='fdp')   # neato gives circular-ish organic layouts
+    A.layout(prog='fdp')
     A.draw(filename)
 
 def customCouplingMatrixGraph(matrix, title, filename, show = False, save= True, figsize=(4.5,4.5), dpi=300):
@@ -426,10 +306,8 @@ def customCouplingMatrixGraph(matrix, title, filename, show = False, save= True,
     edge_colors = {1: 'tab:blue', -1: 'tab:red'}
 
     G = nx.DiGraph()
-
     n = matrix.shape[0]
     G.add_nodes_from(range(n))
-
     for i in range(n):
         for j in range(n):
             if matrix[i, j] != 0:
@@ -440,72 +318,14 @@ def customCouplingMatrixGraph(matrix, title, filename, show = False, save= True,
     edge_color_list = [edge_colors[G[u][v]['weight']] for u, v in G.edges()]
         
     fig, ax = plt.subplots(1,1, figsize=figsize, layout="constrained")
-    # plt.title(title, fontsize=17)
     nx.draw_networkx_edges(G, pos, ax=ax, edge_color = edge_color_list, connectionstyle=f'arc3, rad={0.2}', arrows=True, width=5, arrowsize=30, node_size=1600)
-
     nx.draw_networkx_nodes(G, pos, ax=ax, node_color='orange', node_size=1600)
-
     nx.draw_networkx_labels(G, pos, ax=ax, font_size=14, font_color='black')  
-
-    # # --- Force equal, symmetric limits ---
-    # xvals, yvals = np.array(list(pos.values())).T
-    # pad = 0.1
-    # xmax, ymax = xvals.max() + pad, yvals.max() + pad
-    # xmin, ymin = xvals.min() - pad, yvals.min() - pad
-    # ax.set_xlim(xmin, xmax)
-    # ax.set_ylim(ymin, ymax)
-    # ax.set_aspect('equal')
-
-    # # Remove frame/padding
-    # plt.tight_layout()
     ax.margins(0.1)
     ax.axis('off')
-    
 
-    # --- Save cleanly ---
-   
     if save:
         plt.savefig(filename, dpi=dpi, pad_inches=0)
-    if show:
-        plt.show()
-    else: 
-        plt.close()
-
-def saveHeatmap(textValues, colorValues, title, filename, show=False, save=True, figsize = (4.5,4), dpi=300, xlabel= "", ylabel ="", xtickLabels = [], ytickLabels=[]):
-    fig = plt.figure(figsize=figsize, layout="constrained")
-    #plt.suptitle(title, fontsize=15)
-    ax = sns.heatmap(colorValues, cmap = "Wistia", annot = textValues, annot_kws={"fontsize": 14})
-    cax = ax.figure.axes[-1]
-    cax.tick_params(labelsize=12)
-    ax.invert_yaxis()
-    plt.xlabel(xlabel, fontsize=14)
-    plt.ylabel(ylabel, fontsize=14)
-    if len(xtickLabels) == 0:
-        plt.xticks(fontsize=14)
-    else:
-        plt.xticks(ticks=np.array(range(len(xtickLabels))) + 0.5, labels=xtickLabels, fontsize=12)
-    if len(ytickLabels) == 0:
-        plt.yticks(fontsize=14)
-    else:
-        plt.yticks(ticks=np.array(range(len(ytickLabels))) + 0.5, labels=ytickLabels,fontsize=12)
-    if save:
-        plt.savefig(filename, dpi=dpi)
-    if show:
-        plt.show()
-    else: 
-        plt.close()
-
-def saveGrid(matrix, title, filename, show=False, save = True, figsize=(4.2,3.8), dpi=300):
-    fig, ax = plt.subplots(1,1,layout="constrained", figsize=figsize)
-    #plt.suptitle(title,fontsize=15)
-    maxVal = np.max(np.abs(matrix))
-    cax = ax.imshow(matrix, cmap='bwr', vmin = -maxVal, vmax = maxVal)
-    ax.set_xticks([])
-    ax.set_yticks([])
-    cb = fig.colorbar(cax,shrink=0.9)
-    cb.ax.tick_params(labelsize=14)
-    if save:
-        plt.savefig(filename, dpi=dpi)
     if show:
         plt.show()
     else: 
@@ -603,6 +423,7 @@ def plotCouplingGraphs():
     filenames = ["SmallLowDense", "SmallHighDense", "MedLowDense", "MedHighDense", "LargeLowDense", "LargeHighDense"]
     for matr, name in zip(matrices, filenames):
         pyGraphVizCouplingMatrix(matr, "diagrams/MatrixGraphs/" +name + ".png")
+        # Alternative plotting of nodes in a circle:
         # customCouplingMatrixGraph(matr, "", "diagrams/MatrixGraphs/" +name + ".png")
 
 def plotRandomCouplingGraphs():
@@ -611,6 +432,7 @@ def plotRandomCouplingGraphs():
     matrices = matrices[1:]
     for i, matr in enumerate(matrices):
         pyGraphVizCouplingMatrix(matr, "diagrams/MatrixGraphs/" +str(i) + ".png")
+        # Alternative plotting of nodes in a circle:
         # customCouplingMatrixGraph(matr, "", "diagrams/MatrixGraphs/" +name + ".png")
     fig, axes = plt.subplots(2,5, figsize=(6,3))
     for i, ax in enumerate(axes.flatten()):
@@ -631,7 +453,6 @@ def plotRandomCouplingGraphs():
             ha='left'
         )
     fig.subplots_adjust(left=0.02, right=0.99, top=0.99, bottom=0.01)
-    # fig.tight_layout()
     plt.savefig("diagrams/MatrixGraphs/combination.png", dpi=300)
 
 if __name__ == "__main__":

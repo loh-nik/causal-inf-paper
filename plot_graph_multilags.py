@@ -1,5 +1,5 @@
 """
-Written with help by Claude-AI, with several corrections towards interoperability with existing code.
+Written largely by Claude-AI, with several manual corrections towards interoperability with existing code.
 
 plot_graph_multilags.py
 =======================

@@ -1,15 +1,11 @@
 import numpy as np
 from matplotlib import pyplot as plt
-from scipy.integrate import solve_ivp
 
-from progress.bar import Bar
 import brainpy as bp
 import brainpy.math as bm
 import jax.numpy as jnp
 
-def dynSysX3(t,y,A,B,C,D,deltaT,noiseArr):
-    return A*(np.power(y,3)) + B*y + C + D@(y-1) + noiseArr[int(t/deltaT)%len(noiseArr)]
-
+# Individual sized Delayed / Stochastic Differential Equation data generation
 def gen3dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000, noiseScale = 0.01, savename = "threeInteractions", verbose = True):
     
     
@@ -60,7 +56,6 @@ def gen3dNoDelayData(couplingMatrix, timeSteps = 1000, noiseScale = 0.01, verbos
     stacked = np.stack((runner.mon.x[::sampleSkip], runner.mon.y[::sampleSkip],runner.mon.z[::sampleSkip])).reshape((3,-1))
     return stacked
 
-# 6 dimensional cubic diff. eq. with delays
 def gen6dDelayData(couplingMatrix, delayMatrix, timeSteps = 1000, noiseScale = 0.01, verbose = True):
     
     if couplingMatrix.shape != (6,6) or delayMatrix.shape != (6,6):
@@ -149,25 +144,7 @@ def gen12dNoDelayData(couplingMatrix, timeSteps = 1000, noiseScale = 0.01, verbo
     stacked = np.stack((runner.mon.x[::sampleSkip], runner.mon.y[::sampleSkip],runner.mon.z[::sampleSkip],runner.mon.a[::sampleSkip], runner.mon.b[::sampleSkip],runner.mon.c[::sampleSkip],runner.mon.d[::sampleSkip], runner.mon.e[::sampleSkip],runner.mon.f[::sampleSkip],runner.mon.g[::sampleSkip], runner.mon.h[::sampleSkip],runner.mon.j[::sampleSkip])).reshape((12,-1))
     return stacked
 
-def gen3dAutoCorrData(couplingMatrix, autoCorr, verbose = True):
-    
-    dt = 0.001
-    f = lambda x,y,z,t: (- autoCorr*pow(x, 3) + autoCorr*x + couplingMatrix[0,1] * (y-1) + couplingMatrix[0,2] * (z-1),\
-                          - autoCorr*pow(y, 3) + autoCorr*y + couplingMatrix[1,0] * (x-1) + couplingMatrix[1,2] * (z-1), \
-                           - autoCorr*pow(z, 3) + autoCorr*z + couplingMatrix[2,0] * (x-1) + couplingMatrix[2,1] * (y-1))
-    g = lambda x,y,z,t: (0.01, 0.01, 0.01)
-
-    integral = bp.sdeint(f, g)
-
-    runner = bp.IntegratorRunner(integral,
-                                monitors=['x', 'y', 'z'],
-                                inits = [1.,1.,1.],
-                                dt=dt,
-                                progress_bar=verbose)
-    runner.run(100.)
-    stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100])).reshape((3,-1))
-    return stacked
-
+# Chooses the correct implementation of a DDE/SDE
 def getCascadeDataBrainpy(couplingMatrix, samples, noiseScale, delay = 0, verbose = True, deltaT = 0.1):
     if delay == 0:
         if couplingMatrix.shape == (3,3):
@@ -189,54 +166,6 @@ def getCascadeDataBrainpy(couplingMatrix, samples, noiseScale, delay = 0, verbos
             return gen6dDelayData(couplingMatrix, np.ones((6,6)) * delay, samples, noiseScale, verbose)
     raise RuntimeError("No implementation of the given matrix shape")
     return
-
-def getCascade3dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcingNoise = 0.01, verbose = True):
-    
-    if couplingMatrix.shape != (3,3):
-        print("Error, coupling matrix not of shape (3,3)")
-        return
-    dt = 0.001
-    def function3dConfounded(x,y,z,c,t):
-        values = jnp.stack([x,y,z])
-        minus1 = values-1
-        result = -jnp.power(values, 3) + values + couplingMatrix @ minus1 + c
-        return result[0], result[1], result[2], confounderFct(c,t)
-    g = lambda x,y,z,c,t: (0.01, 0.01, 0.01, forcingNoise)
-
-    integral = bp.sdeint(function3dConfounded, g)
-
-    runner = bp.IntegratorRunner(integral,
-                                monitors=['x', 'y', 'z', 'c'],
-                                inits = [1.,1.,1.,0.],
-                                dt=dt,
-                                progress_bar=verbose)
-    runner.run(samples / 10)
-    stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100],runner.mon.z[::100], runner.mon.c[::100])).reshape((4,-1))
-    return stacked
-
-def getCascade2dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcingNoise = 0.01, verbose = True):
-    
-    if couplingMatrix.shape != (2,2):
-        print("Error, coupling matrix not of shape (2,2)")
-        return
-    dt = 0.001
-    def function2dConfounded(x,y,c,t):
-        values = jnp.stack([x,y])
-        minus1 = values-1
-        result = -jnp.power(values, 3) + values + couplingMatrix @ minus1 + c
-        return result[0], result[1], confounderFct(c,t)
-    g = lambda x,y,c,t: (0.01, 0.01, forcingNoise)
-
-    integral = bp.sdeint(function2dConfounded, g)
-
-    runner = bp.IntegratorRunner(integral,
-                                monitors=['x', 'y', 'c'],
-                                inits = [1.,1.,0.],
-                                dt=dt,
-                                progress_bar=verbose)
-    runner.run(samples / 10)
-    stacked = np.stack((runner.mon.x[::100], runner.mon.y[::100], runner.mon.c[::100])).reshape((3,-1))
-    return stacked
 
 def getCascade6dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcingNoise = 0.01, verbose = True):
     
@@ -263,20 +192,6 @@ def getCascade6dConfoundedBrainpy(confounderFct, couplingMatrix, samples, forcin
                         runner.mon.a[::100], runner.mon.b[::100],runner.mon.c[::100], runner.mon.d[::100])).reshape((7,-1))
     return stacked
 
-def getCascadeData(couplingMatrix, samples, deltaTOutput, noiseScale, seed, constantNoiseDuration = 1, deltaTSim = 0.001):
-    n, _ = couplingMatrix.shape
-    endT = samples*deltaTOutput
-    timeSpan = [0, endT]
-    timePoints = [x * deltaTSim for x in range(int(endT * (1/deltaTSim)))]
-    randomGen = np.random.default_rng(seed)
-    noiseArray = randomGen.normal(loc=0,scale=noiseScale,size=(int((1/constantNoiseDuration)*endT / deltaTOutput), n))
-    init = np.ones(n)
-    A = np.ones(n) * (-1)
-    B = np.ones(n)
-    C = np.zeros(n)
-    sol = solve_ivp(dynSysX3, timeSpan, init, t_eval = timePoints, args=(A,B,C,couplingMatrix,deltaTOutput*constantNoiseDuration,noiseArray))
-    return sol.y.T[::int(deltaTOutput/deltaTSim)]
-
 def getVARData(couplingMatrix, samples, noiseScale, seed, delay=0):
     from tigramite.toymodels import structural_causal_processes as toys
     n,_ = couplingMatrix.shape
@@ -298,236 +213,18 @@ def getVARData(couplingMatrix, samples, noiseScale, seed, delay=0):
     assert not nonstationarity_indicator
     return data_full
 
-# corner and border treatment are a bit confusing - for "energy conservation" (or stability around startVal), one needs to use the following formula when calling:
-# couplingGrid = couplingFactor, cornerAuto=1 - (couplingFactor * 2), borderAuto=1 - (couplingFactor * 3), borderLoss = -couplingFactor, autoCoupling = 1 - (couplingFactor*4), startVal=XY
-def getGridData(gridX, gridY, couplingGrid, autoCoupling, driverCoupling, selfNoise, timeSteps, continuousGrid = False, 
-                startVal = 0, cornerAuto = 0.5, borderAuto = 0.25, borderLoss = -0.25, gridToDriverCoupling=0, gridToDriverDelay=4, 
-                driverAutoReg = 0, driverNoise=1, driverTimeSeries = [], driverNoiseSeries = [], seed = 0):
-    randomGen = np.random.default_rng(seed)
-    valuesGrid = startVal * np.ones((gridX * gridY, timeSteps))
-    # to allow for energy dissipation to the border of the grid, basically modelling the grid to be surrounded by cells with constant value startVal
-    constLoss = np.zeros((gridX * gridY))
-    lossValue = - borderLoss * startVal
-    generateDriver = False
-    generateNoise = False
-    if driverTimeSeries == []:
-        driverTimeSeries = np.zeros(timeSteps)
-        if driverNoiseSeries == []:
-            driverNoiseSeries = np.zeros(timeSteps)
-            generateNoise = True
-        generateDriver = True
-        
-    couplingMatrix = np.zeros((gridX*gridY, gridX * gridY))
-    # could speed this up by writing more elegantly, whatever
-    if continuousGrid:
-        for i in range(gridX*gridY):
-            couplingMatrix[i, i-gridX] = couplingGrid
-            couplingMatrix[i,(i+gridX)%(gridX*gridY)] = couplingGrid
-            couplingMatrix[i,i-1] = couplingGrid
-            couplingMatrix[i,(i+1)%(gridX*gridY)] = couplingGrid
-    else:
-        for i in range(gridX*gridY):
-            if i == 0 or i == gridX-1 or i == gridX * gridY - 1 or i == gridX * (gridY-1):
-                couplingMatrix[i,i] = cornerAuto + (2 * borderLoss)
-                constLoss[i] = lossValue * 2
-            elif i < gridX or i % gridX == 0 or i%gridX == gridX-1 or i > gridX * (gridY-1):
-                couplingMatrix[i,i] = borderAuto + borderLoss
-                constLoss[i] = lossValue
-            else:
-                couplingMatrix[i,i] = autoCoupling
-            if i >= gridX:
-                couplingMatrix[i, i-gridX] = couplingGrid
-            if i < (gridX*gridY)-gridX:
-                couplingMatrix[i,i+gridX] = couplingGrid
-            if i % gridX > 0:
-                couplingMatrix[i,i-1] = couplingGrid
-            if i % gridX != (gridX-1):
-                couplingMatrix[i,i+1] = couplingGrid
-    driverCoupling = np.ones(gridX*gridY) * driverCoupling
-    for j in range(1,timeSteps):
-        valuesGrid[:,j] = couplingMatrix@valuesGrid[:,j-1] + constLoss + driverCoupling * (driverTimeSeries[j-1] - startVal) + randomGen.normal(loc = 0, scale = selfNoise, size=gridX*gridY)
-        if generateDriver:
-            driverTimeSeries[j] = driverAutoReg * driverTimeSeries[j-1] + driverNoiseSeries[j] + (randomGen.normal(loc=0,scale=driverNoise) if generateNoise else 0) + (0 if j <= (gridToDriverDelay-1) else np.sum(gridToDriverCoupling * valuesGrid[:,j-gridToDriverDelay]))
-    if np.max(driverTimeSeries) > 100 or np.max(valuesGrid) > 100 or np.any(np.isnan(driverTimeSeries)) or np.any(np.isnan(valuesGrid)):
-        print("error: values larger than 100 indicate lack of convergence / parametrization fault")
-        exit()
-    return driverTimeSeries, valuesGrid
-
-# returns a multi-dim array that contains 1 for instability and 0 for stability in cascade data gen
-def getStabilityMatrix(couplingMatrices, sampleCounts, couplingStrengths, noiseScales, runs):
-    result = np.zeros((len(couplingMatrices), len(sampleCounts), len(couplingStrengths), len(noiseScales)))
-    totalRuns = (len(couplingMatrices) * len(sampleCounts) * len(couplingStrengths) * len(noiseScales)) * runs
-    progressBar = Bar('Processing', max=totalRuns)
-    for matInd in range(len(couplingMatrices)):
-        for sampInd in range(len(sampleCounts)):
-            for strength in range(len(couplingStrengths)):
-                matrix = couplingStrengths[strength] * couplingMatrices[matInd]
-                for i in range(matrix.shape[0]):
-                    matrix[i,i] = couplingMatrices[matInd][i,i]
-                for noiseInd in range(len(noiseScales)):
-                    for run in range(runs):
-                        progressBar.next()
-                        data = getCascadeData(couplingMatrices[matInd], sampleCounts[sampInd], 0.1, noiseScales[noiseInd], run, deltaTSim=0.01)
-                        if np.min(data) <= -1:
-                            result[matInd, sampInd, strength, noiseInd] = 1
-                            print("Unstable config for matrix " + str(matInd) + ", " + str(sampleCounts[sampInd]) + " samples, coupling strength " + str(couplingStrengths[strength]) + " and noise scale " + str(noiseScales[noiseInd]))
-    progressBar.finish()
-    return result
-
-def checkStability():
-    mediumCouplingMatrixVAR = np.array([[0.5,0,-1,1,0,0],
-                                        [1,0.5,0,0,0,0],
-                                        [0,1,0.5,0,0,0],
-                                        [0,0,0,0.5,0,0],
-                                        [0,0,1,-1,0.5,1],
-                                        [0,0,0,0,-1,0.5]])
-    mediumCouplingMatrixCascade = np.array([[0,0,-1,1,0,0],
-                                        [1,0,0,0,0,0],
-                                        [0,1,0,0,0,0],
-                                        [0,0,0,0,0,0],
-                                        [0,0,1,-1,0,1],
-                                        [0,0,0,0,-1,0]])
-            
-    largeCouplingMatrixVAR = np.array([[0.5,0,-1,0,0,1,0,0,0,0,0,0],
-                                        [1,0.5,0,0,0,0,0,0,0,0,0,0],
-                                        [0,1,0.5,0,0,0,0,1,0,0,0,0],
-                                        [0,1,0,0.5,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0.5,-1,0,0,0,0,0,0],
-                                        [0,0,0,-1,0,0.5,0,0,0,0,0,0],
-                                        [0,0,-1,0,0,1,0.5,0,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0.5,1,0,0,0],
-                                        [0,0,0,0,0,0,0,-1,0.5,1,0,0],
-                                        [0,0,0,0,1,0,0,0,0,0.5,0,-1],
-                                        [0,0,0,0,0,0,0,-1,0,0,0.5,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,0.5]])
-    largeCouplingMatrixCascade = np.array([[0,0,-1,0,0,1,0,0,0,0,0,0],
-                                        [1,0,0,0,0,0,0,0,0,0,0,0],
-                                        [0,1,0,0,0,0,0,1,0,0,0,0],
-                                        [0,1,0,0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0,-1,0,0,0,0,0,0],
-                                        [0,0,0,-1,0,0,0,0,0,0,0,0],
-                                        [0,0,-1,0,0,1,0,0,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0,1,0,0,0],
-                                        [0,0,0,0,0,0,0,-1,0,1,0,0],
-                                        [0,0,0,0,1,0,0,0,0,0,0,-1],
-                                        [0,0,0,0,0,0,0,-1,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,0]])
-    highDensityCouplingMatrixVAR = np.array([
-                                        [0.5,0,-1,-1,0,0],
-                                        [1,0.5,0,0,0,0],
-                                        [1,1,0.5,0,0,0],
-                                        [0,0,0,0.5,-1,-1],
-                                        [0,1,-1,0,0.5,1],
-                                        [0,0,0,1,-1,0.5]])
-    highDensityCouplingMatrixCascade = np.array([
-                                        [0,0,-1,-1,0,0],
-                                        [1,0,0,0,0,0],
-                                        [1,1,0,0,0,0],
-                                        [0,0,0,0,-1,-1],
-                                        [0,1,-1,0,0,1],
-                                        [0,0,0,1,-1,0]])
-    defaultCouplingMatrixVAR_LowDense= np.array([[0.5,0,0],[-1,0.5,0],[0,-1,0.5]])
-    defaultCouplingMatrixCascade_LowDense = np.array([[0,0,0],[-1,0,0],[0,-1,0]])
-
-    defaultCouplingMatrixVAR_HighDense= np.array([[0.5,1,0],[-1,0.5,1],[1,-1,0.5]])
-    defaultCouplingMatrixCascade_HighDense = np.array([[0,1,0],[-1,0,1],[1,-1,0]])
-
-    largeCouplingMatrixVAR_LowDense = np.array([[0.5,0,0,0,0,0,0,0,0,0,0,0],
-                                        [1,0.5,0,0,0,0,0,0,0,0,0,0],
-                                        [0,1,0.5,0,0,0,0,0,0,0,0,0],
-                                        [0,1,0,0.5,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0.5,-1,0,0,0,0,0,0],
-                                        [0,0,0,-1,0,0.5,0,0,0,0,0,0],
-                                        [0,0,-1,0,0,0,0.5,0,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0.5,1,0,0,0],
-                                        [0,0,0,0,0,0,0,-1,0.5,0,0,0],
-                                        [0,0,0,0,1,0,0,0,0,0.5,0,-1],
-                                        [0,0,0,0,0,0,0,-1,0,0,0.5,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,0.5]])
-    largeCouplingMatrixCascade_LowDense = np.array([[0,0,0,0,0,0,0,0,0,0,0,0],
-                                        [1,0,0,0,0,0,0,0,0,0,0,0],
-                                        [0,1,0,0,0,0,0,0,0,0,0,0],
-                                        [0,1,0,0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0,-1,0,0,0,0,0,0],
-                                        [0,0,0,-1,0,0,0,0,0,0,0,0],
-                                        [0,0,-1,0,0,0,0,0,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0,1,0,0,0],
-                                        [0,0,0,0,0,0,0,-1,0,0,0,0],
-                                        [0,0,0,0,1,0,0,0,0,0,0,-1],
-                                        [0,0,0,0,0,0,0,-1,0,0,0,0],
-                                        [0,0,0,0,0,0,0,0,0,0,0,0]])
-    largeCouplingMatrixVAR_HighDense = np.array([[0.5,0,-1,0,0,1,0,0,0,0,0,0],
-                                        [1,0.5,-1,0,0,0,0,0,0,0,0,0],
-                                        [0,1,0.5,0,0,0,0,1,0,0,0,0],
-                                        [0,1,0,0.5,0,0,0,-1,0,0,0,0],
-                                        [0,0,0,0,0.5,-1,0,0,-1,-1,0,0],
-                                        [0,0,0,-1,0,0.5,0,0,0,0,0,0],
-                                        [0,0,-1,0,0,1,0.5,0,0,0,0,0],
-                                        [0,0,0,0,0,0,-1,0.5,1,0,0,0],
-                                        [0,0,0,0,0,0,0,-1,0.5,1,0,0],
-                                        [0,0,0,0,1,0,0,0,0,0.5,1,-1],
-                                        [0,0,0,0,0,0,0,-1,0,0,0.5,1],
-                                        [0,0,0,1,0,0,0,0,0,0,0,0.5]])
-    largeCouplingMatrixCascade_HighDense = np.array([[0,0,-1,0,0,1,0,0,0,0,0,0],
-                                        [1,0,-1,0,0,0,0,0,0,0,0,0],
-                                        [0,1,0,0,0,0,0,1,0,0,0,0],
-                                        [0,1,0,0,0,0,0,-1,0,0,0,0],
-                                        [0,0,0,0,0,-1,0,0,-1,-1,0,0],
-                                        [0,0,0,-1,0,0,0,0,0,0,0,0],
-                                        [0,0,-1,0,0,1,0,0,0,0,0,0],
-                                        [0,0,0,0,0,0,-1,0,1,0,0,0],
-                                        [0,0,0,0,0,0,0,-1,0,1,0,0],
-                                        [0,0,0,0,1,0,0,0,0,0,1,-1],
-                                        [0,0,0,0,0,0,0,-1,0,0,0,1],
-                                        [0,0,0,1,0,0,0,0,0,0,0,0]])
-    defaultCouplingMatrixCascade = np.array([[0,1,0],[-1,0,0],[1,-1,0]])
-    for i in [mediumCouplingMatrixVAR, largeCouplingMatrixVAR, highDensityCouplingMatrixVAR, defaultCouplingMatrixVAR_LowDense, defaultCouplingMatrixVAR_HighDense, largeCouplingMatrixVAR_LowDense,largeCouplingMatrixVAR_HighDense]:
-        matrix = 0.1 * i
-        for m in range(matrix.shape[0]):
-            matrix[m,m] = i[m,m]
-        #data = getVARData(matrix, 2000, 0.1, 0)
-        #plt.figure()
-        #for j in range(data.shape[1]):
-        #    plt.plot(data[:,j])
-    #for i in [mediumCouplingMatrixCascade, largeCouplingMatrixCascade, highDensityCouplingMatrixCascade,defaultCouplingMatrixCascade_LowDense,defaultCouplingMatrixCascade_HighDense,largeCouplingMatrixCascade_LowDense,largeCouplingMatrixCascade_HighDense ]:
-    for i in [defaultCouplingMatrixCascade]: 
-        data = getCascadeData(3*i, 10000, 0.1,0.1, 0)
-        plt.figure()
-        for j in range(data.shape[1]):
-            plt.plot(data[:,j], label = str(j))
-        plt.legend()
-    plt.show()
-
-if __name__ == "__main__":
-    # truthMatrix = np.array([[0.5,0.2,0],[-0.2,0.5,0],[0.2,-0.2,0.5]])
-    # data = getVARData(truthMatrix, 1000, 0.01, 0, 5)
-    # plt.plot(data)
-    # plt.figure()
-    # data2 = getVARData(truthMatrix, 1000, 0.01, 0, 0)
-    # plt.plot(data2)
-    # plt.plot(data[:,1] - data2[:,1])
-    # plt.show()
+def checkRandomGraphStability():
     graphs = np.load("data/random_graphs.npy")
-    # truthMatrix = np.array([
-    #                         [0,0,0,0,0,0],
-    #                         [1,0,0,0,0,0],
-    #                         [0,-1,0,0,0,0],
-    #                         [0,0,0,0,0,0],
-    #                         [0,0,1,0,0,1],
-    #                         [0,0,0,0,-1,0]])
     for index, truthMatrix in enumerate(graphs):
         data = getCascadeDataBrainpy(truthMatrix, 10000, 0.05)
-        print(data.shape)
         fig, axs = plt.subplots(6,1, figsize=(3,6), sharex=True)
         for ax in axs:
             ax.set_xticklabels([])
-            # ax.set_yticklabels([])
-            # ax.set_yticks([])
 
         for i in range(data.shape[0]):
             axs[i].plot(data[i], color="black")
-            #if i < 5:
-                #ax.spines['bottom'].set_linewidth(2)
-                #ax.spines['bottom'].set_color('black')
         plt.subplots_adjust(hspace=0)
         plt.savefig("diagrams/plainData"+str(index)+".png", dpi=300)
+
+if __name__ == "__main__":
+    checkRandomGraphStability()
